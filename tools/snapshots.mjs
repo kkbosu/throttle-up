@@ -3,10 +3,12 @@
 // Used to prove the Vite split behaves exactly like throttle-up-v11.html:
 //
 //   node tools/snapshots.mjs                         -> snapshots/golden from throttle-up-v11.html
-//   PAGE_URL=http://localhost:4173/ node tools/snapshots.mjs snapshots/after
+//   node tools/snapshots.mjs --serve snapshots/after -> builds the Vite app and tests it via `vite preview`
+//   PAGE_URL=http://localhost:5173/ node tools/snapshots.mjs snapshots/dev   (any running server)
 //   node tools/compare.mjs snapshots/golden snapshots/after
 //
-// Options: --only <regex> (scenario ids), --jobs <n> (parallel pages, default 3). HEADED=1 shows the browser.
+// Options: --only <regex> (scenario ids; replaces just those in an existing run), --jobs <n> (parallel
+// browsers, default 3). HEADED=1 shows the browser.
 //
 // Determinism:
 // - ?manual drives frames at a fixed 16 ms; the fast-forward helper (FF) steps the sim at 50 ms.
@@ -26,8 +28,19 @@ const args = process.argv.slice(2);
 const opt = (name, def) => { const i = args.indexOf(name); return i < 0 ? def : args.splice(i, 2)[1]; };
 const ONLY = new RegExp(opt('--only', '.'));
 const JOBS = +opt('--jobs', 3);
+const SERVE = args.includes('--serve') && !!args.splice(args.indexOf('--serve'), 1);
 const OUT = resolve(ROOT, args[0] || 'snapshots/golden');
-const PAGE = process.env.PAGE_URL || pathToFileURL(resolve(ROOT, 'throttle-up-v11.html')).href;
+let PAGE = process.env.PAGE_URL || pathToFileURL(resolve(ROOT, 'throttle-up-v11.html')).href;
+
+// --serve: build the Vite app and test it through `vite preview` (parity is always checked on the build).
+let server = null;
+if (SERVE) {
+  const vite = await import('vite');
+  await vite.build({ root: ROOT, logLevel: 'warn' });
+  server = await vite.preview({ root: ROOT, logLevel: 'warn', preview: { port: 4173 } });
+  PAGE = server.resolvedUrls.local[0];
+  console.log(`serving the build at ${PAGE}`);
+}
 const CDN = 'https://cdn.jsdelivr.net/npm/three@0.160.0/';
 const THREE_DIR = resolve(ROOT, 'node_modules/three');
 
@@ -359,6 +372,7 @@ await Promise.all(Array.from({ length: Math.min(JOBS, todo.length) }, async () =
 // Keep scenario order stable in the manifest regardless of which job finished first.
 const ordered = Object.fromEntries(scenarios.filter(s => results[s.id] || previous[s.id]).map(s => [s.id, results[s.id] || previous[s.id]]));
 await writeFile(MANIFEST, JSON.stringify({ page: PAGE, scenarios: ordered }, null, 1) + '\n');
+if (server) await server.close();
 const failed = Object.values(results).filter(r => r.failure || r.errors.length).length;
 const shots = Object.values(results).reduce((n, r) => n + r.checkpoints.filter(c => c.file).length, 0);
 console.log(`\n${shots} screenshots, ${todo.length} scenarios, ${failed} with failures/errors -> ${OUT}  (${((Date.now() - t0) / 1000).toFixed(0)}s)`);

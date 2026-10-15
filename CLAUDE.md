@@ -85,7 +85,7 @@ The manifest records sim state, `Math.random` counts, an audio-parameter hash, I
 - three@0.160.0 is served from `node_modules`;
 - the Chromium flags make compositing deterministic.
 
-Check another build with `PAGE_URL=http://localhost:4173/ npm run snapshots -- snapshots/after`, then `npm run compare -- snapshots/golden snapshots/after`. That must report 0 differences. `--only <regex>` reruns selected scenarios into an existing folder. `snapshots/` is gitignored; regenerate it from v11 (about 6 min).
+Check the Vite build with `npm run snapshots -- --serve snapshots/after` (it builds, starts `vite preview`, and runs the suite), then `npm run compare -- snapshots/golden snapshots/after`. That must report 0 differences. `--only <regex>` reruns selected scenarios into an existing folder; `compare --partial` compares only the scenarios a run contains. `snapshots/` is gitignored; regenerate it from v11 (about 6 min).
 
 `tools/legacy-tests/` holds the Playwright (Python) scripts used during development in a cloud sandbox with a software GPU. They're a starting point, not a suite: `t10.py M OUT` screenshots a machine through views/lenses/scenes, `t10s.py OUT` runs SEQUENCE for machines 6 and 7, `t11s.py` runs Hall + sky crane sequences and checks the 2D chip list, `t10f.py` cycles all machines/scenes/quality and REC, `r10_stall.py 0` is the compressor-stall regression in 2D. Needs `pip install playwright` and `playwright install chromium`. On a real GPU you can drop the SwiftShader flags in `h3.py`.
 

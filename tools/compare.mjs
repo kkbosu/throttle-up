@@ -12,10 +12,13 @@ import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 
-const [A, B] = process.argv.slice(2).map(p => resolve(p || ''));
-if (!process.argv[3]) { console.error('usage: node tools/compare.mjs <golden dir> <other dir>'); process.exit(2); }
+const argv = process.argv.slice(2);
+const PARTIAL = argv.includes('--partial') && !!argv.splice(argv.indexOf('--partial'), 1);   // only scenarios present in <other>
+const [A, B] = argv.map(p => resolve(p || ''));
+if (!argv[1]) { console.error('usage: node tools/compare.mjs [--partial] <golden dir> <other dir>'); process.exit(2); }
 const load = async d => JSON.parse(await readFile(join(d, 'manifest.json'), 'utf8')).scenarios;
 const [ma, mb] = await Promise.all([load(A), load(B)]);
+if (PARTIAL) for (const id of Object.keys(ma)) if (!mb[id]) delete ma[id];
 
 const diffs = [];
 function deep(a, b, path) {
