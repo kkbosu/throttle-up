@@ -37,6 +37,7 @@ let server = null;
 if (SERVE) {
   const vite = await import('vite');
   await vite.build({ root: ROOT, logLevel: 'warn' });
+  await import('./check-chunks.mjs');   // exits on failure
   server = await vite.preview({ root: ROOT, logLevel: 'warn', preview: { port: 4173 } });
   PAGE = server.resolvedUrls.local[0];
   console.log(`serving the build at ${PAGE}`);

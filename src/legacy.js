@@ -1020,7 +1020,7 @@ function frame(t){
 const MAN=new URLSearchParams(location.search).has('manual');function step(n=1,ms=16){for(let i=0;i<n;i++)frame(last+ms)}
 MC.forEach((m,i)=>{const b=document.createElement('button');b.textContent=m.btn;b.onclick=e=>{e.stopPropagation();setMachine(i)};$('mch').appendChild(b)});
 setMachine(Math.min(MC.length-1,Math.max(0,+new URLSearchParams(location.search).get('m')||0)));
-/* ---------- 3D renderer loader: Three.js from the CDN; anything goes wrong (no WebGL2, offline, error) and the 2D renderer above carries on ---------- */
+/* ---------- 3D renderer loader: Three.js is a separate chunk, fetched only here; anything goes wrong (no WebGL2, offline, error) and the 2D renderer above carries on ---------- */
 function ready3D(ok,X){if(R3done)return;R3done=true;
  if(ok){try{G3=init3D(X.T,X);SN.splice(0,3,'DUSK','DAY','NIGHT');$('gl').addEventListener('webglcontextlost',e=>{e.preventDefault();fail3D()})}catch(e){console.error('3D init failed',e);G3=null}}
  if(!G3)$('gl').style.display='none';document.querySelector('#ov span').textContent='START ENGINE';chips();lab()}
@@ -1029,7 +1029,7 @@ resize();if(!MAN)requestAnimationFrame(frame);
 (function(){document.querySelector('#ov span').textContent='LOADING 3D...';
  if(new URLSearchParams(location.search).get('r')==='2d'){ready3D(false);return}
  const to=setTimeout(()=>ready3D(false),20000);
- Promise.all(['three','three/addons/postprocessing/EffectComposer.js','three/addons/postprocessing/ShaderPass.js','three/addons/postprocessing/UnrealBloomPass.js','three/addons/postprocessing/OutputPass.js'].map(m=>import(m)))
+ Promise.all([import('three'),import('three/addons/postprocessing/EffectComposer.js'),import('three/addons/postprocessing/ShaderPass.js'),import('three/addons/postprocessing/UnrealBloomPass.js'),import('three/addons/postprocessing/OutputPass.js')])
  .then(([T,a,b,c,d])=>{clearTimeout(to);ready3D(true,{T,EffectComposer:a.EffectComposer,ShaderPass:b.ShaderPass,UnrealBloomPass:c.UnrealBloomPass,OutputPass:d.OutputPass})})
  .catch(e=>{console.error(e);clearTimeout(to);ready3D(false)})})();
 /* =====================================================================================

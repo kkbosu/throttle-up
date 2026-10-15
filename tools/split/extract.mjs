@@ -2,7 +2,8 @@
 //   index.html      head (meta, title, import map) + body markup
 //   src/style.css   the <style> block
 //   src/legacy.js   script 1 + script 2, concatenated into one ES module, plus a generated test bridge
-// Re-runnable: it always starts from the v11 file. Deleted at the end of the split.
+// Used once, in step 1a. Later steps edit the generated files directly, so DON'T rerun it: it would
+// overwrite them with v11 again. Deleted at the end of the split.
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
