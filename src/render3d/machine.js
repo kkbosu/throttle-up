@@ -17,15 +17,7 @@ export function createMachine(){
 
 /* ======================= per-machine configuration ======================= */
 /* camera presets per view: [position, target, half-width that must stay in frame] */
-CFG=[
- M3[0].cfg,
- M3[1].cfg,
- M3[2].cfg,
- M3[3].cfg,
- M3[4].cfg,
- M3[5].cfg,
- M3[6].cfg,
- {box:[12,2.6],sc:[0,10,0],sh:24,mars:1,cams:[[[15,3.5,24],[0,0,0],6.5],[[5.2,1.8,7.2],[0,.9,0],2.9],[[8,1.3,12],[0,0,0],7]],mt:0}];
+CFG=M3.map(m=>m.cfg);
 }
 
 export function applyMachine(){k3.MA=state.mi;ENG.forEach((e,i)=>e.G.visible=i==state.mi);const c=CFG[state.mi];setPlumeBox(c.box[0],c.box[1]);

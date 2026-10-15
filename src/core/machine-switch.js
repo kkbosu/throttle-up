@@ -4,7 +4,7 @@ import { $ } from './util.js';
 import { buildLabels, lab, say } from '../hud/controls.js';
 import { GV, buildFaces } from '../hud/gauges.js';
 import { applyRaw } from '../input/lever.js';
-import { MC } from '../machines/table.js';
+import { MC } from '../machines/index.js';
 import { EM, P, SM, VP } from '../render2d/index.js';
 import { seqStop } from '../sequence/sequence.js';
 

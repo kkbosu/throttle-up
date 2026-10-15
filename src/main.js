@@ -9,7 +9,7 @@ import { wireGauges } from './hud/gauges.js';
 import { resize, wireLayout } from './hud/layout.js';
 import { wireInfo } from './info/info.js';
 import { wireInput } from './input/lever.js';
-import { MC } from './machines/table.js';
+import { MC } from './machines/index.js';
 import { wireRecorder } from './recorder/recorder.js';
 import './debug/globals.js';
 
