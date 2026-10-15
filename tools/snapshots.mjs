@@ -10,79 +10,29 @@
 // Options: --only <regex> (scenario ids; replaces just those in an existing run), --jobs <n> (parallel
 // browsers, default 3). HEADED=1 shows the browser.
 //
-// Determinism:
-// - ?manual drives frames at a fixed 16 ms; the fast-forward helper (FF) steps the sim at 50 ms.
-// - Math.random is a seeded mulberry32, re-seeded when the first WebGL context is created. three.js draws
-//   random numbers for every object's UUID, including objects it creates at import, and a bundled
-//   three creates a different number of those than the CDN file.
-// - three@0.160.0 requests to jsDelivr are served from node_modules/three, so runs are offline and fixed.
+// Runs are byte-for-byte reproducible; how is described in tools/harness.mjs.
 
-import { chromium } from 'playwright';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { resolve, dirname, join } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { resolve, join } from 'node:path';
+import { DESKTOP, FF, PHONE, ROOT, V11_URL, load, newPage, pool, serveBuild } from './harness.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const opt = (name, def) => { const i = args.indexOf(name); return i < 0 ? def : args.splice(i, 2)[1]; };
 const ONLY = new RegExp(opt('--only', '.'));
 const JOBS = +opt('--jobs', 3);
 const SERVE = args.includes('--serve') && !!args.splice(args.indexOf('--serve'), 1);
 const OUT = resolve(ROOT, args[0] || 'snapshots/golden');
-let PAGE = process.env.PAGE_URL || pathToFileURL(resolve(ROOT, 'legacy/throttle-up-v11.html')).href;
+let PAGE = process.env.PAGE_URL || V11_URL;
 
 // --serve: build the Vite app and test it through `vite preview` (parity is always checked on the build).
 let server = null;
 if (SERVE) {
-  const vite = await import('vite');
-  await vite.build({ root: ROOT, logLevel: 'warn' });
-  await import('./check-chunks.mjs');   // exits on failure
-  server = await vite.preview({ root: ROOT, logLevel: 'warn', preview: { port: 4173 } });
-  PAGE = server.resolvedUrls.local[0];
+  server = await serveBuild();
+  PAGE = server.url;
   console.log(`serving the build at ${PAGE}`);
 }
-const CDN = 'https://cdn.jsdelivr.net/npm/three@0.160.0/';
-const THREE_DIR = resolve(ROOT, 'node_modules/three');
-
-const DESKTOP = { viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 };
-const PHONE = { viewport: { width: 390, height: 780 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true };
 const WARMUP_S = 6;
-
-// ---------- page-side helpers ----------
-
-const INIT = `(() => {
-  const H = window.__h = { n: 0, gl: -1, an: 0, ah: 0x811c9dc5, rz: [] };
-  addEventListener('resize', () => H.rz.push([Math.round(performance.now()), typeof R3done !== 'undefined' && R3done, innerWidth, innerHeight]));
-  let a;
-  const seed = s => { a = s; };
-  seed(0x7417e);
-  Math.random = () => {
-    H.n++;
-    a |= 0; a = a + 0x6d2b79f5 | 0;
-    let t = Math.imul(a ^ a >>> 15, 1 | a);
-    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  };
-  const gc = HTMLCanvasElement.prototype.getContext;
-  HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
-    if ((type === 'webgl2' || type === 'webgl') && H.gl < 0) { H.gl = H.n; H.n = 0; seed(0x3d5eed); }
-    return gc.call(this, type, ...rest);
-  };
-  // Audio can't be screenshotted: hash every value the synth sends to an AudioParam (not the times, which are real time).
-  const mix = v => { const s = String(v); for (let i = 0; i < s.length; i++) H.ah = Math.imul(H.ah ^ s.charCodeAt(i), 0x01000193) >>> 0; H.an++; };
-  if (window.AudioParam) {
-    for (const m of ['setValueAtTime', 'linearRampToValueAtTime', 'exponentialRampToValueAtTime', 'setTargetAtTime']) {
-      const f = AudioParam.prototype[m];
-      AudioParam.prototype[m] = function (v, ...r) { mix(v); return f.call(this, v, ...r); };
-    }
-    const d = Object.getOwnPropertyDescriptor(AudioParam.prototype, 'value');
-    Object.defineProperty(AudioParam.prototype, 'value', { ...d, set(v) { mix(v); d.set.call(this, v); } });
-  }
-})();`;
-
-// Fast-forward helper from CLAUDE.md: advances the sim without rendering.
-const FF = s => { for (let t = 0; t < s; t += .05) { seqTick(.05); keys(.05); update(.05); } };
 
 // Everything a checkpoint records about the page. Exact numbers, no rounding: the split must match bit for bit.
 const STATE = () => ({
@@ -295,35 +245,10 @@ scenarios.push({
 
 async function runScenario(browser, sc) {
   const record = { id: sc.id, checkpoints: [], errors: [], threeRequested: false };
-  const ctx = await browser.newContext(sc.ctx);
-  await ctx.addInitScript(INIT);
-  await ctx.route(CDN + '**', async route => {
-    const file = join(THREE_DIR, route.request().url().slice(CDN.length).split('?')[0]);
-    if (!existsSync(file)) return route.fulfill({ status: 404, body: 'not found' });
-    route.fulfill({ status: 200, body: await readFile(file), headers: { 'Content-Type': 'application/javascript', 'Access-Control-Allow-Origin': '*' } });
-  });
-  const page = await ctx.newPage();
-  page.on('pageerror', e => record.errors.push(`pageerror: ${e.message}`));
-  page.on('console', msg => { if (msg.type() === 'error') record.errors.push(`console: ${msg.text()}`); });
-  page.on('request', r => { if (/three/i.test(new URL(r.url()).pathname.split('/').pop() || '') || r.url().startsWith(CDN)) record.threeRequested = true; });
-
-  const qs = new URLSearchParams();
-  if (sc.q != null) qs.set('q', sc.q);
-  qs.set('m', sc.m);
-  if (sc.r2d) qs.set('r', '2d');
-  let url = `${PAGE}?${qs}`;
-  if (sc.manual !== false) url += '&manual';
+  const { ctx, page } = await newPage(browser, sc, record);
   await mkdir(join(OUT, sc.id), { recursive: true });
   try {
-    await page.goto(url);
-    await page.waitForFunction('R3done', null, { timeout: 60_000 });
-    if (sc.ctx.isMobile) {
-      // Mobile emulation fires one resize at a variable time (34 ms to 2 s after load). After 3D has started it
-      // makes the renderer rebuild its targets (24 random draws for UUIDs). Wait for it, then send one more, so
-      // exactly one rebuild is pending either way.
-      await page.waitForFunction(() => window.__h.rz.length > 0, null, { timeout: 10_000 });
-      await page.evaluate(() => dispatchEvent(new Event('resize')));
-    }
+    await load(page, PAGE, sc);
     await sc.run(makeT(page, sc, record), record);
   } catch (e) {
     record.failure = String(e.message || e).split('\n')[0];
@@ -343,32 +268,16 @@ const previous = ONLY.source !== '.' && existsSync(MANIFEST) ? JSON.parse(await 
 if (ONLY.source === '.') await rm(OUT, { recursive: true, force: true });
 else for (const s of todo) await rm(join(OUT, s.id), { recursive: true, force: true });
 await mkdir(OUT, { recursive: true });
-const launch = () => chromium.launch({
-  headless: !process.env.HEADED,
-  args: ['--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required',
-    // Synchronous, single-path raster and compositing. Without these, the anti-aliased corners of the
-    // semi-transparent buttons over the WebGL canvas vary by 1-2 levels between runs.
-    '--disable-gpu-rasterization', '--disable-partial-raster', '--run-all-compositor-stages-before-draw',
-    '--disable-threaded-animation', '--disable-checker-imaging'],
-});
-
 const results = {};
 const t0 = Date.now();
-let next = 0;
-// One browser per job: pages sharing a GPU process composite the semi-transparent buttons over the
-// WebGL canvas slightly differently from run to run.
-await Promise.all(Array.from({ length: Math.min(JOBS, todo.length) }, async () => {
-  const browser = await launch();
-  while (next < todo.length) {
-    const sc = todo[next++], s0 = Date.now();
-    const r = await runScenario(browser, sc);
-    results[sc.id] = r;
-    const shots = r.checkpoints.filter(c => c.file).length;
-    console.log(`${r.failure ? 'FAIL' : 'ok  '} ${sc.id.padEnd(16)} ${String(shots).padStart(3)} shots  ${((Date.now() - s0) / 1000).toFixed(1)}s` +
-      (r.failure ? `  ${r.failure}` : '') + (r.errors.length ? `  ${r.errors.length} error(s): ${r.errors[0]}` : ''));
-  }
-  await browser.close();
-}));
+await pool(todo, JOBS, async (browser, sc) => {
+  const s0 = Date.now();
+  const r = await runScenario(browser, sc);
+  results[sc.id] = r;
+  const shots = r.checkpoints.filter(c => c.file).length;
+  console.log(`${r.failure ? 'FAIL' : 'ok  '} ${sc.id.padEnd(16)} ${String(shots).padStart(3)} shots  ${((Date.now() - s0) / 1000).toFixed(1)}s` +
+    (r.failure ? `  ${r.failure}` : '') + (r.errors.length ? `  ${r.errors.length} error(s): ${r.errors[0]}` : ''));
+});
 
 // Keep scenario order stable in the manifest regardless of which job finished first.
 const ordered = Object.fromEntries(scenarios.filter(s => results[s.id] || previous[s.id]).map(s => [s.id, results[s.id] || previous[s.id]]));

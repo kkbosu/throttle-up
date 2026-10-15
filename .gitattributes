@@ -1,0 +1,3 @@
+# Text files use LF everywhere (Prettier expects LF; Windows checkouts with core.autocrlf would otherwise get CRLF).
+* text=auto eol=lf
+*.png binary

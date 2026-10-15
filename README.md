@@ -11,6 +11,7 @@ npm install
 npm run dev        # http://localhost:5173/  (add -- --host to open it from a phone on the same Wi-Fi)
 npm run build      # production build in dist/ (also checks Three.js stays out of the startup bundle)
 npm run preview    # serves dist/ at http://localhost:4173/
+npm run check      # builds, then plays every machine in a headless browser and fails on any error
 ```
 
 The built page needs a web server (ES modules don't run from `file://`). URL parameters: `?m=0..7` machine, `?q=0|1|2` quality, `?r=2d` force the 2D renderer.

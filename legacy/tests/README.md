@@ -1,6 +1,6 @@
 # Legacy Playwright tests
 
-These were written while developing v6–v11 in a cloud sandbox that only had a software GPU (SwiftShader). They drive the page through its test hooks (`?manual`, `step()`, the fast-forward helper) and take screenshots. The real parity check is now the Node golden suite (`npm run snapshots`, see CLAUDE.md); these are kept as quick, scenario-specific checks.
+These were written while developing v6–v11 in a cloud sandbox that only had a software GPU (SwiftShader). They drive the page through its test hooks (`?manual`, `step()`, the fast-forward helper) and take screenshots. They are superseded by `npm run check` (behaviour checks, including the stall test) and `npm run snapshots` (the golden screenshot suite); see CLAUDE.md. They are kept for reference.
 
 They test the Vite app, which must be running: `npm run dev` (they default to `http://localhost:5173/`), or `npm run build` then `npm run preview` with `PAGE_URL=http://localhost:4173/`. ES modules don't run from `file://`.
 

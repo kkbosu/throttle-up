@@ -1,4 +1,4 @@
-// Test bridge: in v11 everything was a global, and tests (tools/snapshots.mjs, legacy/tests) read and
+// Test bridge: in v11 everything was a global, and tests (tools/snapshots.mjs, tools/check.mjs, legacy/tests) read and
 // assign names like view, raw, N or step() directly. Expose every module export and state key on window.
 import { state } from '../core/state.js';
 import * as m0 from '../audio/audio.js';

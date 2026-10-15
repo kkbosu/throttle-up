@@ -6,11 +6,12 @@
     "dev": "vite",
     "build": "vite build && node tools/check-chunks.mjs",
     "preview": "vite preview",
-    "snapshots": "node tools/snapshots.mjs",
-    "compare": "node tools/compare.mjs",
+    "check": "node tools/check.mjs",
     "lint": "eslint src",
     "format": "prettier --write src",
-    "format:check": "prettier --check src"
+    "format:check": "prettier --check src",
+    "snapshots": "node tools/snapshots.mjs",
+    "compare": "node tools/compare.mjs"
   },
   "devDependencies": {
     "eslint": "10.12.0",
