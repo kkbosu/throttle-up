@@ -6,7 +6,8 @@ import { TH, thSet } from '../../render3d/lenses.js';
 import { SMK, SPK, axisPt } from '../../render3d/particles.js';
 import { C } from '../../render3d/plume.js';
 // What the two jets (F-TYPE, SR-71) share in the 3D renderer: plume, embers/soot, thermal lens, flame light,
-// inner glow, tracer speed. Bodies are v11's `mi<2` branches; isSR switches the J58-specific numbers.
+// inner glow, tracer speed. All exports are function declarations: hook objects reference them while modules
+// are still loading, and only function declarations exist that early. Bodies are v11's `mi<2` branches; isSR switches the J58-specific numbers.
 
 export function jetPlume(u,fl,isSR){let li,lc;{u.uCl.value=0;u.uAnn.value=0;const sr=isSR,re=sr?.62:.45-.1*sm(.3,.95,state.N)+.17*state.A,ab=sm(0,.22,state.A),dry=sm(.3,1,state.N)*state.fu,ig=Math.min(1,state.ign);
   u.uR0.value=re*.92;u.uSp.value=.04+.05*ab;u.uLen.value=(sr?2.6:2.0)+state.N*1.5*(1-ab)+ab*((sr?5:4)+state.A*(sr?9:7))+ig*2.5;
@@ -22,7 +23,7 @@ export function jetEmit(dt,ax){/* afterburner embers (sparse) */k3.sparkAcc+=dt*
   /* soot from a surge, a puff of vapour at light-off */
   k3.sootAcc+=dt*(k3.fire>.3?90:0);while(k3.sootAcc>1){k3.sootAcc--;const p=axisPt(rnd(0,1),rnd(0,.3),rnd(0,6.3)),s=rnd(6,16);SMK.add({x:p.x,y:p.y,z:p.z,vx:ax.x*s,vy:ax.y*s+rnd(.5,2),vz:ax.z*s+rnd(-1,1),a:0,l:rnd(2,3.5),sd:Math.random(),k:1,s0:.4,s1:3.5})}}
 export function jetThermal(amb,nn,fh){thSet(TH.case,amb+state.N*35+state.hg*45,state.hg*state.hg*230+state.A*70,-3.4,-1.2,fh*.15,4);thSet(TH.hot,amb+70*state.N+state.hg*360+state.A*230,state.A*260,-1.6,0);thSet(TH.inner,amb+state.hg*620+state.A*880+state.ign*420+state.gn*300);thSet(TH.bell,amb)}
-export const jetThFh=()=>state.A*320+state.N*state.N*state.fu*80+k3.fire*300+state.ign*120;
-export const jetFlame=()=>axisPt(3.2,0,0);
-export const jetInner=()=>(state.hg*state.hg*.35+state.A*1.1+state.ign*1.2+state.gn*1)*(.9+.1*Math.sin(state.simT*40));
-export const jetFlowSpeed=()=>.12+state.N*1.6;
+export function jetThFh(){return state.A*320+state.N*state.N*state.fu*80+k3.fire*300+state.ign*120}
+export function jetFlame(){return axisPt(3.2,0,0)}
+export function jetInner(){return (state.hg*state.hg*.35+state.A*1.1+state.ign*1.2+state.gn*1)*(.9+.1*Math.sin(state.simT*40))}
+export function jetFlowSpeed(){return .12+state.N*1.6}

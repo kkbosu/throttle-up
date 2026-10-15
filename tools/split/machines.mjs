@@ -207,6 +207,15 @@ for (const f of ALL) if (!out.has(f) && f !== 'machines/table.js') out.set(f, gi
   const nl = t.indexOf('\n');
   out.set(r, (t.slice(0, nl + 1) + `import { loadM3 } from '../machines/three.js';\n` + t.slice(nl + 1)).replace('export function init3D(){\n', 'export function init3D(){\nloadM3();\n'));
 }
+// Same cycle, one level down: hook objects store jet3d helpers by reference (flame: jetFlame) while modules load,
+// so those helpers must be function declarations (initialised before any module code runs), not const arrows.
+{
+  const f = 'machines/shared/jet3d.js';
+  let n = 0;
+  const s = out.get(f).replace(/^export const (\w+)=\(\)=>(.*);$/gm, (_, name, expr) => (n++, `export function ${name}(){return ${expr}}`));
+  if (n !== 4) throw new Error(`expected 4 arrow helpers in jet3d.js, found ${n}`);
+  out.set(f, s.replace('// inner glow, tracer speed.', '// inner glow, tracer speed. All exports are function declarations: hook objects reference them while modules\n// are still loading, and only function declarations exist that early.'));
+}
 // ---------- every file: re-target imports of moved names, drop self-imports, merge duplicate sources ----------
 const MOVED_FROM = new Set(['machines/table.js', 'render3d/builders.js']);
 for (const [f, text] of out) {
