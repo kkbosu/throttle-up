@@ -105,15 +105,23 @@ function importLines(file, names, info, localOwner) {
 }
 
 // One import line per source in a generated file (pieces moved from different places bring their own lines).
-function mergeImports(text) {
+// Imports still pointing at table.js / builders.js are first re-targeted to where each name now lives.
+const MOVED_FROM = new Set(['machines/table.js', 'render3d/builders.js']);
+function mergeImports(file, text) {
   const ast = parse(text, { sourceType: 'module', errorRecovery: true });   // duplicate imports are what we're fixing
   const decls = ast.program.body.filter(st => st.type === 'ImportDeclaration');
   if (decls.length < 2) return text;
   const named = new Map(), other = [];
   for (const st of decls) {
     if (!st.specifiers.length || st.specifiers.some(s => s.type !== 'ImportSpecifier')) { const l = text.slice(st.start, st.end); if (!other.includes(l)) other.push(l); continue; }
-    const k = st.source.value;
-    for (const s of st.specifiers) (named.get(k) || named.set(k, new Set()).get(k)).add(s.local.name);
+    const from = abs(file, st.source.value);
+    for (const s of st.specifiers) {
+      const n = s.local.name;
+      const o = MOVED_FROM.has(from) ? (owner.get(n) || (from === 'machines/table.js' ? TABLE_OUT : from)) : from;
+      if (o === file) continue;
+      const k = o.includes('/') ? rel(file, o) : st.source.value;
+      (named.get(k) || named.set(k, new Set()).get(k)).add(n);
+    }
   }
   const lines = [...other, ...[...named].sort(([a], [b]) => a.localeCompare(b)).map(([k, ns]) => `import { ${[...ns].sort().join(', ')} } from '${k}';`)];
   // replace the import block (contiguous in generated files)
@@ -152,7 +160,7 @@ for (const [f, ps] of pieces) {
   const imps = new Set();
   for (const p of ps) for (const l of importLines(f, p.uses, p.info, tableOwner(p.info))) imps.add(l);
   const body = [...ps.filter(p => !p.last), ...ps.filter(p => p.last)].map(p => p.text).join('');
-  out.set(f, mergeImports(`${HEAD[headKey](TITLE[i], i)}\n${[...imps].join('\n')}\n${body.replace(/^\n+/, '\n')}\n`));
+  out.set(f, mergeImports(f, `${HEAD[headKey](TITLE[i], i)}\n${[...imps].join('\n')}\n${body.replace(/^\n+/, '\n')}\n`));
 }
 
 // The RS-25 section header preceded gimb in table.js; it describes the shuttle's 2D drawing, so it goes there.
@@ -176,7 +184,7 @@ for (let i = 0; i <= UPTO; i++) {
   const [first, ...rest] = base.split('\n');
   const body = rest.filter(l => !l.startsWith('import ')).join('\n').replace('export default {\n', `export default {\ncfg:${cfg},\nbuild:${BUILD[i]},\n`);
   const head = first.replace(': 3D renderer hooks (', ': the 3D side. Builder (the model), cfg (plume box, shadow area, camera presets, ground) and renderer hooks (');
-  out.set(f, mergeImports(`${head}\n${[...imps].join('\n')}\n${ps.map(p => p.text).join('').replace(/^\n+/, '\n')}\n${body.replace(/^\n+/, '\n')}`));
+  out.set(f, mergeImports(f, `${head}\n${[...imps].join('\n')}\n${ps.map(p => p.text).join('').replace(/^\n+/, '\n')}\n${body.replace(/^\n+/, '\n')}`));
 }
 
 // ---------- what stays: machines/table.js (-> index.js at the end), render3d/builders.js, render3d/machine.js ----------
@@ -242,7 +250,6 @@ for (const f of ALL) if (!out.has(f) && f !== 'machines/table.js') out.set(f, gi
   out.set(f, s.replace('// inner glow, tracer speed.', '// inner glow, tracer speed. All exports are function declarations: hook objects reference them while modules\n// are still loading, and only function declarations exist that early.'));
 }
 // ---------- every file: re-target imports of moved names, drop self-imports, merge duplicate sources ----------
-const MOVED_FROM = new Set(['machines/table.js', 'render3d/builders.js']);
 for (const [f, text] of out) {
   if (f === 'debug/globals.js') continue;   // regenerated below
   const ast = parse(text, { sourceType: 'module' });

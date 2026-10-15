@@ -3,54 +3,18 @@ import { S, thump } from '../audio/audio.js';
 import { master } from '../core/engine.js';
 import { state } from '../core/state.js';
 import { MONO, g, sm } from '../core/util.js';
-import { lab, say } from '../hud/controls.js';
+import { say } from '../hud/controls.js';
 import { applyRaw } from '../input/lever.js';
 import { SQ } from '../sequence/sequence.js';
 import m0 from './f-type/machine.js';
 import m1 from './sr-71/machine.js';
 import m2 from './shuttle/machine.js';
+import m3 from './hall/machine.js';
 
 /* ---------- machines: everything that differs between engines lives here ----------
    ab: has an afterburner zone (lever detent at MIL); stall: can surge; idle: spool target at lever 0; up/dn: spool time constants;
    coast: spin-down tau with fuel off; cN/cT: starter speed and duration; e/f: EGT and fuel-flow curves; teb: green light-off flash */
-export const MC=[m0,m1,m2,{clu:dt=>orbStep(dt),reset:()=>orbReset(),insetF:orbitInset,warpName:i=>WN[i],
- n:'HALL THRUSTER',btn:'HALL',need3d:1,space:1,warp:1,orbit:1,inset:1,sub:'Solar-electric Hall thruster in Earth orbit. Quiet, faint, relentless.',hint:'Drag the lever for more power, then try TIME WARP.',
- nxf:.4,ab:0,stall:0,idle:.2,up:.7,dn:.4,coast:.12,cN:0,cT:4.2,tk:[1.2,.6],ign:.9,lk:.08,e0f:30,lt:.22,teb:0,
- e:[20,320,0],f:[0,0,1,0],off:'OFF',st:'HEATER',cl:'PLASMA OFF',cut:'Discharge off.',wait:'Wait a moment before restarting.',
- r:()=>0,shk:()=>state.kick*2,gl:()=>[0,0],skyG:()=>0,hzk:()=>0,hzg:()=>[0,0],hza:()=>0,blk:()=>0,
- g:[{t:'THR',cap:'THRUST mN',min:0,max:300,maj:50,mn:25,red:260,d:1,f:v=>v|0},
-    {t:'PWR',cap:'POWER kW',min:0,max:5,maj:1,mn:.5,red:4.6,d:1,f:v=>v.toFixed(2)},
-    {t:'Xe',cap:'XENON mg/s',min:0,max:16,maj:4,mn:2,red:15,d:1,f:v=>v.toFixed(1)}],
- gv:()=>{const th=htT();return[th*1000,state.ph==1?.22+.03*Math.sin(state.simT*3):4.5*state.N*state.fu,th/((1300+500*state.N)*9.80665)*1e6]},
- lv:[['4.5 kW',1,'t'],['2.7 kW',.5],['0.9 kW',0,'b']],
- lp:()=>[['DISCHARGE',state.ph==2&&state.fu>.5,'#5aa0ff'],['MAX PWR',state.N>.98,'#e0392b']],
- mc:[[0,'#000'],[1,'#000']],dk:1,bl:0,bd:{ts:0,xt:0,hh:0,fh:0,doors:0},pl:null,
- spike:0,draw:()=>{},rear:()=>{},au:auHT,
- sqc:'CATHODE HEATER, XENON FLOW, IGNITION',
- sq:[{cap:'DISCHARGE LIT  0.9 kW',wait:1.6},
-  {cap:'THROTTLE UP  4.5 kW',lever:1,dur:3},
-  {cap:'240 mN: ABOUT THREE QUARTERS IN YOUR HAND',wait:3,view:2},
-  {cap:'TIME WARP  x100,000',do:()=>{state.sl=2;lab()},wait:4.5,view:0},
-  {cap:'ORBIT CLIMBING',wait:3.5,view:3},
-  {cap:'BACK TO REAL TIME',do:()=>{state.sl=0;lab()},wait:1.5},
-  {cap:'THRUSTER OFF',do:()=>master(),wait:3}],
- info:{cut:['CUTAWAY removes half of the thruster. Grey dots are neutral xenon flowing from the anode; they turn blue when ionised and accelerate out as the beam. Yellow dots are electrons: trapped by the magnetic field, they circle the channel as the Hall current, and more stream in from the hollow cathode. Speeds are slowed enormously.','THERMAL is false colour by temperature, like an infrared camera. The temperatures are illustrative.','SCHLIEREN needs air to bend light, so it is not available in space.'],f:['A Hall thruster turns electricity into thrust. Xenon gas enters a ring-shaped ceramic channel; a strong radial magnetic field traps electrons, which swirl round the ring as the Hall current. They ionise the incoming xenon, and the electric field across the channel flings the heavy ions out at high speed.',
-  'The ions leave many times faster than a chemical rocket\'s exhaust, so the thruster needs far less propellant. NASA estimates its Psyche mission would need about 15 times as much propellant with chemical thrusters.',
-  'This one is modelled on the SPT-140 class flown on Psyche: 0.9 to 4.5 kW of power and a specific impulse of about 1,800 s.',
-  'NASA gives up to 240 mN of thrust for Psyche\'s thrusters, "about the same amount of pressure you\'d feel holding three quarters in your hand." It is tiny, but it can run for months.',
-  'Psyche carries four Hall thrusters and fires one at a time. It launched with up to 1,085 kg of xenon at a launch mass of up to 2,747 kg, and its solar arrays gave 21 kW near Earth.',
-  'Ionised xenon glows blue, which is why the beam looks the way it does.',
-  'To raise its orbit the craft fires along its direction of travel: the beam streams out behind and the craft is pushed forward, so it speeds up and its orbit grows. That is why Earth slides away beneath in the same direction as the beam. The EARTH view looks back down at the planet as the orbit climbs.'],
-  a:['The 240 mN maximum is NASA\'s figure for Psyche. Thrust, power and xenon flow in between are interpolated, and the specific impulse is assumed to fall at low power.',
-  'The orbit panel is a what-if: this spacecraft raising its orbit from 400 km with one thruster at full power, ignoring drag and eclipses. Psyche itself left Earth on its rocket.',
-  'Real cathode start-up takes much longer than the few seconds here.',
-  'There is no sound in a vacuum. The faint hum is a stand-in for the power electronics.',
-  'The spacecraft is a generic solar-electric design inspired by Psyche, not a model of it, and the Earth is procedural.'],
-  s:[['SPT-140 (Wikipedia)','https://en.wikipedia.org/wiki/SPT-140'],
-   ['Solar electric propulsion makes NASA\'s Psyche spacecraft go (JPL)','https://www.jpl.nasa.gov/news/solar-electric-propulsion-makes-nasas-psyche-spacecraft-go/'],
-   ['Psyche quick facts (JPL press kit)','https://jpl.nasa.gov/press-kits/psyche/quick-facts'],
-   ['The Hall effect and rocket flight (Physics Today)','https://physicstoday.aip.org/quick-study/the-hall-effect-and-rocket-flight']]}
-},{reset:()=>sicE.fill(0),
+export const MC=[m0,m1,m2,m3,{reset:()=>sicE.fill(0),
  n:'SATURN V F-1',btn:'SATURN V',need3d:1,clu:dt=>sicStep(dt),sub:'Five F-1 engines at the base of an S-IC first stage, on a static test stand.',hint:'Drag the lever up: the engines light in the real centre, pair, pair order.',
  nxf:.4,ab:0,stall:0,idle:0,up:.6,dn:.3,coast:.5,cN:0,cT:3.6,tk:[1.2,.45],ign:1.3,lk:.8,e0f:60,lt:1.4,teb:0,
  e:[20,260,0],f:[0,0,1,0],off:'CUTOFF',st:'START',cl:'SHUTDOWN',cut:'Engine cutoff.',wait:'Wait for shutdown to finish.',
@@ -252,20 +216,6 @@ export function auSC(s,V,pm){const nn=state.N*state.fu,cl=sc.done?0:Math.exp(-Ma
  s(S.roar.gn.gain,(nn*.75+state.ign*.3)*cl*(1+.15*Math.sin(state.simT*23)));s(S.roar.fl.frequency,700+nn*1400);
  s(S.crk.gn.gain,nn*(.1+Math.random()*.35)*cl,.02);s(S.crk.fl.frequency,1800);
  s(S.wh.gn.gain,0);s(S.wh2.gn.gain,0);s(S.sg.gn.gain,0);s(S.sg2.gn.gain,0)}
-/* Hall thruster thrust (N) from the power fraction N; what-if orbit raising from 400 km */
-export const htT=()=>state.ph==2?.24*Math.pow(state.N,.9)*state.fu:0,MU=3.986004418e14,RE=6371e3,WN=['1x','1,000x','100,000x'],WF=[1,1000,100000];
-export const orb={r:RE+400e3,m:2747,t:0,dv:0,xe:0,vph:0,tr:[]};
-export function orbReset(){orb.r=RE+400e3;orb.m=2747;orb.t=orb.dv=orb.xe=orb.vph=0;orb.tr=[]}
-export function orbStep(dt){const W=WF[state.sl],dtw=dt*W,T=htT(),md=T/((1300+500*state.N)*9.80665),a=T/orb.m;
- if(T>0){let v=Math.sqrt(MU/orb.r);v-=a*dtw;orb.r=MU/(v*v);orb.m-=md*dtw;orb.dv+=a*dtw;orb.xe+=md*dtw}
- orb.t+=dtw;orb.vph+=dt*Math.min(W,60)*Math.sqrt(MU/(orb.r*orb.r*orb.r));
- const al=(orb.r-RE)/1e3,lt=orb.tr[orb.tr.length-1];if(!lt||Math.abs(al-lt[0])>2||orb.vph-lt[1]>.25){orb.tr.push([al,orb.vph]);if(orb.tr.length>160)orb.tr.shift()}}
-/* there is no sound in vacuum: a faint power-electronics hum stands in */
-export function auHT(s,V,pm){const nn=state.N*state.fu;
- s(S.rum.gn.gain,nn*.07+state.sg*.02+state.ign*.25);s(S.rum.fl.frequency,55+nn*20);
- s(S.roar.gn.gain,state.ign*.12);s(S.roar.fl.frequency,1800);s(S.crk.gn.gain,0);
- s(S.wh.gn.gain,nn*.01+state.sg*.004);s(S.osc.frequency,(1500+nn*700)*pm);s(S.wh.fl.frequency,2600);
- s(S.wh2.gn.gain,0);s(S.sg.gn.gain,state.sg*.015);s(S.so.frequency,100*pm);s(S.sg.fl.frequency,300);s(S.sg2.gn.gain,0)}
 /* turboprop panel: a blade section at its pitch angle to the plane of rotation, the thrust arrow, and where the thrust comes from */
 export function propInset(x,y,w,h){
  g.globalCompositeOperation='source-over';g.globalAlpha=1;g.fillStyle='rgba(14,17,24,.85)';g.strokeStyle='#2a3040';g.lineWidth=1;g.fillRect(x,y,w,h);g.strokeRect(x+.5,y+.5,w-1,h-1);
@@ -303,15 +253,3 @@ export function hoverInset(x,y,w,h){
  g.fillStyle='#b4bccb';g.beginPath();g.moveTo(px-12,py);g.lineTo(px+10,py-1.5);g.lineTo(px+12,py+1.5);g.lineTo(px-12,py+2.5);g.closePath();g.fill();
  g.textAlign='left';const tx=x+cs+18,lh=Math.min(13,(h-22)/4),ty=y+24;
  [['ALT',(state.alt*3.281).toFixed(0)+' ft'],['V/S',(state.vz*196.85).toFixed(0)+' fpm'],['LIFT/WT',lw.toFixed(2)],['FWD',(T*Math.cos(a)/1000).toFixed(1)+' kN']].forEach((l,i)=>{g.fillStyle='#6c7482';g.fillText(l[0],tx,ty+i*lh);g.fillStyle=l[0]=='LIFT/WT'&&lw>1?'#3fcf7a':'#d8dde6';g.fillText(l[1],tx+52,ty+i*lh)})}
-/* what-if orbit raising: Earth, the orbit (altitude exaggerated), the spiral so far, mission clock */
-export function orbitInset(x,y,w,h){
- g.globalCompositeOperation='source-over';g.globalAlpha=1;g.fillStyle='rgba(14,17,24,.85)';g.strokeStyle='#2a3040';g.lineWidth=1;g.fillRect(x,y,w,h);g.strokeRect(x+.5,y+.5,w-1,h-1);
- g.font=`600 9px ${MONO}`;g.textBaseline='middle';g.textAlign='left';g.fillStyle='#6c7482';g.fillText('ORBIT (WHAT-IF)',x+8,y+11);
- g.textAlign='right';g.fillStyle=state.sl?'#ff9a3a':'#6c7482';g.fillText('WARP '+WN[state.sl],x+w-8,y+11);
- const al=(orb.r-RE)/1e3,cs=h-22,cx=x+8+cs/2,cy=y+16+cs/2,er=cs*.26,orr=a=>er*(1+a/6371*6);
- g.fillStyle='#1b3c78';g.beginPath();g.arc(cx,cy,er,0,6.283);g.fill();g.fillStyle='rgba(255,255,255,.18)';g.beginPath();g.arc(cx-er*.25,cy-er*.25,er*.55,0,6.283);g.fill();
- g.strokeStyle='rgba(120,160,255,.35)';g.beginPath();g.arc(cx,cy,Math.min(cs*.5,orr(al)),0,6.283);g.stroke();
- if(orb.tr.length>1){g.strokeStyle='rgba(120,180,255,.8)';g.beginPath();orb.tr.forEach((p,i)=>{const r=Math.min(cs*.5,orr(p[0])),X=cx+Math.cos(-p[1])*r,Y=cy+Math.sin(-p[1])*r;i?g.lineTo(X,Y):g.moveTo(X,Y)});g.stroke()}
- const rr=Math.min(cs*.5,orr(al));g.fillStyle='#ffd27a';g.beginPath();g.arc(cx+Math.cos(-orb.vph)*rr,cy+Math.sin(-orb.vph)*rr,2.6,0,6.283);g.fill();
- g.textAlign='left';g.fillStyle='#d8dde6';const tx=x+cs+18,lh=Math.min(13,(h-22)/4),ty=y+24;
- [['DAY',(orb.t/86400).toFixed(2)],['ALT',al.toFixed(1)+' km'],['\u0394v',orb.dv.toFixed(1)+' m/s'],['XENON',orb.xe.toFixed(2)+' kg']].forEach((l,i)=>{g.fillStyle='#6c7482';g.fillText(l[0],tx,ty+i*lh);g.fillStyle='#d8dde6';g.fillText(l[1],tx+44,ty+i*lh)})}
