@@ -2,7 +2,6 @@
 import { master } from '../core/engine.js';
 import { state } from '../core/state.js';
 import { $, MONO, cv, g, mk } from '../core/util.js';
-import { hoverInset, orbitInset, spikeInset } from '../machines/table.js';
 import { seqStop } from '../sequence/sequence.js';
 
 /* ---------- gauges: static faces are cached, needles drawn per frame ---------- */
@@ -46,7 +45,7 @@ export function gauges(dr){
  g.textAlign='right';const msg=state.ph==1?state.M.st:state.ph==2?'RUN':state.N>.02?state.M.cl:'OFF';g.fillStyle=on?'#3fcf7a':state.N>.02?'#ff9a3a':'#6c7482';g.fillText(msg,state.gx+sw-10,sy+sh/2+.5);
  g.textAlign='left';
  /* SR-71 inlet spike schematic: beside the dials if there is room, else under the switch */
- if(state.M.inset){const rx=state.gx+sw+14,av=state.W-150-(state.M.nozzle?100:0)-rx,fn=state.M.insetF||(state.M.spike?spikeInset:state.M.orbit?orbitInset:hoverInset);
+ if(state.M.inset){const rx=state.gx+sw+14,av=state.W-150-(state.M.nozzle?100:0)-rx,fn=state.M.insetF;
   if(av>=140)fn(rx,state.gy,Math.min(230,av),state.dsz+34);
   else{const y2=sy+sh+8,w2=Math.min(230,state.W-170-state.gx);if(w2>=150&&y2+58<state.ny-80*state.u)fn(state.gx,y2,w2,58)}}}
 /* load-time setup, called from main.js in v11's order */

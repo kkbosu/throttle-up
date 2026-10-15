@@ -1,8 +1,8 @@
 // Camera: smooth glide between presets, drag to orbit, wheel to zoom, shake.
+import { M3 } from '../machines/three.js';
 import * as T from 'three';
 import { state } from '../core/state.js';
 import { cv } from '../core/util.js';
-import { RE, orb } from '../machines/table.js';
 import { k3 } from './context.js';
 import { V3, cam } from './kit.js';
 import { CFG } from './machine.js';
@@ -23,9 +23,9 @@ k3.lastView=-1;
 }
 
 export function camera(dr){const c=CFG[state.mi].cams[state.view];if(state.view!==k3.lastView){k3.lastView=state.view;k3.yaw=k3.pit=0;k3.zoom=1}
- const P0=V3(...c[0]),T0=V3(...c[1]);if(CFG[state.mi].space&&state.view==3){const h=Math.max(100,(orb.r-RE)/1e3),pc=Math.acos(6371/(6371+h))+.13,hd=V3(-1,0,.12).normalize();P0.copy(T0).addScaledVector(hd,Math.cos(pc)*12);P0.y+=Math.sin(pc)*12}if(state.M.camA){const a=state.M.camA(state.view);P0.y+=a[0];T0.y+=a[1];if(a[2])P0.sub(T0).multiplyScalar(a[2]).add(T0)}else if(state.M.hover){P0.y+=state.alt*.85;T0.y+=state.alt}const dir=P0.clone().sub(T0),d0=dir.length(),tanH=Math.tan(cam.fov*Math.PI/360)*cam.aspect;
+ const P0=V3(...c[0]),T0=V3(...c[1]);if(M3[state.mi].cam)M3[state.mi].cam(P0,T0);if(state.M.camA){const a=state.M.camA(state.view);P0.y+=a[0];T0.y+=a[1];if(a[2])P0.sub(T0).multiplyScalar(a[2]).add(T0)}else if(state.M.hover){P0.y+=state.alt*.85;T0.y+=state.alt}const dir=P0.clone().sub(T0),d0=dir.length(),tanH=Math.tan(cam.fov*Math.PI/360)*cam.aspect;
  /* portrait phones: swing the jets round to a rear three-quarter view so engine and flame stack in depth instead of running off the sides */
- const port=cam.aspect<.85&&state.mi<2,hw=c[2]*(port?(state.view==0?.42:.7):1);
+ const port=cam.aspect<.85&&!!M3[state.mi].portrait,hw=c[2]*(port?(state.view==0?.42:.7):1);
  const dist=Math.min(d0*2.6,Math.max(d0,hw/tanH))*k3.zoom;sph.setFromVector3(dir);sph.radius=dist;sph.theta+=k3.yaw+(port&&state.view==0?.72:0);sph.phi=Math.max(.15,Math.min(1.75,sph.phi-k3.pit));
  tmp.setFromSpherical(sph).add(T0);if(!CFG[state.mi].space&&tmp.y<.35)tmp.y=.35;
  const k=k3.camSnap?1:1-Math.exp(-dr*(k3.dragC?14:3.2));cP.lerp(tmp,k);cT.lerp(T0,k);k3.camSnap=false;

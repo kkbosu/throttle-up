@@ -1,6 +1,6 @@
-// Build guard: the entry chunk must never statically reach three.js or 3D-only code (src/render3d/,
-// src/machines/*/three.js). Otherwise ?r=2d, and the fallback when 3D fails, would download three
-// before anything starts. Reads dist/.vite/manifest.json, written by `vite build` (build.manifest: true).
+// Build guard: the entry chunk must never statically reach three.js or 3D-only code (src/render3d/, and the
+// machines' 3D hooks: src/machines/three.js, src/machines/*/three.js, src/machines/shared/jet3d.js).
+// Otherwise ?r=2d, and the fallback when 3D fails, would download three before anything starts. Reads dist/.vite/manifest.json, written by `vite build` (build.manifest: true).
 
 import { readFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const man = JSON.parse(await readFile(resolve(ROOT, 'dist/.vite/manifest.json'), 'utf8'));
-const THREE_ONLY = /^node_modules\/three\/|^src\/render3d\/|^src\/machines\/[^/]+\/three\.js$/;
+const THREE_ONLY = /^node_modules\/three\/|^src\/render3d\/|^src\/machines\/([^/]+\/)?three\.js$|^src\/machines\/shared\/jet3d\.js$/;
 
 // A static import can also be merged into the entry chunk itself, where the manifest doesn't show it,
 // so every reachable chunk is also scanned for strings only three.js and the 3D renderer contain

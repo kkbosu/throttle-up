@@ -1,4 +1,5 @@
 // Cutaway flow tracers along each machine's gas paths.
+import { M3 } from '../machines/three.js';
 import * as T from 'three';
 import { state } from '../core/state.js';
 import { ENG } from './builders.js';
@@ -22,7 +23,7 @@ export function flowSetup(){const e=ENG[state.mi],on=state.exposed&&!state.lens&
  k3.flowP=e.flow();k3.flowP.forEach(p=>{if(p.ring){p.len=1}else if(p.cv){p.c=new T.CatmullRomCurve3(p.cv.map(q=>V3(...q)));p.len=p.c.getLength()}else{let L=0;for(let i=1;i<p.ax.length;i++)L+=Math.hypot(p.ax[i][0]-p.ax[i-1][0],(p.ax[i][1]+p.ax[i][2]-p.ax[i-1][1]-p.ax[i-1][2])/2);p.len=L}});
  const n=[160,320,520][state.Q],tw=k3.flowP.reduce((s,p)=>s+p.w,0);
  k3.flowP.forEach((p,pi)=>{const c=Math.max(4,Math.round(n*p.w/tw));for(let i=0;i<c;i++){const bk=Math.random()<.5;FLW.L.push({x:0,y:0,z:0,vx:0,vy:0,vz:0,a:0,l:1e12,sd:Math.random(),pi,s:Math.random(),f:Math.random(),an:p.band?(bk?Math.PI+Math.random()*.55:2*Math.PI-Math.random()*.55):Math.random()*6.283,fresh:1})}})}
-export function flowUpd(dt){FLW.u.uStr.value=state.mi==3?.004:.03;const e=ENG[state.mi],sp=state.mi<2?.12+state.N*1.6:.1+state.N*state.fu*1.5+(state.ph==1?.25:0);
+export function flowUpd(dt){FLW.u.uStr.value=M3[state.mi].flowStr??.03;const m3=M3[state.mi],e=ENG[state.mi],sp=m3.flowSpeed?m3.flowSpeed():.1+state.N*state.fu*1.5+(state.ph==1?.25:0);
  FLW.upd(dt,(p,dt)=>{const pa=k3.flowP[p.pi];if(!pa)return null;
   if(pa.ring){const R4=pa.ring;p.an+=dt*pa.om*(.15+state.N*state.fu);if(Math.sin(p.an)>0)p.an+=Math.PI;const r=R4[2]+(R4[3]-R4[2])*p.s;W3.set(R4[0]+(R4[1]-R4[0])*p.f,Math.cos(p.an)*r,Math.sin(p.an)*r).applyMatrix4(e.E.matrixWorld);p.vx=p.vy=p.vz=0;p.x=W3.x;p.y=W3.y;p.z=W3.z;const c=tcol(0,5);return[.004,c[0]*.75,c[1]*.75,c[2]*.75,.8*Math.min(1,state.N*state.fu*2+.15)]}p.s+=dt*sp*pa.sp/Math.max(.5,pa.len)*1.4;let wrap=false;if(p.s>=1){p.s-=1;p.f=Math.random();wrap=true}
   let lx,ly,lz,t;
@@ -32,4 +33,4 @@ export function flowUpd(dt){FLW.u.uStr.value=state.mi==3?.004:.03;const e=ENG[st
   W3.set(lx,ly,lz).applyMatrix4(e.E.matrixWorld);
   if(!p.fresh&&!wrap&&dt>0){p.vx=(W3.x-p.qx)/dt;p.vy=(W3.y-p.qy)/dt;p.vz=(W3.z-p.qz)/dt}else{p.vx=p.vy=p.vz=0}
   p.fresh=0;p.x=p.qx=W3.x;p.y=p.qy=W3.y;p.z=p.qz=W3.z;
-  const c=tcol(t,pa.k),al=(pa.al?pa.al():1)*Math.min(1,p.s*12)*Math.min(1,(1-p.s)*12);return[state.mi<2?.011:state.mi==3?.0035:.015,c[0]*.75,c[1]*.75,c[2]*.75,al*.8]})}
+  const c=tcol(t,pa.k),al=(pa.al?pa.al():1)*Math.min(1,p.s*12)*Math.min(1,(1-p.s)*12);return[m3.flowSize??.015,c[0]*.75,c[1]*.75,c[2]*.75,al*.8]})}

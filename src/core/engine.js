@@ -3,7 +3,6 @@ import { bang, beep, thump, tick } from '../audio/audio.js';
 import { state } from './state.js';
 import { $, sm } from './util.js';
 import { say } from '../hud/controls.js';
-import { hoverStep, orbStep } from '../machines/table.js';
 import { P, SM } from '../render2d/index.js';
 
 /* ---------- engine model: thrust chases the lever with lag ---------- */
@@ -40,7 +39,7 @@ export function update(dt){
  state.E+=(tE-state.E)*(1-Math.exp(-dt/(tE>state.E?(state.sT>0?.7:1.6):2.8)));state.F+=(tF-state.F)*(1-Math.exp(-dt/(tF>state.F?.25:.4)));
  state.fu+=((state.ph==2?1:0)-state.fu)*(1-Math.exp(-dt/(state.ph==2?.35:.08)));   /* combustion: dies fast on fuel cut */
  state.stl+=((state.sT>0?1:0)-state.stl)*(1-Math.exp(-dt/.25));                   /* smoothed stall level for sound + gauges */
- state.hg=Math.min(1,Math.max(0,(state.E-150)/600));if(state.M.orbit)orbStep(dt);if(state.M.clu)state.M.clu(dt);if(state.M.hover)hoverStep(dt);                      /* metal glow follows EGT, so it cools slowly */
+ state.hg=Math.min(1,Math.max(0,(state.E-150)/600));if(state.M.clu)state.M.clu(dt);                      /* metal glow follows EGT, so it cools slowly */
  if((state.A>.5||(!state.M.ab&&state.N>.9))&&state.hinted){state.hinted=false;$('hint').style.opacity=0}
 }
 export function startStall(){state.sT=2.6;state.Nst=state.N;state.pulseT=0;state.bt=0;say('COMPRESSOR STALL! Ease the throttle back.')}

@@ -1,4 +1,5 @@
 // The machine table MC and every machine-specific helper (sim steps, voices, insets, RS-25 2D drawing). Split into src/machines/<name>/ in step 5.
+import { CUT_SCHLIEREN, CUT_THERMAL } from '../info/cut-text.js';
 import { S, thump } from '../audio/audio.js';
 import { master } from '../core/engine.js';
 import { state } from '../core/state.js';
@@ -64,13 +65,13 @@ export const MC=[{
   {cap:'FULL AFTERBURNER',wait:2.4,view:0},
   {cap:'THROTTLE BACK',lever:.45,dur:1.6},
   {cap:'FUEL CUT',do:()=>master(),wait:3.4}],
- info:{f:['A generic afterburning turbofan. It is not modelled on one specific engine.',
+ info:{cut:['CUTAWAY removes half of the casing. The moving dots trace the air: blue is cool intake air, white is compressed air, orange is combustion and exhaust.'+' The outer band is bypass air going round the core.'+' Flow speed is slowed enormously so you can follow it.',CUT_SCHLIEREN,CUT_THERMAL],f:['A generic afterburning turbofan. It is not modelled on one specific engine.',
   'The lever detent is MIL (military power), the most thrust the engine makes dry. Past it, fuel is sprayed into the hot exhaust behind the turbine and burns again: the afterburner. It adds a lot of thrust for a very large jump in fuel flow.',
   'Shock diamonds appear when exhaust leaves the nozzle at a different pressure from the air around it, setting up a repeating pattern of shock waves.',
   'The nozzle petals open as the afterburner lights, to pass the extra flow. Fighter nozzles also open a little at idle and close toward MIL.',
   'A compressor stall is a breakdown of airflow through the compressor. Moving the throttle too fast from low power can trigger one: loud bangs, flames from the tailpipe and a jump in exhaust temperature. Pull the lever back to recover. The FAULTS button turns this off.'],
   a:['The gauge scales, spool times and temperatures are plausible but illustrative. They do not come from any engine manual.','The 3D engine and test stand are simplified, hand-built models, not CAD data.','The sound is synthesized, not recorded.'],s:[]}
-},{
+},{insetF:spikeInset,
  n:'SR-71',btn:'SR-71 J58',sub:'Blackbird turbojet. Watch the inlet spike and the green flash.',hint:'Drag the lever up. It also sets the simulated Mach.',
  nxf:.34,ab:1,stall:1,idle:.53,up:1.7,dn:1.2,coast:4.6,cN:.43,cT:3.4,tk:[2,.1],ign:1.1,lk:.5,e0f:500,lt:.9,teb:1,
  e:[40,600,110],f:[.5,6,2.2,20],off:'FUEL OFF',st:'CART START',cl:'COASTING',cut:'Fuel cut. Rotor coasting down...',wait:'Let the rotor spool down before restarting.',
@@ -98,7 +99,7 @@ export const MC=[{
   {cap:'MACH 3',wait:2.5,view:2},
   {cap:'THROTTLE BACK',lever:.45,dur:2.2,view:0},
   {cap:'FUEL CUT',do:()=>master(),wait:3.6}],
- info:{f:['The J58 is the Pratt & Whitney engine that powered the SR-71. It burns JP-7, a fuel with a very high flash point. At cruise the aircraft burns about 8,000 gallons an hour.',
+ info:{cut:['CUTAWAY removes half of the casing. The moving dots trace the air: blue is cool intake air, white is compressed air, orange is combustion and exhaust.'+' Watch the bypass tubes carry air round the core above about Mach 2, and the secondary air flowing between engine and nacelle to the ejector.'+' Flow speed is slowed enormously so you can follow it.',CUT_SCHLIEREN,CUT_THERMAL],f:['The J58 is the Pratt & Whitney engine that powered the SR-71. It burns JP-7, a fuel with a very high flash point. At cruise the aircraft burns about 8,000 gallons an hour.',
   'Inlet spike: a cone in each inlet slides aft as the aircraft speeds up, by up to 26 inches. It is fully aft at Mach 3 and above. Watch the inset.',
   'Blow-in doors around the nozzle feed extra air into the ejector at low speed, below about Mach 1.2. Above that they are shut.',
   'Starting: two Buick V8 engines on a ground cart (the AG330) spin the engine. They disengage at about 3,200 rpm. Idle is about 3,950 rpm and the maximum is 7,400 rpm.',
@@ -136,7 +137,7 @@ export const MC=[{
   {cap:'109%',wait:2.2,view:0},
   {cap:'THROTTLE DOWN  67%',lever:0,dur:2.4},
   {cap:'ENGINE CUTOFF',do:()=>master(),wait:3}],
- info:{f:['The RS-25 is the Space Shuttle main engine. It burns liquid hydrogen with liquid oxygen, at about 6 to 1 by mass.',
+ info:{cut:['CUTAWAY removes half of the bell and chamber. Blue dots are liquid hydrogen (down the steerhorn and up through the nozzle cooling tubes), pale cyan is liquid oxygen, violet-white is the burning gas expanding through the throat and bell. Speeds are slowed enormously so you can follow them.',CUT_SCHLIEREN,CUT_THERMAL],f:['The RS-25 is the Space Shuttle main engine. It burns liquid hydrogen with liquid oxygen, at about 6 to 1 by mass.',
   'Throttle range is 67% to 109% of rated power in 1% steps (some NASA documents give 65% as the floor). 100% is rated power, about 470,000 lbf in vacuum. 104.5% is the normal power level and 109% is full power level.',
   'Published figures: chamber pressure 2,994 psia at 109%, and a total propellant flow of about 1,134 lb/s.',
   'Start: the start command comes 6.6 seconds before liftoff, and all three engines must reach 90% of rated thrust by T-3 seconds or the launch is aborted on the pad. The chamber spark igniters switch off after about 3 seconds.',
@@ -152,7 +153,7 @@ export const MC=[{
    ['RS-25 engine (L3Harris)','https://l3harris.com/all-capabilities/rs-25-engine'],
    ['Space Shuttle main propulsion system (GlobalSecurity)','https://www.globalsecurity.org/space/library/report/1988/sts-mps.html'],
    ['Heritage hardware: the hydrogen burn-off system (NASASpaceflight)','https://www.nasaspaceflight.com/2015/06/heritage-hardware-hydrogen-burn-off-system-sls/']]}
-},{
+},{clu:dt=>orbStep(dt),reset:()=>orbReset(),insetF:orbitInset,warpName:i=>WN[i],
  n:'HALL THRUSTER',btn:'HALL',need3d:1,space:1,warp:1,orbit:1,inset:1,sub:'Solar-electric Hall thruster in Earth orbit. Quiet, faint, relentless.',hint:'Drag the lever for more power, then try TIME WARP.',
  nxf:.4,ab:0,stall:0,idle:.2,up:.7,dn:.4,coast:.12,cN:0,cT:4.2,tk:[1.2,.6],ign:.9,lk:.08,e0f:30,lt:.22,teb:0,
  e:[20,320,0],f:[0,0,1,0],off:'OFF',st:'HEATER',cl:'PLASMA OFF',cut:'Discharge off.',wait:'Wait a moment before restarting.',
@@ -173,7 +174,7 @@ export const MC=[{
   {cap:'ORBIT CLIMBING',wait:3.5,view:3},
   {cap:'BACK TO REAL TIME',do:()=>{state.sl=0;lab()},wait:1.5},
   {cap:'THRUSTER OFF',do:()=>master(),wait:3}],
- info:{f:['A Hall thruster turns electricity into thrust. Xenon gas enters a ring-shaped ceramic channel; a strong radial magnetic field traps electrons, which swirl round the ring as the Hall current. They ionise the incoming xenon, and the electric field across the channel flings the heavy ions out at high speed.',
+ info:{cut:['CUTAWAY removes half of the thruster. Grey dots are neutral xenon flowing from the anode; they turn blue when ionised and accelerate out as the beam. Yellow dots are electrons: trapped by the magnetic field, they circle the channel as the Hall current, and more stream in from the hollow cathode. Speeds are slowed enormously.','THERMAL is false colour by temperature, like an infrared camera. The temperatures are illustrative.','SCHLIEREN needs air to bend light, so it is not available in space.'],f:['A Hall thruster turns electricity into thrust. Xenon gas enters a ring-shaped ceramic channel; a strong radial magnetic field traps electrons, which swirl round the ring as the Hall current. They ionise the incoming xenon, and the electric field across the channel flings the heavy ions out at high speed.',
   'The ions leave many times faster than a chemical rocket\'s exhaust, so the thruster needs far less propellant. NASA estimates its Psyche mission would need about 15 times as much propellant with chemical thrusters.',
   'This one is modelled on the SPT-140 class flown on Psyche: 0.9 to 4.5 kW of power and a specific impulse of about 1,800 s.',
   'NASA gives up to 240 mN of thrust for Psyche\'s thrusters, "about the same amount of pressure you\'d feel holding three quarters in your hand." It is tiny, but it can run for months.',
@@ -189,7 +190,7 @@ export const MC=[{
    ['Solar electric propulsion makes NASA\'s Psyche spacecraft go (JPL)','https://www.jpl.nasa.gov/news/solar-electric-propulsion-makes-nasas-psyche-spacecraft-go/'],
    ['Psyche quick facts (JPL press kit)','https://jpl.nasa.gov/press-kits/psyche/quick-facts'],
    ['The Hall effect and rocket flight (Physics Today)','https://physicstoday.aip.org/quick-study/the-hall-effect-and-rocket-flight']]}
-},{
+},{reset:()=>sicE.fill(0),
  n:'SATURN V F-1',btn:'SATURN V',need3d:1,clu:dt=>sicStep(dt),sub:'Five F-1 engines at the base of an S-IC first stage, on a static test stand.',hint:'Drag the lever up: the engines light in the real centre, pair, pair order.',
  nxf:.4,ab:0,stall:0,idle:0,up:.6,dn:.3,coast:.5,cN:0,cT:3.6,tk:[1.2,.45],ign:1.3,lk:.8,e0f:60,lt:1.4,teb:0,
  e:[20,260,0],f:[0,0,1,0],off:'CUTOFF',st:'START',cl:'SHUTDOWN',cut:'Engine cutoff.',wait:'Wait for shutdown to finish.',
@@ -220,7 +221,7 @@ export const MC=[{
   'The sound is synthesized.'],
   cut:'CUTAWAY removes half of one outer engine. Pale blue dots are liquid oxygen, amber is RP-1 kerosene, grey is turbine exhaust piped into the manifold and down the inside wall of the nozzle extension, and orange is the burning gas. Speeds are slowed enormously so you can follow them.',
   s:[['Rocketdyne F-1 (Wikipedia)','https://en.wikipedia.org/wiki/Rocketdyne_F-1'],['S-IC (Wikipedia)','https://en.wikipedia.org/wiki/S-IC']]}
-},{
+},{clu:dt=>hoverStep(dt),reset:()=>{state.nz=90},insetF:hoverInset,
  n:'HARRIER',btn:'HARRIER',need3d:1,hover:1,nozzle:1,inset:1,sub:'Pegasus vectored-thrust jump jet on a hover pad.',hint:'Throttle up to lift off. The second lever swivels the nozzles.',
  nxf:.4,ab:0,stall:0,idle:.27,up:1.2,dn:.9,coast:3,cN:.2,cT:3.2,tk:[1.6,.08],ign:.8,lk:.3,e0f:420,lt:.7,teb:0,
  e:[40,600,0],f:[.3,9,2,0],off:'FUEL OFF',st:'STARTING',cl:'RUNDOWN',cut:'Fuel off. Engine running down...',wait:'Let it run down before restarting.',
@@ -255,7 +256,7 @@ export const MC=[{
   'Ground effects such as suck-down and hot-gas reingestion are not modelled, and the sound is synthesized.'],
   cut:'CUTAWAY opens the fuselage over the Pegasus. Blue dots are cool fan air heading for the front nozzles; the inner stream is compressed, burned and leaves hot through the rear nozzles. Speeds are slowed enormously so you can follow them.',
   s:[['Rolls-Royce Pegasus (Wikipedia)','https://en.wikipedia.org/wiki/Rolls-Royce_Pegasus'],['AV-8 Harrier (FAS)','https://man.fas.org/dod-101/sys/ac/av-8.htm']]}
-},{
+},{reset:()=>{state.prp=0;state.beta=86},
  n:'NK-12 TURBOPROP',btn:'NK-12',need3d:1,clu:dt=>tpStep(dt),inset:1,insetF:propInset,sub:'Kuznetsov NK-12 turboprop with contra-rotating propellers, on an outdoor test stand.',hint:'Throttle up: the RPM holds steady while the blades bite harder.',
  nxf:.4,ab:0,stall:0,idle:.08,up:1.4,dn:1.1,coast:2.2,cN:.25,cT:4,tk:[1.4,.12],ign:.6,lk:.2,e0f:380,lt:.5,teb:0,
  e:[300,250,0],f:[.5,6,1.3,0],off:'FUEL OFF',st:'STARTING',cl:'RUNDOWN',cut:'Fuel off. The propellers feather and stop...',wait:'Let the propellers stop before restarting.',
@@ -288,7 +289,7 @@ export const MC=[{
   'The sound is synthesized, including the beat between the two propellers.'],
   cut:'CUTAWAY removes half of the cowling. Inner dots trace the engine\'s own air: blue intake air is squeezed by the compressor (white), burned (orange) and expanded through the turbine, which drives the propellers through a reduction gearbox. The outer band shows the far larger stream of air the propellers push back. Speeds are slowed enormously.',
   s:[['Kuznetsov NK-12 (Wikipedia)','https://en.wikipedia.org/wiki/Kuznetsov_NK-12'],['Tupolev Tu-95 (Wikipedia)','https://en.wikipedia.org/wiki/Tupolev_Tu-95']]}
-},{
+},{onSelect:()=>{state.raw2=0;skyReset()},seqPre:()=>({cap:'POWERED DESCENT',do:()=>skyReset(),wait:.1}),
  n:'MARS SKY CRANE',btn:'SKY CRANE',need3d:1,sky:1,nozzle:1,inset:1,insetF:craneInset,clu:dt=>skyStep(dt),camA:v=>skyCam(v),sub:'Mars 2020 descent stage lowering the Perseverance rover on bridles, Jezero Crater.',hint:'HOVER to stop falling, BRIDLES to lower the rover.',
  nxf:.4,ab:0,stall:0,idle:0,up:.3,dn:.3,coast:.4,cN:0,cT:1.5,tk:[9,1],ign:.35,lk:.1,e0f:60,lt:.3,teb:0,
  e:[20,200,0],f:[0,1,1,0],off:'ENGINES OFF',st:'PRIMING',cl:'SHUTDOWN',cut:'Engines off!',wait:'Wait for the engines to stop.',

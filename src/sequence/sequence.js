@@ -4,7 +4,6 @@ import { state } from '../core/state.js';
 import { $, MONO, SL, g } from '../core/util.js';
 import { lab, say } from '../hud/controls.js';
 import { K, applyRaw } from '../input/lever.js';
-import { skyReset } from '../machines/table.js';
 import { stopRec } from '../recorder/recorder.js';
 
 /* ---------- SEQUENCE: a scripted run for one-tap clips. Steps: wait / until / lever ramp / view cut / slow-mo. Any lever input cancels it.
@@ -15,7 +14,7 @@ export function seqStart(){
  const pre=[];
  if(state.ph==3)pre.push({cap:'WAITING FOR SHUTDOWN',until:()=>state.N<.12,max:20},{cap:state.M.sqc,do:()=>{if(state.ph==3)master()},until:()=>state.ph==2,max:16});
  else if(state.ph==1)pre.push({cap:state.M.sqc,until:()=>state.ph==2,max:16});
- else if(state.M.sky)pre.push({cap:'POWERED DESCENT',do:()=>skyReset(),wait:.1});
+ else if(state.M.seqPre)pre.push(state.M.seqPre());
  else pre.push({cap:'SETTLING TO IDLE',lever:0,dur:1.2,until:()=>state.sT<=0&&state.N<state.M.idle+.07,max:14});
  SQ.steps=pre.concat(state.M.sq);SQ.i=-1;SQ.on=1;SQ.v0=state.view;SQ.rec=state.rec?1:0;SQ.cap='';seqNext();lab()}
 export function seqNext(){

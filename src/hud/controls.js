@@ -6,13 +6,12 @@ import { state } from '../core/state.js';
 import { $, SL, SLN, SN, SNM, VN } from '../core/util.js';
 import { showInfo } from '../info/info.js';
 import { tq, trk } from '../input/lever.js';
-import { WN } from '../machines/table.js';
 import { startRec, stopRec } from '../recorder/recorder.js';
 import { SQ, seqStart, seqStop } from '../sequence/sequence.js';
 
 export function lab(){const q=k=>document.querySelector('#ctl [data-k='+k+']');
  const sb=q('seq');sb.textContent=SQ.on?'■ STOP SEQUENCE':'▶ SEQUENCE';sb.classList.toggle('run',!!SQ.on);
- q('mach').textContent='MACHINE: '+state.M.btn;q('view').textContent='VIEW: '+VN[state.view];q('exp').textContent=state.G3?'CUTAWAY: '+(state.exposed?'ON':'OFF'):'CASING: '+(state.exposed?'EXPOSED':'COVERED');const lb=q('lens');lb.textContent='LENS: '+['NORMAL','SCHLIEREN','THERMAL'][state.lens];lb.style.opacity=state.G3?1:.4;q('scn').textContent='SCENE: '+(state.M.space?['TERMINATOR','SUNLIT','ECLIPSE'][state.scene]:state.M.sky&&state.G3?SNM[state.scene]:SN[state.scene]);q('slow').textContent=state.M.warp?'WARP: '+WN[state.sl]:'SLOW-MO: '+SLN[state.sl];
+ q('mach').textContent='MACHINE: '+state.M.btn;q('view').textContent='VIEW: '+VN[state.view];q('exp').textContent=state.G3?'CUTAWAY: '+(state.exposed?'ON':'OFF'):'CASING: '+(state.exposed?'EXPOSED':'COVERED');const lb=q('lens');lb.textContent='LENS: '+['NORMAL','SCHLIEREN','THERMAL'][state.lens];lb.style.opacity=state.G3?1:.4;q('scn').textContent='SCENE: '+(state.M.space?['TERMINATOR','SUNLIT','ECLIPSE'][state.scene]:state.M.sky&&state.G3?SNM[state.scene]:SN[state.scene]);q('slow').textContent=state.M.warp?'WARP: '+state.M.warpName(state.sl):'SLOW-MO: '+SLN[state.sl];
  const f=q('flt');f.textContent='FAULTS: '+(state.M.stall?(state.faults?'ON':'OFF'):'N/A');f.style.opacity=state.M.stall?1:.4}
 /* engine master: ON cranks and lights off; OFF cuts fuel (flame dies, rotor coasts, nozzle cools). Restart once the rotor is nearly stopped */
 export function say(t){$('hint').textContent=t;$('hint').style.opacity=1;state.hinted=true}
