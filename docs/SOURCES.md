@@ -1,6 +1,6 @@
 # Sources by machine
 
-Extracted from the INFO panels in throttle-up-v11.html. Every user-facing fact should trace to one of these, or be listed under WHAT IS APPROXIMATED.
+Extracted from the INFO panels (now in `src/machines/<name>/machine.js`; originally `throttle-up-v11.html`, kept in `legacy/`). Every user-facing fact should trace to one of these, or be listed under WHAT IS APPROXIMATED.
 
 ## AFTERBURNER (F-TYPE)
 (none: a generic afterburning turbojet; its INFO panel says the numbers are illustrative)

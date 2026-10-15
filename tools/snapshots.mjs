@@ -1,8 +1,8 @@
 // Golden suite: drives the page through its test hooks and records screenshots plus a manifest
 // (sim state, Math.random call counts, an audio-parameter trace, INFO html, chip list, errors).
-// Used to prove the Vite split behaves exactly like throttle-up-v11.html:
+// Used to prove the Vite split behaves exactly like legacy/throttle-up-v11.html:
 //
-//   node tools/snapshots.mjs                         -> snapshots/golden from throttle-up-v11.html
+//   node tools/snapshots.mjs                         -> snapshots/golden from legacy/throttle-up-v11.html
 //   node tools/snapshots.mjs --serve snapshots/after -> builds the Vite app and tests it via `vite preview`
 //   PAGE_URL=http://localhost:5173/ node tools/snapshots.mjs snapshots/dev   (any running server)
 //   node tools/compare.mjs snapshots/golden snapshots/after
@@ -30,7 +30,7 @@ const ONLY = new RegExp(opt('--only', '.'));
 const JOBS = +opt('--jobs', 3);
 const SERVE = args.includes('--serve') && !!args.splice(args.indexOf('--serve'), 1);
 const OUT = resolve(ROOT, args[0] || 'snapshots/golden');
-let PAGE = process.env.PAGE_URL || pathToFileURL(resolve(ROOT, 'throttle-up-v11.html')).href;
+let PAGE = process.env.PAGE_URL || pathToFileURL(resolve(ROOT, 'legacy/throttle-up-v11.html')).href;
 
 // --serve: build the Vite app and test it through `vite preview` (parity is always checked on the build).
 let server = null;

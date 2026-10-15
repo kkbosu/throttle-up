@@ -4,7 +4,7 @@ Throttle Up is a browser toy (heading toward a game) where you throttle up real 
 
 **Source of truth:** the Vite project in `src/` (no framework, plain JavaScript, three@0.160.0 from npm). Run it with `npm install` once, then `npm run dev`; `npm run build` + `npm run preview` serves the production build. ES modules don't run from `file://`, so the built page needs a server (GitHub Pages is fine).
 
-`throttle-up-v11.html` is the original single-file version the project was split from. It still runs from disk (Three.js from the jsDelivr CDN) and is kept as the reference the golden suite compares against: the split was verified to render and behave identically, pixel for pixel. Retire it once intentional changes start (then regenerate the golden reference from the build; see Testing).
+`legacy/throttle-up-v11.html` is the original single-file version the project was split from. It still runs from disk (Three.js from the jsDelivr CDN) and is kept as the reference the golden suite compares against: the split was verified to render and behave identically, pixel for pixel. Retire it once intentional changes start (then regenerate the golden reference from the build; see Testing).
 
 ## Machines (index = `?m=` URL param)
 
@@ -22,6 +22,8 @@ Throttle Up is a browser toy (heading toward a game) where you throttle up real 
 Machines 0–2 also have a hand-drawn 2D canvas renderer (fallback). Machines with `need3d:1` are hidden when 3D is unavailable.
 
 ## Architecture
+
+Top level: `index.html` + `src/` (the game), `tools/` (golden suite, compare, chunk check), `legacy/` (v11 and the Python tests from its development), `docs/SOURCES.md`.
 
 `index.html` (markup) + `src/style.css` + `src/main.js`. The code was moved verbatim from v11 by scripts and then formatted with Prettier (`npm run format`; `.prettierrc.json`, 120 columns), so variable names are still v11's short ones (`N`, `E`, `fu`, `hg` ... see the state list below).
 
@@ -110,7 +112,7 @@ Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim up
 ```
 `G3.snap()` jumps the camera to its target. Click `#ov span` to start the engine. `act('view'|'exp'|'scn'|'lens'|'seq'|...)` mirrors the buttons. In the Vite app these names reach `window` through the test bridge (`src/debug/globals.js`): state keys are readable and assignable (`view=1`), functions are callable but can't be replaced from outside.
 
-**Golden suite (Node Playwright, the parity check for the Vite split):** `npm run snapshots` drives `throttle-up-v11.html` through 38 scenarios and writes 290 screenshots plus `manifest.json` to `snapshots/golden`. The scenarios cover:
+**Golden suite (Node Playwright, the parity check for the Vite split):** `npm run snapshots` drives `legacy/throttle-up-v11.html` through 38 scenarios and writes 290 screenshots plus `manifest.json` to `snapshots/golden`. The scenarios cover:
 - every machine in every view, with cutaway, lenses and scenes, at power, and with INFO open;
 - every SEQUENCE;
 - the 2D renderer and its fallback;
@@ -125,7 +127,7 @@ The manifest records sim state, `Math.random` counts, an audio-parameter hash, I
 
 Check the Vite build with `npm run snapshots -- --serve snapshots/after` (it builds, starts `vite preview`, and runs the suite), then `npm run compare -- snapshots/golden snapshots/after`. That must report 0 differences. `--only <regex>` reruns selected scenarios into an existing folder; `compare --partial` compares only the scenarios a run contains. `snapshots/` is gitignored; regenerate it from v11 (about 6 min). Any refactor that should not change behaviour must pass this. When a change is *meant* to alter what you see or hear, review the diff images in `snapshots/after/_diff/`, then make the build the new reference: `npm run snapshots -- --serve snapshots/golden`.
 
-`tools/legacy-tests/` holds the Playwright (Python) scripts used during development in a cloud sandbox with a software GPU. They're a starting point, not a suite: `t10.py M OUT` screenshots a machine through views/lenses/scenes, `t10s.py OUT` runs SEQUENCE for machines 6 and 7, `t11s.py` runs Hall + sky crane sequences and checks the 2D chip list, `t10f.py` cycles all machines/scenes/quality and REC, `r10_stall.py 0` is the compressor-stall regression in 2D. They test the running Vite app (`npm run dev`, or set `PAGE_URL`). Needs `pip install playwright` and `playwright install chromium` (the repo's `.venv` has both). On a real GPU you can drop the SwiftShader flags in `h3.py`.
+`legacy/tests/` holds the Playwright (Python) scripts used during development in a cloud sandbox with a software GPU. They're a starting point, not a suite: `t10.py M OUT` screenshots a machine through views/lenses/scenes, `t10s.py OUT` runs SEQUENCE for machines 6 and 7, `t11s.py` runs Hall + sky crane sequences and checks the 2D chip list, `t10f.py` cycles all machines/scenes/quality and REC, `r10_stall.py 0` is the compressor-stall regression in 2D. They test the running Vite app (`npm run dev`, or set `PAGE_URL`). Needs `pip install playwright` and `playwright install chromium` (the repo's `.venv` has both). On a real GPU you can drop the SwiftShader flags in `h3.py`.
 
 Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari, and listening on real speakers.
 

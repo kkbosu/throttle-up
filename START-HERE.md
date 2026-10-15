@@ -7,9 +7,10 @@ throttle-up/
 ├─ CLAUDE.md              ← project guide; Claude Code reads it automatically
 ├─ START-HERE.md          ← this file
 ├─ index.html, src/       ← the game, as a Vite project (one folder per machine in src/machines/)
-├─ throttle-up-v11.html   ← the original single-file version (reference for the screenshot comparison)
+├─ legacy/               ← throttle-up-v11.html (the original single-file version, reference for the screenshot
+│                           comparison) and tests/ (the Python Playwright scripts used while building v6–v11)
 ├─ docs/SOURCES.md        ← every source behind the INFO panels, by machine
-├─ tools/                 ← snapshots.mjs + compare.mjs (golden screenshot suite), check-chunks.mjs, legacy-tests/
+├─ tools/                 ← snapshots.mjs + compare.mjs (golden screenshot suite), check-chunks.mjs
 └─ package.json, vite.config.js, eslint.config.js
 ```
 
@@ -64,6 +65,6 @@ Then continue with the roadmap in CLAUDE.md (game layer → realism → launch).
 ## Tips
 
 - Commit after each working step, so you can always roll back.
-- Keep `throttle-up-v11.html` in the repo while you still want to prove the project behaves exactly like it (`npm run snapshots`); retire it once you start changing behaviour on purpose.
+- Keep `legacy/throttle-up-v11.html` in the repo while you still want to prove the project behaves exactly like it (`npm run snapshots`); retire it once you start changing behaviour on purpose.
 - For anything that adds facts, ask Claude to find and cite a source and add it to `docs/SOURCES.md` and the machine's INFO panel. Credibility is the brand.
 - Big changes: ask for a plan first, read it, then say go.

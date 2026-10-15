@@ -15,4 +15,4 @@ npm run preview    # serves dist/ at http://localhost:4173/
 
 The built page needs a web server (ES modules don't run from `file://`). URL parameters: `?m=0..7` machine, `?q=0|1|2` quality, `?r=2d` force the 2D renderer.
 
-The code is a Vite project with no framework: shared modules for the engine model, HUD, audio, sequence player, INFO panel, recorder and the 3D renderer, and one folder per machine in `src/machines/`. `CLAUDE.md` describes the structure. `throttle-up-v11.html` is the original single-file version it was split from (it still runs from disk, with Three.js from a CDN); `npm run snapshots` compares the two pixel for pixel.
+The code is a Vite project with no framework: shared modules for the engine model, HUD, audio, sequence player, INFO panel, recorder and the 3D renderer, and one folder per machine in `src/machines/`. `CLAUDE.md` describes the structure. `legacy/throttle-up-v11.html` is the original single-file version it was split from (it still runs from disk, with Three.js from a CDN); `npm run snapshots` compares the two pixel for pixel.
