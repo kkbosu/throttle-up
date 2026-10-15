@@ -11,8 +11,9 @@ const man = JSON.parse(await readFile(resolve(ROOT, 'dist/.vite/manifest.json'),
 const THREE_ONLY = /^node_modules\/three\/|^src\/render3d\/|^src\/machines\/[^/]+\/three\.js$/;
 
 // A static import can also be merged into the entry chunk itself, where the manifest doesn't show it,
-// so every reachable chunk is also scanned for a string only three.js contains.
-const THREE_MARK = 'THREE.WebGLRenderer';
+// so every reachable chunk is also scanned for strings only three.js and the 3D renderer contain
+// (uHeatLen is a plume-shader uniform defined in src/render3d/).
+const MARKS = ['THREE.WebGLRenderer', 'uHeatLen'];
 
 const bad = [];
 const seen = new Set();
@@ -21,7 +22,11 @@ const walk = async (key, path) => {
   seen.add(key);
   const c = man[key];
   if (THREE_ONLY.test(c.src || key)) bad.push(path.concat(key).join(' -> '));
-  else if ((await readFile(resolve(ROOT, 'dist', c.file), 'utf8')).includes(THREE_MARK)) bad.push(`${path.concat(key).join(' -> ')} (contains three.js code)`);
+  else {
+    const text = await readFile(resolve(ROOT, 'dist', c.file), 'utf8');
+    const hit = MARKS.find(m => text.includes(m));
+    if (hit) bad.push(`${path.concat(key).join(' -> ')} (contains 3D-only code: "${hit}")`);
+  }
   for (const k of c.imports || []) await walk(k, path.concat(key));
 };
 for (const [key, c] of Object.entries(man)) if (c.isEntry) await walk(key, []);
