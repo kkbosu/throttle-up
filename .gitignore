@@ -7,3 +7,4 @@ Thumbs.db
 __pycache__/
 tools/legacy-tests/tj/
 test-output/
+snapshots/

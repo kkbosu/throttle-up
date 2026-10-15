@@ -72,6 +72,21 @@ Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim up
 ```
 `G3.snap()` jumps the camera to its target. Click `#ov span` to start the engine. `act('view'|'exp'|'scn'|'lens'|'seq'|...)` mirrors the buttons.
 
+**Golden suite (Node Playwright, the parity check for the Vite split):** `npm run snapshots` drives `throttle-up-v11.html` through 38 scenarios and writes 290 screenshots plus `manifest.json` to `snapshots/golden`. The scenarios cover:
+- every machine in every view, with cutaway, lenses and scenes, at power, and with INFO open;
+- every SEQUENCE;
+- the 2D renderer and its fallback;
+- `q=0` and `q=1`;
+- a phone at 390×780, DPR 2;
+- REC, WebGL context loss, and a live run.
+
+The manifest records sim state, `Math.random` counts, an audio-parameter hash, INFO HTML and chip lists. Runs are byte-for-byte reproducible:
+- `Math.random` is seeded, and re-seeded when WebGL starts, because three.js draws randoms for every object's UUID;
+- three@0.160.0 is served from `node_modules`;
+- the Chromium flags make compositing deterministic.
+
+Check another build with `PAGE_URL=http://localhost:4173/ npm run snapshots -- snapshots/after`, then `npm run compare -- snapshots/golden snapshots/after`. That must report 0 differences. `--only <regex>` reruns selected scenarios into an existing folder. `snapshots/` is gitignored; regenerate it from v11 (about 6 min).
+
 `tools/legacy-tests/` holds the Playwright (Python) scripts used during development in a cloud sandbox with a software GPU. They're a starting point, not a suite: `t10.py M OUT` screenshots a machine through views/lenses/scenes, `t10s.py OUT` runs SEQUENCE for machines 6 and 7, `t11s.py` runs Hall + sky crane sequences and checks the 2D chip list, `t10f.py` cycles all machines/scenes/quality and REC, `r10_stall.py 0` is the compressor-stall regression in 2D. Needs `pip install playwright` and `playwright install chromium`. On a real GPU you can drop the SwiftShader flags in `h3.py`.
 
 Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari, and listening on real speakers.
