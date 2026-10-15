@@ -1,4 +1,5 @@
 // 3D renderer (Three.js), loaded on demand by core/loader3d.js together with three.
+import { loadM3 } from '../machines/three.js';
 // init3D creates everything in exactly v11's order (object ids and UUID random draws depend on it), then
 // returns the G3 interface the rest of the program uses.
 import { state } from '../core/state.js';
@@ -28,6 +29,7 @@ import { createSky } from './sky.js';
    -> bloom -> ACES tone map.
    ===================================================================================== */
 export function init3D(){
+loadM3();
 createContext();
 createKit();
 createSky();

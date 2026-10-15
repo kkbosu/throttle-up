@@ -1,4 +1,5 @@
 // Per-machine configuration (plume box, shadow area, camera presets, ground type) and switching machines.
+import { M3 } from '../machines/three.js';
 import { state } from '../core/state.js';
 import { ENG } from './builders.js';
 import { k3 } from './context.js';
@@ -17,7 +18,7 @@ export function createMachine(){
 /* ======================= per-machine configuration ======================= */
 /* camera presets per view: [position, target, half-width that must stay in frame] */
 CFG=[
- {box:[16,2.6],sc:[-2,1,0],sh:13,cams:[[[1.4,3.0,10.8],[-.9,2.2,0],5.8],[[2.75,2.0,3.35],[-.45,1.62,0],1.9],[[8.8,2.1,2.7],[-.6,1.65,0],2.3]],mt:1},
+ M3[0].cfg,
  {box:[20,3],sc:[-3.5,1,0],sh:15,cams:[[[1.0,3.5,14.2],[-2.5,2.65,0],7.6],[[3.3,2.5,3.7],[-.45,2.05,0],2.1],[[10.5,2.5,3.1],[-.8,2.05,0],2.5]],mt:1},
  {box:[7,3.2],sc:[1,6,0],sh:17,cams:[[[2.2,6.2,23.5],[-.6,5.6,0],8.6],[[2.9,5.0,6.4],[0,6.4,0],2.7],[[3.8,1.4,4.8],[0,6.0,0],2.6]],mt:0},
  {box:[1.8,1.0],sc:[-1,0,0],sh:7,space:1,cams:[[[3.7,2.7,8.4],[-.25,-.45,0],2.6],[[1.0,.02,1.65],[.05,-.36,.33],.55],[[2.1,.2,1.05],[-.17,-.38,.35],.62],[[0,0,0],[-.6,-2.6,-1.6],2.6]],mt:0},

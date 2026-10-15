@@ -1,25 +1,17 @@
 // The machine table MC and every machine-specific helper (sim steps, voices, insets, RS-25 2D drawing). Split into src/machines/<name>/ in step 5.
-import { CUT_SCHLIEREN, CUT_THERMAL } from '../info/cut-text.js';
 import { S, thump } from '../audio/audio.js';
 import { master } from '../core/engine.js';
 import { state } from '../core/state.js';
 import { MONO, g, sm } from '../core/util.js';
 import { lab, say } from '../hud/controls.js';
+import { CUT_SCHLIEREN, CUT_THERMAL } from '../info/cut-text.js';
 import { applyRaw } from '../input/lever.js';
 import { EM, VP } from '../render2d/index.js';
 import { body, metal, plume, rear, sparks, stream } from '../render2d/jet.js';
 import { SP, blob } from '../render2d/sprites.js';
 import { SQ } from '../sequence/sequence.js';
+import m0 from './f-type/machine.js';
 
-/* per-machine voices: each sets the same nodes (rumble, roar, whine, upper siren, crackle, starter) its own way */
-export function auF(s,V,pm){
- s(S.rum.gn.gain,(state.N*.6*(.35+.65*state.fu)+state.A*.7+state.sg*.12+state.ign*.7)*(1+state.stl*.4*Math.sin(state.simT*50)));s(S.rum.fl.frequency,90+state.N*110+state.A*240);
- s(S.roar.gn.gain,(state.N*state.N*(.05+.17*state.fu)+state.A*.5+state.sg*.04+state.ign*.35)*(1+state.stl*.6*Math.sin(state.simT*75)));s(S.roar.fl.frequency,250+state.N*800+state.A*1500);
- s(S.wh.gn.gain,state.N*.05*(1-state.A*.8)*(1+(1-state.fu)*1.6)+state.spd*.16);s(S.osc.frequency,(180+state.N*1500)*pm);s(S.wh.fl.frequency,(900+state.N*2200)*pm);
- s(S.wh2.gn.gain,state.spd*.09+state.N*.012*(1-state.A)*(1+(1-state.fu)*2));s(S.osc2.frequency,(180+state.N*1500)*2.01*pm);
- s(S.crk.gn.gain,state.A*(.5+Math.random()*1.2)*(.8+V.raw)+state.stl*(.3+Math.random()*.9),.02);s(S.crk.fl.frequency,700);
- s(S.sg.gn.gain,state.sg*.12);s(S.so.frequency,(60+state.N*2600)*pm);s(S.sg.fl.frequency,300+state.N*3000);
- s(S.sg2.gn.gain,state.sg*.05);s(S.so2.frequency,(30+state.N*500)*pm)}
 /* J58: bigger, lower, rougher. Slow rolling rumble, deeper whine, harder crackle; the starter is a pair of V8 start-cart engines burbling */
 export function auSR(s,V,pm){const bur=.62+.38*Math.sin(state.simT*55)*Math.sin(state.simT*37+1);
  s(S.rum.gn.gain,(state.N*.78*(.35+.65*state.fu)+state.A*.85+state.sg*.3*bur+state.ign*.9)*(1+.12*Math.sin(state.simT*7.3))*(1+state.stl*.4*Math.sin(state.simT*50)));s(S.rum.fl.frequency,70+state.N*95+state.A*230);
@@ -38,40 +30,7 @@ export function auSS(s,V,pm){const nn=state.N*state.fu;
 /* ---------- machines: everything that differs between engines lives here ----------
    ab: has an afterburner zone (lever detent at MIL); stall: can surge; idle: spool target at lever 0; up/dn: spool time constants;
    coast: spin-down tau with fuel off; cN/cT: starter speed and duration; e/f: EGT and fuel-flow curves; teb: green light-off flash */
-export const MC=[{
- n:'AFTERBURNER',btn:'F-TYPE',sub:'Afterburning turbofan. Push through the detent.',hint:'Drag the lever up. Push through the detent.',
- nxf:.34,ab:1,stall:1,idle:.28,up:1.1,dn:.8,coast:3.2,cN:.13,cT:2.4,tk:[1.5,.09],ign:1,lk:.4,e0f:480,lt:.8,teb:0,
- e:[40,620,90],f:[.35,7.1,2.2,36],off:'FUEL OFF',st:'STARTING',cl:'COASTING',cut:'Fuel cut. Rotor coasting down...',wait:'Let the rotor spool down before restarting.',
- r:()=>(30+18*state.A)*state.u,shk:()=>state.N*state.N*1.2+state.A*4+state.kick*12,
- gl:()=>[state.A*.3+state.N*state.N*.06*state.fu+state.ign*.2,160+state.A*700+state.N*120],skyG:()=>state.A*.4+state.N*state.N*.05*state.fu+state.ign*.1,
- hzk:()=>state.A+state.N*state.N*.28*state.fu+state.hg*state.hg*.12,hzg:()=>[62+state.A*46,300+state.A*900],hza:()=>.8+state.A*4.2+state.N*1.4,blk:()=>state.A*.3+state.N*state.N*.05*state.fu+state.kick*.3+state.ign*.15,
- g:[{t:'N1',cap:'N1 SPEED %',min:0,max:110,maj:20,mn:10,red:102,d:1,f:v=>v|0},
-    {t:'EGT',cap:'EGT °C x100',min:0,max:900,maj:200,mn:100,red:760,d:100,f:v=>v|0},
-    {t:'FF',cap:'FUEL klb/h',min:0,max:50,maj:10,mn:5,red:46,d:1,f:v=>v.toFixed(1)}],
- gv:()=>[state.N*100,state.E,state.F],
- lv:[['MAX',1,'t'],['AFTERBURNER',.85],['MIL',.7],['IDLE',0,'b']],
- lp:()=>[['A/B',state.A>.05,'#ff8a2a'],['EGT HI',state.E>720&&(state.simT*6%1<.6),'#e0392b']],
- mc:[[0,'#1a1e26'],[.35,'#4a5160'],[.5,'#6a7282'],[.65,'#3a404c'],[1,'#12151b']],dk:1,bl:0,
- bd:{ts:120,xt:64,hh:64,fh:78,doors:0},
- pl:{dl:[70,140],dp:[SP.b,SP.b,SP.o,SP.r],al:[240,1000],ap:[SP.y,SP.y,SP.o,SP.r],sn:64,ak:1,cp:[SP.w,SP.y,SP.y,SP.o],dn:[3,2,5],ds:[34,38,8],dc:[SP.y,SP.b]},
- spike:0,draw:(r,dt)=>{plume(r,dt);body(r)},rear:rear,au:auF,
- sqc:'STARTER SPIN-UP',
- sq:[{cap:'IDLE',wait:1.6},
-  {cap:'SPOOLING UP',lever:.74,dur:3.6},
-  {cap:'MIL POWER',until:()=>state.N>.9,wait:.6,max:6},
-  {cap:'PUSH THROUGH THE DETENT',lever:1,dur:1.6,view:1,slow:.35},
-  {cap:'AFTERBURNER LIGHT',until:()=>state.lit,wait:1.3,max:6},
-  {cap:'FULL AFTERBURNER',slow:1,wait:3.2,view:2},
-  {cap:'FULL AFTERBURNER',wait:2.4,view:0},
-  {cap:'THROTTLE BACK',lever:.45,dur:1.6},
-  {cap:'FUEL CUT',do:()=>master(),wait:3.4}],
- info:{cut:['CUTAWAY removes half of the casing. The moving dots trace the air: blue is cool intake air, white is compressed air, orange is combustion and exhaust.'+' The outer band is bypass air going round the core.'+' Flow speed is slowed enormously so you can follow it.',CUT_SCHLIEREN,CUT_THERMAL],f:['A generic afterburning turbofan. It is not modelled on one specific engine.',
-  'The lever detent is MIL (military power), the most thrust the engine makes dry. Past it, fuel is sprayed into the hot exhaust behind the turbine and burns again: the afterburner. It adds a lot of thrust for a very large jump in fuel flow.',
-  'Shock diamonds appear when exhaust leaves the nozzle at a different pressure from the air around it, setting up a repeating pattern of shock waves.',
-  'The nozzle petals open as the afterburner lights, to pass the extra flow. Fighter nozzles also open a little at idle and close toward MIL.',
-  'A compressor stall is a breakdown of airflow through the compressor. Moving the throttle too fast from low power can trigger one: loud bangs, flames from the tailpipe and a jump in exhaust temperature. Pull the lever back to recover. The FAULTS button turns this off.'],
-  a:['The gauge scales, spool times and temperatures are plausible but illustrative. They do not come from any engine manual.','The 3D engine and test stand are simplified, hand-built models, not CAD data.','The sound is synthesized, not recorded.'],s:[]}
-},{insetF:spikeInset,
+export const MC=[m0,{insetF:spikeInset,
  n:'SR-71',btn:'SR-71 J58',sub:'Blackbird turbojet. Watch the inlet spike and the green flash.',hint:'Drag the lever up. It also sets the simulated Mach.',
  nxf:.34,ab:1,stall:1,idle:.53,up:1.7,dn:1.2,coast:4.6,cN:.43,cT:3.4,tk:[2,.1],ign:1.1,lk:.5,e0f:500,lt:.9,teb:1,
  e:[40,600,110],f:[.5,6,2.2,20],off:'FUEL OFF',st:'CART START',cl:'COASTING',cut:'Fuel cut. Rotor coasting down...',wait:'Let the rotor spool down before restarting.',
