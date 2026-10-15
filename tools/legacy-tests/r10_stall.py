@@ -1,19 +1,29 @@
 import sys
 import time
 from playwright.sync_api import sync_playwright
+from h3 import URL
+# Compressor-stall regression in the 2D renderer. Counts what the page does without replacing its functions
+# (modules can't be patched from outside): stalls = sT rising from 0, bangs = surge pulses (the only
+# navigator.vibrate(40)), beeps = the warning oscillator (the only one set to 1100 Hz).
+COUNT="""(()=>{window.__st=0;window.__b=0;window.__p=0;window.__maxL=0;
+  const v=navigator.vibrate?navigator.vibrate.bind(navigator):null;navigator.vibrate=t=>{if(t===40)window.__b++;return v?v(t):false};
+  const co=AudioContext.prototype.createOscillator;AudioContext.prototype.createOscillator=function(){const o=co.call(this),d=Object.getOwnPropertyDescriptor(AudioParam.prototype,'value');
+    Object.defineProperty(o.frequency,'value',{get(){return d.get.call(this)},set(x){if(x===1100)window.__p++;d.set.call(this,x)}});return o};
+})()"""
+POLL="""window.__st=0;window.__b=0;window.__p=0;window.__maxL=0;let ps=sT;
+  setInterval(()=>{if(ps<=0&&sT>0)__st++;ps=sT;__maxL=Math.max(__maxL,Lrate)},4)"""
 ST="({ph,sT:+sT.toFixed(2),N:+N.toFixed(2),E:Math.round(E),F:+F.toFixed(1),A:+A.toFixed(2),ign:+ign.toFixed(2),stl:+stl.toFixed(2),faults,st:window.__st,bang:window.__b,beep:window.__p,maxL:+window.__maxL.toFixed(2)})"
 errs=[]
 with sync_playwright() as p:
     b=p.chromium.launch(args=["--autoplay-policy=no-user-gesture-required"])
-    pg=b.new_context(viewport={"width":905,"height":655}).new_page()
+    ctx=b.new_context(viewport={"width":905,"height":655})
+    ctx.add_init_script(COUNT)
+    pg=ctx.new_page()
     pg.on("pageerror",lambda e:errs.append(str(e)))
     pg.on("console",lambda m:errs.append(m.text) if m.type=="error" else None)
-    pg.goto(__import__("pathlib").Path(__file__).resolve().parents[2].joinpath("throttle-up-v11.html").as_uri()+"?r=2d&q=2&m="+sys.argv[1])
+    pg.goto(URL+"?r=2d&q=2&m="+sys.argv[1])
     pg.click("#ov span");pg.wait_for_timeout(6500)
-    pg.evaluate("""window.__st=0;window.__b=0;window.__p=0;window.__maxL=0;
-      const os=startStall;startStall=function(){__st++;os()};
-      const ob=bang;bang=function(v){__b++;ob(v)};const op=beep;beep=function(){__p++;op()};
-      setInterval(()=>{__maxL=Math.max(__maxL,Lrate)},8)""")
+    pg.evaluate(POLL)
     tr=pg.evaluate("(()=>{const r=trk.getBoundingClientRect();return {x:r.left+r.width/2,top:r.top,bottom:r.bottom}})()")
     x,top,bot=tr["x"],tr["top"],tr["bottom"]
     def slam(force=True):

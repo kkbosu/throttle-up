@@ -3,13 +3,14 @@
 Everything in this folder is ready to become your project repo.
 
 ```
-throttle-up-starter/
+throttle-up/
 ├─ CLAUDE.md              ← project guide; Claude Code reads it automatically
 ├─ START-HERE.md          ← this file
-├─ throttle-up-v11.html   ← the current game (source of truth until the refactor)
+├─ index.html, src/       ← the game, as a Vite project (one folder per machine in src/machines/)
+├─ throttle-up-v11.html   ← the original single-file version (reference for the screenshot comparison)
 ├─ docs/SOURCES.md        ← every source behind the INFO panels, by machine
-├─ tools/legacy-tests/    ← Playwright scripts used during development (optional)
-└─ .gitignore
+├─ tools/                 ← snapshots.mjs + compare.mjs (golden screenshot suite), check-chunks.mjs, legacy-tests/
+└─ package.json, vite.config.js, eslint.config.js
 ```
 
 ## 1. Install (once)
@@ -27,7 +28,7 @@ The Claude Code extension works with a paid Claude plan (Pro, Max, Team or Enter
 ## 2. Set up the folder
 
 1. Unzip this folder somewhere sensible, for example `Documents/throttle-up`.
-2. Double-click `throttle-up-v11.html` to check it runs in your browser (it needs internet for Three.js).
+2. In a terminal in the folder: `npm install`, then `npm run dev`, and open the address it prints (http://localhost:5173/).
 3. In VS Code: **File → Open Folder…** and pick the folder.
 
 ## 3. Install Claude Code in VS Code
@@ -39,6 +40,8 @@ The Claude Code extension works with a paid Claude plan (Pro, Max, Team or Enter
 Official guide: https://code.claude.com/docs/en/vs-code
 
 ## 4. First prompts (paste them one at a time)
+
+Prompts 1 and 2 are done (git repo, and the Vite split on branch `refactor/vite-split`, verified identical to v11).
 
 **Prompt 1 — get your bearings and start version control**
 > Read CLAUDE.md and START-HERE.md. Initialise a git repo, commit the current files as "v11 baseline", and give me a short summary of how the code is organised.
@@ -61,6 +64,6 @@ Then continue with the roadmap in CLAUDE.md (game layer → realism → launch).
 ## Tips
 
 - Commit after each working step, so you can always roll back.
-- Keep `throttle-up-v11.html` in the repo until the refactored version matches it on every machine.
+- Keep `throttle-up-v11.html` in the repo while you still want to prove the project behaves exactly like it (`npm run snapshots`); retire it once you start changing behaviour on purpose.
 - For anything that adds facts, ask Claude to find and cite a source and add it to `docs/SOURCES.md` and the machine's INFO panel. Credibility is the brand.
 - Big changes: ask for a plan first, read it, then say go.

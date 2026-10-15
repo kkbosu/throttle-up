@@ -2,7 +2,9 @@
 
 Throttle Up is a browser toy (heading toward a game) where you throttle up real engines and machines and watch, hear and read what happens. Owner: Kingsley. Goal: host it publicly, make it credible ("not taken for a joke"), and give it a real chance of spreading on social media.
 
-**Source of truth right now:** `throttle-up-v11.html`, a single self-contained file (about 227 KB, 2,000 lines). It runs straight from disk; Three.js comes from the jsDelivr CDN through an import map. The first job in this repo is to split it into a proper project **without changing behaviour** (see Roadmap).
+**Source of truth:** the Vite project in `src/` (no framework, plain JavaScript, three@0.160.0 from npm). Run it with `npm install` once, then `npm run dev`; `npm run build` + `npm run preview` serves the production build. ES modules don't run from `file://`, so the built page needs a server (GitHub Pages is fine).
+
+`throttle-up-v11.html` is the original single-file version the project was split from. It still runs from disk (Three.js from the jsDelivr CDN) and is kept as the reference the golden suite compares against: the split was verified to render and behave identically, pixel for pixel. Retire it once intentional changes start (then regenerate the golden reference from the build; see Testing).
 
 ## Machines (index = `?m=` URL param)
 
@@ -19,39 +21,75 @@ Throttle Up is a browser toy (heading toward a game) where you throttle up real 
 
 Machines 0–2 also have a hand-drawn 2D canvas renderer (fallback). Machines with `need3d:1` are hidden when 3D is unavailable.
 
-## Architecture of the single file
+## Architecture
 
-Three `<script>` blocks:
+`index.html` (markup) + `src/style.css` + `src/main.js`. The code was moved verbatim from v11 by scripts, so it is still in v11's dense style; module and variable names below are the v11 names.
 
-1. **Import map** for `three@0.160.0` and its addons.
-2. **Script 1 — simulation, 2D renderer, HUD, audio, UI** (classic script, globals).
-   - Global sim state: `N` (spool/power 0..1), `A` (afterburner), `E` (EGT °C), `F` (fuel flow), `L`/`raw` (lever), `ph` (0 off, 1 starting, 2 running, 3 fuel off/run-down), `fu` (combustion 0..1), `ign`, `kick`, `hg` (metal heat glow), `simT`, `view`, `exposed` (cutaway), `scene`, `lens` (0 normal, 1 schlieren, 2 thermal), `mi`/`M` (machine index / entry).
-   - Second lever: `raw2` (Harrier nozzles, sky-crane bridles), shown when `M.nozzle`.
-   - Machine-specific state: `alt, vz, nz` (Harrier), `sicE[]` (Saturn V), `orb{}` (Hall orbit), `prp, beta` (NK-12), `sc{}` (sky crane).
-   - `update(dt)`: generic engine model, then per-machine hooks `M.orbit → orbStep`, `M.clu(dt)` (custom step: Saturn V, NK-12, sky crane), `M.hover → hoverStep`.
-   - `MC[]` — **the machine table. Everything that differs per machine lives in its entry** (see below).
-   - Gauges, lamps, engine switch, insets (`spikeInset`, `orbitInset`, `hoverInset`, `propInset`, `craneInset`; chosen by `M.insetF` or flags), SEQUENCE player (`SQ`, `seqStart/seqNext/seqTick`), INFO panel (`showInfo`), REC clip recorder (canvas + WebGL composite → MediaRecorder), Web Audio synth (`initAudio`, per-machine voices `M.au`).
-   - Frame loop `frame(t)` → `update` → 2D draw or `G3.render` → `gauges` → `G3.overlay` → `seqCap`.
-3. **Script 2 — `init3D(T, X)`, the Three.js renderer.** Draws the sim; never changes it (exceptions: camera follow uses sim state).
-   - Helpers: `lathe` (profiles run along local +X), `ring`, `box`, `cyl`, `pipe`, `beam`, `bladeRing`, `canvasTex`, materials `MT.*`, thermal categories `CAT` (material → 'case' / 'hot' / 'inner' / 'bell' / 'gnd' / 'cold' …).
-   - Builders, one per machine, in `ENG[]` order: `buildF, buildSR, buildSS, buildHT, buildF1, buildHR, buildTP, buildSC`. Each returns `{G, E, anchor, lens, labels, flow, upd(dt)}`:
-     - `G` group added to the scene; `E` the engine frame (labels and tracers are in E's local coords); `anchor` = nozzle exit, **plume runs along anchor's local +X**; `lens` = light-pole lens meshes for night; `labels` = `[text,[x,y,z],[dxPx,dyPx]]` shown in cutaway; `flow()` = cutaway tracer paths (`ax` axial keyframes `[x,rIn,rOut,temp]`, `cv` CatmullRom paths, `ring` electron rings); `upd(dt)` per frame.
-   - `CFG[]` per machine: `box:[len,radius]` plume volume, `sc` shadow centre, `sh` shadow half-size, `cams:[[pos,target,halfWidthFit] x3 or 4]`, `mt` (1 = desert lakebed, 0 = grass + trees), `space`, `mars`.
-   - Scenes: `SCN` (DUSK/DAY/NIGHT), `SCNS` (space: TERMINATOR/SUNLIT/ECLIPSE), `SCNM` (Mars: MIDDAY/AFTERNOON/SUNSET); `applyScene`, `sKey`.
-   - Pipeline: scene → HDR render target with depth (MSAA at Q2) → **ray-marched volumetric plume** in a box at half res (stops at scene depth; alpha = heat) → composite pass (heat haze, plume, Schlieren/thermal modes) → bloom → ACES output.
-   - `plumeParams(dt)` has one branch per machine setting plume uniforms (colour ramp `uC0..3`, shock diamonds, cluster mode `uCl/uO/uW` for multi-nozzle machines). `emitters(dt)` (particles: smoke, steam, dust kinds), `thermalU()` (per-machine temperatures for the thermal lens), `lensRender()` (material swap for lenses), `camera(dr)` (glide between presets, drag orbit, wheel zoom, `M.camA(view)` vertical follow, EARTH view for space).
-   - Returns `{canvas, render, overlay, resize, surge, snap, R}` as `G3`.
+```
+src/
+  main.js                 boot: wires listeners in v11's order (wireX()), picks ?m, resize, loop, 3D loader
+  core/state.js           `state`: every shared mutable variable (N, A, E, F, ph, raw, raw2, view, exposed, scene,
+                          lens, mi, M, simT, alt, vz, ...) with its initial value. Code reads/writes state.N etc.
+  core/params.js          ?q (QP) and ?manual (MAN); ?m is read in main.js, ?r=2d in core/loader3d.js
+  core/util.js            $, cv/g (HUD canvas), mk, sm (smoothstep), label tables, MONO font
+  core/engine.js          update(dt): generic engine model, stall/surge, master switch; M.clu(dt) per-machine step
+  core/machine-switch.js  setMachine (resets, then every machine's reset() and the selected one's onSelect()), chips
+  core/loop.js            frame(), adapt(), step() test hook
+  core/loader3d.js        load3D(): fetches three + the renderer chunk; ready3D/fail3D fall back to 2D
+  hud/                    layout.js (resize), gauges.js (gauges, lamps, engine switch, inset placement),
+                          controls.js (lab, act, lever labels, START overlay)
+  input/lever.js          lever(s) with the MIL detent, keyboard
+  audio/audio.js          Web Audio graph and one-shot sounds (per-machine voices live in the machine folders)
+  sequence/sequence.js    SEQUENCE player (SQ, seqStart/Next/Stop/Tick/Cap)
+  info/                   info.js (INFO panel), cut-text.js (the SCHLIEREN/THERMAL paragraphs)
+  recorder/recorder.js    REC: WebGL + HUD composite into a MediaRecorder clip
+  render2d/               index.js (2D renderer: sky, haze, bloom, draw), jet.js (2D jet parts), sprites.js
+  render3d/               lazy chunk, the only code that imports three:
+    index.js              init3D(): loadM3(), then every createX() in v11's order; returns G3
+    kit.js                renderer, materials MT, thermal categories CAT, textures, geometry helpers
+                          (lathe along local +X, ring, box, cyl, pipe, beam, bladeRing, canvasTex ...)
+    sky, lights, scenes (SCN/SCNS/SCNM, applyScene), ground, earth, props
+    plume.js              ray-marched volumetric plume shader; plumeParams() -> M3[mi].plume
+    particles.js          pools (SPK, SMK, FIR, FLW), emitters() -> M3[mi].emit, burst()
+    lenses.js             thermal/schlieren; thermalU() -> M3[mi].thermal
+    composite, camera, flow (cutaway tracers), overlay (labels, legend), frame (render())
+    machine.js            CFG (= M3.map(m=>m.cfg)), applyMachine();  builders.js: ENG (= M3.map(m=>m.build()))
+    context.js            k3: renderer state several modules reassign (camera, plume, targets, accumulators)
+  machines/
+    index.js              MC = [...] in machine order (index = ?m = chip order)
+    three.js              M3 = [...] the 3D side, same order (filled by loadM3() when init3D starts)
+    <name>/machine.js     default export = the MC entry, plus the machine's own sim, voice (au*) and constants
+    <name>/three.js       default export = { cfg, build, hooks }: the 3D model, camera/plume config, renderer hooks
+    <name>/inset.js       inset panel (hall, harrier, nk-12, sky-crane, sr-71)
+    shuttle/draw2d.js     the RS-25's 2D renderer
+    shared/jet3d.js       3D hooks F-TYPE and SR-71 share;  shared/gimbal.js: RS-25/F-1 gimbal wobble
+  debug/globals.js        test bridge: every main-chunk export and state key on window
+```
 
-### Machine table entry (`MC[i]`) — key fields
+Frame: `frame(t)` → `seqTick` → `keys` → `update` → `audio` → 2D `draw` or `G3.render` → `gauges` → `G3.overlay` → `seqCap` → REC.
 
-`n` title, `btn` chip label, `sub` subtitle, `hint`, flags `need3d, space, warp, orbit, hover, nozzle, sky, inset`, `insetF`, `clu(dt)`, `camA(view)`.
+### Machine table entry (`MC[i]`, `machines/<name>/machine.js`) — key fields
+
+`n` title, `btn` chip label, `sub` subtitle, `hint`, flags `need3d, space, warp, orbit, hover, nozzle, sky, inset, spike`, `insetF` (inset drawer).
+Hooks: `clu(dt)` per-frame machine step (Hall orbit, Saturn V, Harrier hover, NK-12, sky crane), `reset()` (runs for every machine on any switch), `onSelect()` (sky crane), `seqPre()` (sky crane's SEQUENCE pre-step), `camA(view)`, `warpName(i)` (Hall).
 Engine model: `idle, up, dn, coast, cN, cT, tk, ign, lk, e0f, lt, ab, stall, e:[EGT curve], f:[fuel curve]`.
 UI: `g` (3 gauges: `{t,cap,min,max,maj,mn,red,d,f}`), `gv()` values, `lv`/`lv2` lever labels `[text,pos,'t'|'b']`, `lp()` lamps, status words `off/st/cl/cut/wait`.
 Feel: `shk()` camera shake, `au(s,V,pm)` audio voice.
-Story: `sqc` + `sq[]` SEQUENCE steps (`{cap, lever|()=>, dur, wait, until(), max, view, do()}`), `info:{f:[facts], a:[approximations], cut:string|array, s:[[title,url]]}`.
-2D-only: `nxf, r, gl, skyG, hzk, hzg, hza, blk, mc, dk, bl, bd, pl, spike, draw, rear`.
+Story: `sqc` + `sq[]` SEQUENCE steps (`{cap, lever|()=>, dur, wait, until(), max, view, do()}`), `info:{f:[facts], a:[approximations], cut:string|array, s:[[title,url]]}` (a string `cut` gets the shared SCHLIEREN/THERMAL paragraphs appended).
+2D-only: `nxf, r, gl, skyG, hzk, hzg, hza, blk, mc, dk, bl, bd, pl, draw, rear`.
 
-**To add a machine** today you touch: `MC` entry (+ sim/audio/inset functions in script 1), a `buildX()` builder appended to `ENG`, a `CFG` entry, and the `plumeParams` / `emitters` / `thermalU` / flame-position branches keyed on `mi`. The refactor should turn this into one module per machine.
+### 3D side (`machines/<name>/three.js`) — fields
+
+`cfg:{box:[len,radius], sc, sh, cams:[[pos,target,halfWidthFit] x3 or 4], mt, space?, mars?}`, `build()` → `{G, E, anchor, lens, labels, flow, upd(dt)}` (plume runs along `anchor`'s local +X; labels/tracers in `E`'s local coords), `plume(u,fl)` → `[lightIntensity, lightColour]` (sets plume uniforms), `emit(dt,ax)`, `thermal(amb,nn,fh)`, `flame()` (flame-light position). Optional: `thFh(nn)`, `thR:[cold,ground]`, `flap()`, `inner()` (metal glow), `flowStr`, `flowSize`, `flowSpeed()`, `cam(P0,T0)` (Hall's EARTH view), `portrait` (swing round on portrait phones), `burst` (stall fireballs). A hook a machine leaves out gets the shared default.
+
+### Rules the split relies on
+
+- **Load order.** Modules do no work when they load except build constants. Listeners and DOM setup go in a module's `wireX()`, called from `main.js` in v11's order. Every three.js object is created inside `init3D` (`createX()` / `build()`), in v11's order: object ids and the random numbers three draws for UUIDs depend on it.
+- **Import cycles exist** (the machine table, controls and renderer modules reference each other). Anything read *while modules are loading* must be a function declaration; a `const` or default export read that early is silently `undefined` in the bundle. That's why `M3` is filled by `loadM3()` and `jet3d.js` exports only functions.
+- **Three.js stays out of the main chunk.** `npm run build` runs `tools/check-chunks.mjs`, which fails if the entry chunk reaches three, `render3d/` or a machine's `three.js` (`?r=2d` must never download three).
+- `npm run lint` (ESLint `no-undef`): a forgotten import would otherwise silently resolve to an element with that id (`hd`, `trk`, `tq` are both).
+
+**To add a machine:** create `src/machines/<name>/machine.js` (default export = the MC entry; its sim, voice, inset) and `src/machines/<name>/three.js` (default export `{cfg, build, plume, emit, thermal, flame, ...}`), then add it at the same position in `machines/index.js` and `machines/three.js`. Add its sources to `info.s` and `docs/SOURCES.md`. New ground types or scene sets go in `render3d/ground.js` / `render3d/scenes.js`.
 
 ## Non-negotiable conventions
 
@@ -70,7 +108,7 @@ Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim up
 ```js
 (s)=>{for(let t=0;t<s;t+=.05){seqTick(.05);keys(.05);update(.05)}}
 ```
-`G3.snap()` jumps the camera to its target. Click `#ov span` to start the engine. `act('view'|'exp'|'scn'|'lens'|'seq'|...)` mirrors the buttons.
+`G3.snap()` jumps the camera to its target. Click `#ov span` to start the engine. `act('view'|'exp'|'scn'|'lens'|'seq'|...)` mirrors the buttons. In the Vite app these names reach `window` through the test bridge (`src/debug/globals.js`): state keys are readable and assignable (`view=1`), functions are callable but can't be replaced from outside.
 
 **Golden suite (Node Playwright, the parity check for the Vite split):** `npm run snapshots` drives `throttle-up-v11.html` through 38 scenarios and writes 290 screenshots plus `manifest.json` to `snapshots/golden`. The scenarios cover:
 - every machine in every view, with cutaway, lenses and scenes, at power, and with INFO open;
@@ -85,9 +123,9 @@ The manifest records sim state, `Math.random` counts, an audio-parameter hash, I
 - three@0.160.0 is served from `node_modules`;
 - the Chromium flags make compositing deterministic.
 
-Check the Vite build with `npm run snapshots -- --serve snapshots/after` (it builds, starts `vite preview`, and runs the suite), then `npm run compare -- snapshots/golden snapshots/after`. That must report 0 differences. `--only <regex>` reruns selected scenarios into an existing folder; `compare --partial` compares only the scenarios a run contains. `snapshots/` is gitignored; regenerate it from v11 (about 6 min).
+Check the Vite build with `npm run snapshots -- --serve snapshots/after` (it builds, starts `vite preview`, and runs the suite), then `npm run compare -- snapshots/golden snapshots/after`. That must report 0 differences. `--only <regex>` reruns selected scenarios into an existing folder; `compare --partial` compares only the scenarios a run contains. `snapshots/` is gitignored; regenerate it from v11 (about 6 min). Any refactor that should not change behaviour must pass this. When a change is *meant* to alter what you see or hear, review the diff images in `snapshots/after/_diff/`, then make the build the new reference: `npm run snapshots -- --serve snapshots/golden`.
 
-`tools/legacy-tests/` holds the Playwright (Python) scripts used during development in a cloud sandbox with a software GPU. They're a starting point, not a suite: `t10.py M OUT` screenshots a machine through views/lenses/scenes, `t10s.py OUT` runs SEQUENCE for machines 6 and 7, `t11s.py` runs Hall + sky crane sequences and checks the 2D chip list, `t10f.py` cycles all machines/scenes/quality and REC, `r10_stall.py 0` is the compressor-stall regression in 2D. Needs `pip install playwright` and `playwright install chromium`. On a real GPU you can drop the SwiftShader flags in `h3.py`.
+`tools/legacy-tests/` holds the Playwright (Python) scripts used during development in a cloud sandbox with a software GPU. They're a starting point, not a suite: `t10.py M OUT` screenshots a machine through views/lenses/scenes, `t10s.py OUT` runs SEQUENCE for machines 6 and 7, `t11s.py` runs Hall + sky crane sequences and checks the 2D chip list, `t10f.py` cycles all machines/scenes/quality and REC, `r10_stall.py 0` is the compressor-stall regression in 2D. They test the running Vite app (`npm run dev`, or set `PAGE_URL`). Needs `pip install playwright` and `playwright install chromium` (the repo's `.venv` has both). On a real GPU you can drop the SwiftShader flags in `h3.py`.
 
 Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari, and listening on real speakers.
 
@@ -97,12 +135,13 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 - Saturn V schlieren is busy where the plume meets the deflector.
 - In the Hall EARTH view under the TERMINATOR scene the craft is a dark silhouette.
 - Propellers are drawn slower than real (anti-strobe), stated in INFO.
+- The SR-71 spike inset (`machines/sr-71/inset.js`) is never shown: the SR-71 entry has no `inset` flag, yet its INFO text about the inlet spike ends "Watch the inset." Inherited from v11 and kept for parity; fix it deliberately (add `inset:1`, check the phone layout).
 - All testing so far was software-rendered; performance on real phones unknown.
 
 ## Roadmap (agreed)
 
 1. **Make it shippable**
-   - Split into a Vite project, one module per machine (sim + builder + config + info together), shared renderer/HUD/audio modules. Behaviour identical to v11 — compare screenshots before/after.
+   - ~~Split into a Vite project, one module per machine (sim + builder + config + info together), shared renderer/HUD/audio modules. Behaviour identical to v11 — compare screenshots before/after.~~ Done (branch `refactor/vite-split`): identical to v11 on the full golden suite.
    - Git, then host on GitHub Pages or Cloudflare Pages; social preview image (Open Graph), favicon, privacy-friendly analytics.
    - Real-device test pass and fixes (performance budget for mid-range Android).
 2. **Game layer**
