@@ -104,6 +104,23 @@ function importLines(file, names, info, localOwner) {
   ];
 }
 
+// One import line per source in a generated file (pieces moved from different places bring their own lines).
+function mergeImports(text) {
+  const ast = parse(text, { sourceType: 'module', errorRecovery: true });   // duplicate imports are what we're fixing
+  const decls = ast.program.body.filter(st => st.type === 'ImportDeclaration');
+  if (decls.length < 2) return text;
+  const named = new Map(), other = [];
+  for (const st of decls) {
+    if (!st.specifiers.length || st.specifiers.some(s => s.type !== 'ImportSpecifier')) { const l = text.slice(st.start, st.end); if (!other.includes(l)) other.push(l); continue; }
+    const k = st.source.value;
+    for (const s of st.specifiers) (named.get(k) || named.set(k, new Set()).get(k)).add(s.local.name);
+  }
+  const lines = [...other, ...[...named].sort(([a], [b]) => a.localeCompare(b)).map(([k, ns]) => `import { ${[...ns].sort().join(', ')} } from '${k}';`)];
+  // replace the import block (contiguous in generated files)
+  const first = decls[0], last = decls[decls.length - 1];
+  return text.slice(0, first.start) + lines.join('\n') + text.slice(last.end);
+}
+
 const out = new Map();   // file (relative to src/) -> text
 const TB = analyse('machines/table.js'), BU = analyse('render3d/builders.js');
 const mcStmt = TB.stmts.find(s => s.names.includes('MC'));
@@ -135,9 +152,17 @@ for (const [f, ps] of pieces) {
   const imps = new Set();
   for (const p of ps) for (const l of importLines(f, p.uses, p.info, tableOwner(p.info))) imps.add(l);
   const body = [...ps.filter(p => !p.last), ...ps.filter(p => p.last)].map(p => p.text).join('');
-  out.set(f, `${HEAD[headKey](TITLE[i], i)}\n${[...imps].join('\n')}\n${body.replace(/^\n+/, '\n')}\n`);
+  out.set(f, mergeImports(`${HEAD[headKey](TITLE[i], i)}\n${[...imps].join('\n')}\n${body.replace(/^\n+/, '\n')}\n`));
 }
 
+// The RS-25 section header preceded gimb in table.js; it describes the shuttle's 2D drawing, so it goes there.
+if (UPTO >= 2) {
+  const G = 'machines/shared/gimbal.js', D = 'machines/shuttle/draw2d.js';
+  const hdr = '/* ---------- RS-25 (shuttle main engine): bell nozzle, near-invisible hydrogen plume with steam, gimbal ---------- */\n';
+  if (!out.get(G).includes(hdr)) throw new Error('RS-25 header not found');
+  out.set(G, out.get(G).replace(hdr, ''));
+  out.set(D, out.get(D).replace('\nexport function drawSS(', '\n' + hdr + 'export function drawSS('));
+}
 // three.js: base hooks file + builder (+ helpers) + cfg/build in the default export
 const MA = analyse('render3d/machine.js');
 let cfgArr = null;
@@ -151,7 +176,7 @@ for (let i = 0; i <= UPTO; i++) {
   const [first, ...rest] = base.split('\n');
   const body = rest.filter(l => !l.startsWith('import ')).join('\n').replace('export default {\n', `export default {\ncfg:${cfg},\nbuild:${BUILD[i]},\n`);
   const head = first.replace(': 3D renderer hooks (', ': the 3D side. Builder (the model), cfg (plume box, shadow area, camera presets, ground) and renderer hooks (');
-  out.set(f, `${head}\n${[...imps].join('\n')}\n${ps.map(p => p.text).join('').replace(/^\n+/, '\n')}\n${body.replace(/^\n+/, '\n')}`);
+  out.set(f, mergeImports(`${head}\n${[...imps].join('\n')}\n${ps.map(p => p.text).join('').replace(/^\n+/, '\n')}\n${body.replace(/^\n+/, '\n')}`));
 }
 
 // ---------- what stays: machines/table.js (-> index.js at the end), render3d/builders.js, render3d/machine.js ----------

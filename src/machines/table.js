@@ -4,66 +4,16 @@ import { master } from '../core/engine.js';
 import { state } from '../core/state.js';
 import { MONO, g, sm } from '../core/util.js';
 import { lab, say } from '../hud/controls.js';
-import { CUT_SCHLIEREN, CUT_THERMAL } from '../info/cut-text.js';
 import { applyRaw } from '../input/lever.js';
-import { EM, VP } from '../render2d/index.js';
-import { metal, sparks, stream } from '../render2d/jet.js';
-import { SP, blob } from '../render2d/sprites.js';
 import { SQ } from '../sequence/sequence.js';
 import m0 from './f-type/machine.js';
 import m1 from './sr-71/machine.js';
+import m2 from './shuttle/machine.js';
 
-/* RS-25: no whine at all. Deep thunder, a wide roar and hydrogen crackle; during start a hiss of chilldown vents */
-export function auSS(s,V,pm){const nn=state.N*state.fu;
- s(S.rum.gn.gain,(nn*1.25+state.ign*1.1)*(1+.14*Math.sin(state.simT*37)*Math.sin(state.simT*11+2)));s(S.rum.fl.frequency,60+state.N*95);
- s(S.roar.gn.gain,nn*nn*.5+state.ign*.55+state.sg*.07);s(S.roar.fl.frequency,state.sg>.05&&nn<.05?3200:180+state.N*950);
- s(S.crk.gn.gain,nn*(.3+Math.random()*.8)*(.8+V.raw)+state.ign*.4,.02);s(S.crk.fl.frequency,900+state.N*500);
- s(S.wh.gn.gain,0);s(S.wh2.gn.gain,0);s(S.sg.gn.gain,0);s(S.sg2.gn.gain,0)}
 /* ---------- machines: everything that differs between engines lives here ----------
    ab: has an afterburner zone (lever detent at MIL); stall: can surge; idle: spool target at lever 0; up/dn: spool time constants;
    coast: spin-down tau with fuel off; cN/cT: starter speed and duration; e/f: EGT and fuel-flow curves; teb: green light-off flash */
-export const MC=[m0,m1,{
- n:'RS-25',btn:'SHUTTLE',sub:'Space Shuttle main engine. Hydrogen and oxygen, no afterburner.',hint:'Drag the lever up. 100% is rated power, 109% is full.',
- nxf:.46,ab:0,stall:0,idle:.615,up:.8,dn:.35,coast:.35,cN:.03,cT:3.4,tk:[.9,.38],ign:1.2,lk:.6,e0f:60,lt:1.2,teb:0,
- e:[20,60,0],f:[0,1134,1,0],off:'CUTOFF',st:'PRIMING',cl:'SHUTDOWN',cut:'Engine cutoff.',wait:'Wait for shutdown to finish.',
- r:()=>74*state.u,shk:()=>state.N*state.N*2.4*state.fu+state.kick*10,
- gl:()=>[state.N*state.N*.15*state.fu+state.ign*.2,200+state.N*520],skyG:()=>state.N*state.N*.3*state.fu+state.ign*.15,
- hzk:()=>state.N*state.N*.85*state.fu,hzg:()=>[105,260+state.N*state.N*700*state.fu],hza:()=>1+state.N*3.4*state.fu,blk:()=>state.N*state.N*.22*state.fu+state.kick*.3+state.ign*.2,
- g:[{t:'THR',cap:'THRUST %',min:0,max:120,maj:20,mn:10,red:109.5,d:1,f:v=>v|0},
-    {t:'Pc',cap:'Pc psia x100',min:0,max:35,maj:10,mn:5,red:30,d:1,f:v=>(v*100)|0},
-    {t:'FLOW',cap:'lb/s x100',min:0,max:1200,maj:200,mn:100,red:1150,d:100,f:v=>v|0}],
- gv:()=>[state.N*109,state.N*29.94*state.fu,state.F],   /* 2,994 psia is the published figure at 109%; other levels scaled with thrust */
- lv:[['109% FPL',1,'t'],['104.5%',.89],['100% RATED',.78],['67% MIN',0,'b']],
- lp:()=>[['RATED',state.N>=.915&&state.fu>.9,'#3fcf7a'],['FPL',state.N>.995,'#e0392b']],
- mc:[[0,'#1a1e26'],[.35,'#4a5160'],[.5,'#6a7282'],[.65,'#3a404c'],[1,'#12151b']],dk:1,bl:0,
- bd:{ts:250,xt:0,hh:20,fh:74,doors:0},pl:null,
- spike:0,draw:drawSS,rear:rearSS,au:auSS,
- sqc:'BURN-OFF IGNITERS, THEN ENGINE START',
- sq:[{cap:'MAINSTAGE  67%',slow:.4,wait:1.3},
-  {cap:'THROTTLE UP  100% RATED',slow:1,lever:.78,dur:2},
-  {cap:'104.5%',lever:.89,dur:1.3,wait:.5},
-  {cap:'FULL POWER LEVEL  109%',lever:1,dur:1.4,view:1},
-  {cap:'109%',wait:3.2,view:2},
-  {cap:'109%',wait:2.2,view:0},
-  {cap:'THROTTLE DOWN  67%',lever:0,dur:2.4},
-  {cap:'ENGINE CUTOFF',do:()=>master(),wait:3}],
- info:{cut:['CUTAWAY removes half of the bell and chamber. Blue dots are liquid hydrogen (down the steerhorn and up through the nozzle cooling tubes), pale cyan is liquid oxygen, violet-white is the burning gas expanding through the throat and bell. Speeds are slowed enormously so you can follow them.',CUT_SCHLIEREN,CUT_THERMAL],f:['The RS-25 is the Space Shuttle main engine. It burns liquid hydrogen with liquid oxygen, at about 6 to 1 by mass.',
-  'Throttle range is 67% to 109% of rated power in 1% steps (some NASA documents give 65% as the floor). 100% is rated power, about 470,000 lbf in vacuum. 104.5% is the normal power level and 109% is full power level.',
-  'Published figures: chamber pressure 2,994 psia at 109%, and a total propellant flow of about 1,134 lb/s.',
-  'Start: the start command comes 6.6 seconds before liftoff, and all three engines must reach 90% of rated thrust by T-3 seconds or the launch is aborted on the pad. The chamber spark igniters switch off after about 3 seconds.',
-  'Hydrogen burn-off igniters fire at T-10 seconds, 3.4 seconds before engine start, showering zirconium sparks to burn off stray hydrogen. They are the sparklers during the start here.',
-  'Each engine gimbals up to ±10.5° in pitch and yaw to steer the vehicle.',
-  'Hydrogen and oxygen burn to water, so the flame is pale and nearly transparent and the plume is mostly steam.'],
-  a:['I only found the chamber pressure for 109%. At other power levels the dial scales it in proportion to thrust.',
-  'The toy swings the gimbal only a few degrees so you can see it. The real range is ±10.5°.',
-  'The engine runs on its own at sea level. Lever zero is the 67% minimum, and the thrust build-up after ignition is a guess.',
-  'The engine and test stand are simplified hand-built models. The stand is styled after the vertical stands at NASA Stennis, where RS-25s fire down into a flame deflector, but it is not a copy of any one stand.',
-  'The sound is synthesized.'],
-  s:[['RS-25 (Wikipedia)','https://en.wikipedia.org/wiki/RS-25'],
-   ['RS-25 engine (L3Harris)','https://l3harris.com/all-capabilities/rs-25-engine'],
-   ['Space Shuttle main propulsion system (GlobalSecurity)','https://www.globalsecurity.org/space/library/report/1988/sts-mps.html'],
-   ['Heritage hardware: the hydrogen burn-off system (NASASpaceflight)','https://www.nasaspaceflight.com/2015/06/heritage-hardware-hydrogen-burn-off-system-sls/']]}
-},{clu:dt=>orbStep(dt),reset:()=>orbReset(),insetF:orbitInset,warpName:i=>WN[i],
+export const MC=[m0,m1,m2,{clu:dt=>orbStep(dt),reset:()=>orbReset(),insetF:orbitInset,warpName:i=>WN[i],
  n:'HALL THRUSTER',btn:'HALL',need3d:1,space:1,warp:1,orbit:1,inset:1,sub:'Solar-electric Hall thruster in Earth orbit. Quiet, faint, relentless.',hint:'Drag the lever for more power, then try TIME WARP.',
  nxf:.4,ab:0,stall:0,idle:.2,up:.7,dn:.4,coast:.12,cN:0,cT:4.2,tk:[1.2,.6],ign:.9,lk:.08,e0f:30,lt:.22,teb:0,
  e:[20,320,0],f:[0,0,1,0],off:'OFF',st:'HEATER',cl:'PLASMA OFF',cut:'Discharge off.',wait:'Wait a moment before restarting.',
@@ -316,84 +266,6 @@ export function auHT(s,V,pm){const nn=state.N*state.fu;
  s(S.roar.gn.gain,state.ign*.12);s(S.roar.fl.frequency,1800);s(S.crk.gn.gain,0);
  s(S.wh.gn.gain,nn*.01+state.sg*.004);s(S.osc.frequency,(1500+nn*700)*pm);s(S.wh.fl.frequency,2600);
  s(S.wh2.gn.gain,0);s(S.sg.gn.gain,state.sg*.015);s(S.so.frequency,100*pm);s(S.sg.fl.frequency,300);s(S.sg2.gn.gain,0)}
-
-/* ---------- RS-25 (shuttle main engine): bell nozzle, near-invisible hydrogen plume with steam, gimbal ---------- */
-export const gimb=()=>.05*sm(.45,1,state.N)*state.fu*(Math.sin(state.simT*.8)*.6+Math.sin(state.simT*1.9+1)*.4)+.004*state.N*Math.sin(state.simT*23);
-export function drawSS(r,dt){
- const ts=state.nx-220*state.u,px=ts-64*state.u,gm=gimb();
- g.save();g.translate(px,state.ny);g.rotate(gm);g.translate(-px,-state.ny);plumeSS(r,dt);bellSS(r,ts,px);g.restore();baySS(px,gm)}
-export function plumeSS(r,dt){
- g.globalCompositeOperation='lighter';const T=state.simT,fl=.94+.06*Math.sin(T*61)*Math.sin(T*37+1),nn=state.N*state.fu;
- const gr=(200+nn*520)*state.u,rg=g.createRadialGradient(state.nx+140*state.u,state.ny,0,state.nx+140*state.u,state.ny,gr);
- rg.addColorStop(0,`rgba(150,175,255,${(nn*nn*.15+state.ign*.2)*fl})`);rg.addColorStop(.55,`rgba(255,150,90,${(nn*nn*.04+state.ign*.05)*fl})`);rg.addColorStop(1,'rgba(255,120,40,0)');
- g.globalAlpha=1;g.fillStyle=rg;g.fillRect(-state.W,-state.H,state.W*3,state.H*3);
- const len=(260+nn*nn*520)*state.u*(1+state.kick*.2);
- if(nn>.02){
-  const qf=state.Q>1?1:.65;   /* fewer, brighter sprites when the frame rate is struggling */
-  stream(len*1.05,r,nn*fl*.23/qf,Math.round(28*qf),T,[SP.l,SP.b,SP.b,SP.o],0);
-  stream(len*.72,r*.78,nn*fl*.3/qf,Math.round(24*qf),T+2,[SP.c,SP.b,SP.l],1);
-  stream(len*.2,r*.5,nn*fl*.16/qf,Math.round(12*qf),T+4,[SP.w,SP.c,SP.b],2);
-  blob(SP.w,state.nx+6*state.u,state.ny,r*.7,r*1.8,nn*.28*fl)}
- if(state.ign>.02)stream((70+170*state.ign)*state.u,r*1.05,state.ign*.7,26,T*1.3,[SP.y,SP.o,SP.o,SP.r],5);
- /* burn-off igniters during priming: sparklers under the bell */
- if(state.ph==1&&state.st>.5){let n=dt*50;n=Math.floor(n)+(Math.random()<n%1?1:0);for(;n>0&&EM.length<120;n--)EM.push({x:state.nx+Math.random()*40*state.u,y:state.ny+(Math.random()-.5)*r*1.8,vx:(30+Math.random()*170)*state.u,vy:-Math.random()*240*state.u,l:0,m:.5+Math.random()*.6})}
- sparks(dt);
- /* diamonds: bright pale rings close to the exit */
- const dn=4+Math.floor(nn*3),sp=r*(1.05+nn*.15),da=sm(.45,1,nn)*.9;
- for(let i=0;i<dn;i++){const a=da*(1-i/(dn+1))*(.85+.15*Math.sin(T*90+i*2)),rr=Math.max(2,r*(.66-i*.075)),x=state.nx+(i+.9)*sp;
-  blob(SP.b,x,state.ny,sp*.95,rr*2.1,a*.6);blob(SP.w,x,state.ny,sp*.42,rr*.9,a*.8)}
- /* steam: water vapour drifting off the plume */
- let n=nn*dt*(state.Q>1?16:9);n=Math.floor(n)+(Math.random()<n%1?1:0);
- for(;n>0&&VP.length<(state.Q>1?70:34);n--)VP.push({x:state.nx+Math.random()*70*state.u,y:state.ny+(Math.random()-.5)*r*2.1,vx:(40+Math.random()*130)*state.u,vy:-(20+Math.random()*80)*state.u,l:0,m:1.6+Math.random()*1.4,s:(40+Math.random()*50)*state.u});
- g.globalCompositeOperation='source-over';
- for(let i=VP.length-1;i>=0;i--){const p=VP[i];p.l+=dt;if(p.l>p.m){VP[i]=VP[VP.length-1];VP.pop();continue}
-  p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy-=14*state.u*dt;p.vx*=Math.exp(-dt*.5);const f=p.l/p.m,z=p.s*(1+1.6*f);blob(SP.s,p.x,p.y,z,z,(f<.2?f/.2:1)*(1-f)*(.09+.18*nn))}
- g.globalCompositeOperation='lighter';g.globalAlpha=1}
-/* bell: chamber barrel, throat, parabola-ish contour with cooling-tube lines and stiffening rings */
-export function bellSS(r,ts,px){
- const rth=11*state.u,len=state.nx-ts,h=t=>rth+(r-rth)*(1-Math.pow(1-t,1.8)),n=26,mr=22*state.u;
- g.globalCompositeOperation='source-over';g.globalAlpha=1;
- let gd=g.createLinearGradient(0,state.ny-mr,0,state.ny+mr);[[0,'#2a2f3a'],[.4,'#8f99aa'],[.55,'#c4cbd6'],[1,'#20252f']].forEach(s=>gd.addColorStop(s[0],s[1]));
- g.fillStyle=gd;g.beginPath();g.moveTo(px,state.ny-mr);g.lineTo(ts-26*state.u,state.ny-mr);g.lineTo(ts,state.ny-rth);g.lineTo(ts,state.ny+rth);g.lineTo(ts-26*state.u,state.ny+mr);g.lineTo(px,state.ny+mr);g.closePath();g.fill();
- gd=g.createLinearGradient(0,state.ny-r,0,state.ny+r);[[0,'#4a3320'],[.3,'#b88c52'],[.5,'#e6c48c'],[.7,'#a0743a'],[1,'#2e1e10']].forEach(s=>gd.addColorStop(s[0],s[1]));
- g.beginPath();g.moveTo(ts,state.ny-rth);for(let i=1;i<=n;i++){const t=i/n;g.lineTo(ts+t*len,state.ny-h(t))}
- for(let i=n;i>=0;i--){const t=i/n;g.lineTo(ts+t*len,state.ny+h(t))}g.closePath();g.fillStyle=gd;g.fill();
- g.strokeStyle='rgba(30,18,8,.38)';g.lineWidth=1.2*state.u;
- for(let k=-4;k<=4;k++){const f=k/4.6;g.beginPath();for(let i=0;i<=n;i++){const t=i/n,y=state.ny+f*h(t);i?g.lineTo(ts+t*len,y):g.moveTo(ts+t*len,y)}g.stroke()}
- g.strokeStyle='rgba(20,12,4,.55)';g.lineWidth=2.2*state.u;[.3,.58,.84].forEach(t=>{g.beginPath();g.moveTo(ts+t*len,state.ny-h(t));g.lineTo(ts+t*len,state.ny+h(t));g.stroke()});
- g.strokeStyle='rgba(235,225,205,.7)';g.lineWidth=2.5*state.u;g.beginPath();g.moveTo(state.nx,state.ny-r);g.lineTo(state.nx,state.ny+r);g.stroke();
- g.strokeStyle='rgba(0,0,0,.5)';g.lineWidth=2*state.u;g.beginPath();g.moveTo(ts,state.ny-rth);g.lineTo(ts,state.ny+rth);g.stroke()}
-/* engine bay behind the gimbal: sealed casing, or exposed pumps, ducts and the two gimbal actuators */
-export function baySS(px,gm){
- const fh=74*state.u,bx=px-4*state.u,co=Math.cos(gm),si=Math.sin(gm),rot=(dx,dy)=>[px+dx*co-dy*si,state.ny+dx*si+dy*co];
- g.globalCompositeOperation='source-over';g.globalAlpha=1;
- if(!state.exposed){g.fillStyle=metal(fh);g.fillRect(-60,state.ny-fh,bx+60,fh*2);g.fillStyle='#0a0c10';g.fillRect(bx-3*state.u,state.ny-fh,3*state.u,fh*2);return}
- g.fillStyle='#0b0d11';g.fillRect(-60,state.ny-fh,bx+60,fh*2);
- const cyl=(x,y0,y1,w)=>{const gd=g.createLinearGradient(x-w/2,0,x+w/2,0);gd.addColorStop(0,'#1d2330');gd.addColorStop(.4,'#8f99aa');gd.addColorStop(1,'#20262f');g.fillStyle=gd;g.fillRect(x-w/2,y0,w,y1-y0)};
- cyl(px-100*state.u,state.ny-fh*.93,state.ny-10*state.u,40*state.u);cyl(px-52*state.u,state.ny+10*state.u,state.ny+fh*.93,36*state.u);
- g.lineCap='round';
- g.strokeStyle='#b0703a';g.lineWidth=9*state.u;g.beginPath();g.moveTo(px-84*state.u,state.ny-36*state.u);g.lineTo(bx-4*state.u,state.ny-26*state.u);g.stroke();
- g.strokeStyle='#8f99aa';g.lineWidth=7*state.u;g.beginPath();g.moveTo(px-38*state.u,state.ny+34*state.u);g.lineTo(bx-4*state.u,state.ny+22*state.u);g.stroke();
- g.strokeStyle='rgba(255,255,255,.25)';g.lineWidth=1.5*state.u;g.beginPath();g.moveTo(px-84*state.u,state.ny-39*state.u);g.lineTo(bx-4*state.u,state.ny-29*state.u);g.moveTo(px-38*state.u,state.ny+31*state.u);g.lineTo(bx-4*state.u,state.ny+19*state.u);g.stroke();
- [[-1,-26],[1,26]].forEach(a=>{const ax=px-135*state.u,ay=state.ny+a[0]*fh*.9,l=rot(14*state.u,a[1]*state.u),mx=ax+(l[0]-ax)*.55,my=ay+(l[1]-ay)*.55;
-  g.strokeStyle='#2a313d';g.lineWidth=11*state.u;g.beginPath();g.moveTo(ax,ay);g.lineTo(mx,my);g.stroke();
-  g.strokeStyle='#c4cbd6';g.lineWidth=4*state.u;g.beginPath();g.moveTo(mx,my);g.lineTo(l[0],l[1]);g.stroke();
-  g.fillStyle='#e4e8ee';g.beginPath();g.arc(l[0],l[1],3.2*state.u,0,6.283);g.fill();g.beginPath();g.arc(ax,ay,3.4*state.u,0,6.283);g.fill()});
- g.lineCap='butt'}
-/* rear view: looking up the bell, tube-wall rings shrinking to a glowing throat */
-export function rearSS(){
- const cx=state.W*.44,cy=state.H*.5,T=state.simT,R=Math.min(state.W,state.H)*.34,nn=state.N*state.fu,fl=.94+.06*Math.sin(T*61)*Math.sin(T*37+1),rth=R*.13;
- g.globalCompositeOperation='source-over';g.globalAlpha=1;
- let gd=g.createRadialGradient(cx,cy,R,cx,cy,R*1.4);gd.addColorStop(0,'#3a404c');gd.addColorStop(1,'#10131a');g.fillStyle=gd;g.beginPath();g.arc(cx,cy,R*1.4,0,6.283);g.fill();
- for(let i=0;i<16;i++){const t=i/16,rr=R*(1-Math.pow(t,.7)*.87),b=(1-t*.9)*.3;g.fillStyle=`rgb(${190*b|0},${140*b|0},${84*b|0})`;g.beginPath();g.arc(cx,cy,rr,0,6.283);g.fill();g.strokeStyle='rgba(20,12,4,.35)';g.lineWidth=1.2;g.stroke()}
- g.strokeStyle='rgba(20,12,4,.22)';g.lineWidth=1;g.beginPath();for(let k=0;k<96;k++){const a=k/96*6.283;g.moveTo(cx+Math.cos(a)*rth,cy+Math.sin(a)*rth);g.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R)}g.stroke();
- g.fillStyle='#02030a';g.beginPath();g.arc(cx,cy,rth*.9,0,6.283);g.fill();
- g.globalCompositeOperation='lighter';
- gd=g.createRadialGradient(cx,cy,0,cx,cy,R);gd.addColorStop(0,`rgba(190,210,255,${nn*.7*fl})`);gd.addColorStop(.5,`rgba(120,150,255,${nn*.22*fl})`);gd.addColorStop(1,`rgba(255,140,80,${nn*.05})`);
- g.fillStyle=gd;g.beginPath();g.arc(cx,cy,R,0,6.283);g.fill();
- blob(SP.w,cx,cy,rth*4.5,rth*4.5,nn*.8*fl);blob(SP.c,cx,cy,R*.8,R*.8,nn*.35*fl);
- g.lineWidth=3;for(let i=0;i<4;i++){g.strokeStyle=`rgba(210,225,255,${nn*.4*(1-i/5)})`;g.beginPath();g.arc(cx,cy,R*(.2+i*.09),0,6.283);g.stroke()}
- blob(SP.y,cx,cy,R*2.4,R*2.4,state.ign*.8);blob(SP.o,cx,cy,R*4,R*4,nn*.05*fl);g.globalAlpha=1}
 /* turboprop panel: a blade section at its pitch angle to the plane of rotation, the thrust arrow, and where the thrust comes from */
 export function propInset(x,y,w,h){
  g.globalCompositeOperation='source-over';g.globalAlpha=1;g.fillStyle='rgba(14,17,24,.85)';g.strokeStyle='#2a3040';g.lineWidth=1;g.fillRect(x,y,w,h);g.strokeRect(x+.5,y+.5,w-1,h-1);

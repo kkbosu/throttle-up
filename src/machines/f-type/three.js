@@ -1,11 +1,11 @@
 // F-TYPE: the 3D side. Builder (the model), cfg (plume box, shadow area, camera presets, ground) and renderer hooks (plume, particles, thermal lens, flame light, tracers).
-import { jetEmit, jetFlame, jetFlowSpeed, jetInner, jetPlume, jetThFh, jetThermal } from '../shared/jet3d.js';
-import { state } from '../../core/state.js';
 import * as T from 'three';
+import { state } from '../../core/state.js';
 import { sm } from '../../core/util.js';
 import { padTex } from '../../render3d/ground.js';
 import { CAT, MT, V3, beam, bolts, box, cyl, lathe, onCase, pipe, ring, std } from '../../render3d/kit.js';
 import { blastFence, hangar, lightPole } from '../../render3d/props.js';
+import { jetEmit, jetFlame, jetFlowSpeed, jetInner, jetPlume, jetThFh, jetThermal } from '../shared/jet3d.js';
 
 /* ======================= F-TYPE: afterburning turbofan on an open-air test stand ======================= */
 export function buildF(){const G=new T.Group(),E=new T.Group();E.position.set(0,1.65,0);G.add(E);

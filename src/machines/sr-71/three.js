@@ -1,11 +1,11 @@
 // SR-71 J58: the 3D side. Builder (the model), cfg (plume box, shadow area, camera presets, ground) and renderer hooks (plume, particles, thermal lens, flame light, tracers).
-import { jetEmit, jetFlame, jetFlowSpeed, jetInner, jetPlume, jetThFh, jetThermal } from '../shared/jet3d.js';
 import * as T from 'three';
 import { state } from '../../core/state.js';
 import { sm } from '../../core/util.js';
 import { padTex } from '../../render3d/ground.js';
 import { CAT, MT, V3, beam, bladeRing, box, cyl, halfRing, lathe, onCase, pipe, ring, std } from '../../render3d/kit.js';
 import { blastFence, hangar, lightPole } from '../../render3d/props.js';
+import { jetEmit, jetFlame, jetFlowSpeed, jetInner, jetPlume, jetThFh, jetThermal } from '../shared/jet3d.js';
 
 /* ======================= SR-71: J58 in its nacelle (spike, cowl, blow-in doors, ejector) on cradles ======================= */
 export function buildSR(){const G=new T.Group(),E=new T.Group();E.position.set(0,2.05,0);G.add(E);

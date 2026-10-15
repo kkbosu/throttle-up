@@ -1,12 +1,12 @@
 // SR-71 J58: the machine's table entry (engine model numbers, gauges, lamps, lever labels, SEQUENCE, INFO with sources)
 // plus its own simulation and synthesized voice.
 import { S } from '../../audio/audio.js';
-import { state } from '../../core/state.js';
 import { master } from '../../core/engine.js';
+import { state } from '../../core/state.js';
 import { CUT_SCHLIEREN, CUT_THERMAL } from '../../info/cut-text.js';
-import { spikeInset } from './inset.js';
 import { body, plume, rear } from '../../render2d/jet.js';
 import { SP } from '../../render2d/sprites.js';
+import { spikeInset } from './inset.js';
 
 /* J58: bigger, lower, rougher. Slow rolling rumble, deeper whine, harder crackle; the starter is a pair of V8 start-cart engines burbling */
 export function auSR(s,V,pm){const bur=.62+.38*Math.sin(state.simT*55)*Math.sin(state.simT*37+1);

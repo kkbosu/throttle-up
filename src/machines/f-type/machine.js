@@ -1,8 +1,8 @@
 // F-TYPE: the machine's table entry (engine model numbers, gauges, lamps, lever labels, SEQUENCE, INFO with sources)
 // plus its own simulation and synthesized voice.
 import { S } from '../../audio/audio.js';
-import { state } from '../../core/state.js';
 import { master } from '../../core/engine.js';
+import { state } from '../../core/state.js';
 import { CUT_SCHLIEREN, CUT_THERMAL } from '../../info/cut-text.js';
 import { body, plume, rear } from '../../render2d/jet.js';
 import { SP } from '../../render2d/sprites.js';
