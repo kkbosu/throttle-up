@@ -5,7 +5,10 @@ import { M3 } from '../machines/three.js';
 // assigned by create*() below, when init3D runs
 export let ENG;
 
-export function createBuilders(){
-
-ENG=M3.map(m=>m.build());ENG.forEach(e=>{scn.add(e.G);e.G.visible=false});
+export function createBuilders() {
+  ENG = M3.map((m) => m.build());
+  ENG.forEach((e) => {
+    scn.add(e.G);
+    e.G.visible = false;
+  });
 }

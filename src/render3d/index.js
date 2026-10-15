@@ -28,27 +28,45 @@ import { createSky } from './sky.js';
    (ray-marched, stops at scene depth, alpha carries heat for the haze); composite (haze + plume + flash)
    -> bloom -> ACES tone map.
    ===================================================================================== */
-export function init3D(){
-loadM3();
-createContext();
-createKit();
-createSky();
-createLights();
-createScenes();
-createGround();
-createEarth();
-createBuilders();
-createPlume();
-createParticles();
-createComposite();
-createMachine();
-createCamera();
-createPlume2();
-createParticles2();
-createLenses();
-createFlow();
-createFrame();
-createOverlay();
-createFrame2();
-setup();applyScene(state.scene);applyMachine();
-return{canvas:glc,render,overlay,resize:()=>{k3.QA=-1},surge:()=>{k3.fire=1;burst(14,true)},snap:()=>{k3.camSnap=true},R}}
+export function init3D() {
+  loadM3();
+  createContext();
+  createKit();
+  createSky();
+  createLights();
+  createScenes();
+  createGround();
+  createEarth();
+  createBuilders();
+  createPlume();
+  createParticles();
+  createComposite();
+  createMachine();
+  createCamera();
+  createPlume2();
+  createParticles2();
+  createLenses();
+  createFlow();
+  createFrame();
+  createOverlay();
+  createFrame2();
+  setup();
+  applyScene(state.scene);
+  applyMachine();
+  return {
+    canvas: glc,
+    render,
+    overlay,
+    resize: () => {
+      k3.QA = -1;
+    },
+    surge: () => {
+      k3.fire = 1;
+      burst(14, true);
+    },
+    snap: () => {
+      k3.camSnap = true;
+    },
+    R,
+  };
+}

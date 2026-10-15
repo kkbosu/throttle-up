@@ -7,18 +7,56 @@ import { k3 } from './context.js';
 import { V3, cam, pscn } from './kit.js';
 
 // assigned by create*() below, when init3D runs
-export let PU,plMat,C;
+export let PU, plMat, C;
 
-export function createPlume(){
-
-/* ======================= volumetric plume (ray-marched, half resolution) ======================= */
-PU={uInv:{value:new T.Matrix4()},uFwd:{value:V3()},tDepth:{value:null},uPRes:{value:new T.Vector2(1,1)},uNear:{value:cam.near},uFar:{value:cam.far},
- uT:{value:0},uLen:{value:5},uR0:{value:.4},uSp:{value:.05},uI:{value:0},uTurb:{value:.5},uSteps:{value:28},uHeat:{value:0},uHeatLen:{value:3},uGreen:{value:0},uFire:{value:0},
- uDia:{value:0},uDiaSp:{value:1},uDiaN:{value:3},uDiaOff:{value:.3},uDisk:{value:0},uDiaR:{value:.6},uBox:{value:new T.Vector2(14,2.5)},
- uAnn:{value:0},uCl:{value:0},uO:{value:[0,1,2,3,4].map(()=>new T.Vector2())},uW:{value:[0,0,0,0,0]},uMR:{value:4},uMg:{value:new T.Vector2(3,10)},uC0:{value:V3()},uC1:{value:V3()},uC2:{value:V3()},uC3:{value:V3()},uDC:{value:V3()},uGC:{value:V3(.25,1.9,.55)}};
-plMat=new T.ShaderMaterial({uniforms:PU,side:T.BackSide,depthTest:false,depthWrite:false,blending:T.NoBlending,
- vertexShader:`varying vec3 vW;void main(){vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
- fragmentShader:`#include <packing>
+export function createPlume() {
+  /* ======================= volumetric plume (ray-marched, half resolution) ======================= */
+  PU = {
+    uInv: { value: new T.Matrix4() },
+    uFwd: { value: V3() },
+    tDepth: { value: null },
+    uPRes: { value: new T.Vector2(1, 1) },
+    uNear: { value: cam.near },
+    uFar: { value: cam.far },
+    uT: { value: 0 },
+    uLen: { value: 5 },
+    uR0: { value: 0.4 },
+    uSp: { value: 0.05 },
+    uI: { value: 0 },
+    uTurb: { value: 0.5 },
+    uSteps: { value: 28 },
+    uHeat: { value: 0 },
+    uHeatLen: { value: 3 },
+    uGreen: { value: 0 },
+    uFire: { value: 0 },
+    uDia: { value: 0 },
+    uDiaSp: { value: 1 },
+    uDiaN: { value: 3 },
+    uDiaOff: { value: 0.3 },
+    uDisk: { value: 0 },
+    uDiaR: { value: 0.6 },
+    uBox: { value: new T.Vector2(14, 2.5) },
+    uAnn: { value: 0 },
+    uCl: { value: 0 },
+    uO: { value: [0, 1, 2, 3, 4].map(() => new T.Vector2()) },
+    uW: { value: [0, 0, 0, 0, 0] },
+    uMR: { value: 4 },
+    uMg: { value: new T.Vector2(3, 10) },
+    uC0: { value: V3() },
+    uC1: { value: V3() },
+    uC2: { value: V3() },
+    uC3: { value: V3() },
+    uDC: { value: V3() },
+    uGC: { value: V3(0.25, 1.9, 0.55) },
+  };
+  plMat = new T.ShaderMaterial({
+    uniforms: PU,
+    side: T.BackSide,
+    depthTest: false,
+    depthWrite: false,
+    blending: T.NoBlending,
+    vertexShader: `varying vec3 vW;void main(){vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
+    fragmentShader: `#include <packing>
  uniform mat4 uInv;uniform vec3 uFwd;uniform sampler2D tDepth;uniform vec2 uPRes,uBox;uniform float uNear,uFar;
  uniform float uT,uLen,uR0,uSp,uI,uTurb,uSteps,uHeat,uHeatLen,uGreen,uFire,uDia,uDiaSp,uDiaN,uDiaOff,uDisk,uDiaR,uAnn,uCl,uMR;uniform vec2 uO[5],uMg;uniform float uW[5];
  uniform vec3 uC0,uC1,uC2,uC3,uDC,uGC;varying vec3 vW;
@@ -49,19 +87,37 @@ plMat=new T.ShaderMaterial({uniforms:PU,side:T.BackSide,depthTest:false,depthWri
     e+=uDC*mix(lens,disk,uDisk)*exp(-x/(uDiaSp*uDiaN))*uDia*(.75+.5*nz);}
    e=mix(e,uGC*dot(e,vec3(.34)),clamp(uGreen*exp(-u*1.2),0.,1.));
    c+=e*dt;ht+=(uCl>.5?core:exp(-pow(r/(R*1.4),2.)))*exp(-x/uHeatLen)*(.4+1.2*nz)*dt;}
-  gl_FragColor=vec4(c,ht*uHeat);}`});
-k3.plume=null;
+  gl_FragColor=vec4(c,ht*uHeat);}`,
+  });
+  k3.plume = null;
 }
 
-export function createPlume2(){
-
-/* ======================= per-frame plume parameters from the simulation ======================= */
-C=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
-k3.fire=0;
+export function createPlume2() {
+  /* ======================= per-frame plume parameters from the simulation ======================= */
+  C = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  k3.fire = 0;
 }
 
-export function setPlumeBox(L,Rm){if(k3.plume){pscn.remove(k3.plume);k3.plume.geometry.dispose()}const g=new T.BoxGeometry(L,Rm*2,Rm*2);g.translate(L/2,0,0);k3.plume=new T.Mesh(g,plMat);k3.plume.matrixAutoUpdate=false;k3.plume.frustumCulled=false;pscn.add(k3.plume);PU.uBox.value.set(L,Rm)}
-export function plumeParams(dt){const fl=.93+.07*Math.sin(state.simT*47)*Math.sin(state.simT*29+1),u=PU;let lc=[1,.6,.3],li=0;
- k3.fire*=Math.exp(-dt*3.2);k3.fire=Math.max(k3.fire,state.sT>0?state.ign*.5:0);
- [li,lc]=M3[state.mi].plume(u,fl)
- return[li*fl,lc]}
+export function setPlumeBox(L, Rm) {
+  if (k3.plume) {
+    pscn.remove(k3.plume);
+    k3.plume.geometry.dispose();
+  }
+  const g = new T.BoxGeometry(L, Rm * 2, Rm * 2);
+  g.translate(L / 2, 0, 0);
+  k3.plume = new T.Mesh(g, plMat);
+  k3.plume.matrixAutoUpdate = false;
+  k3.plume.frustumCulled = false;
+  pscn.add(k3.plume);
+  PU.uBox.value.set(L, Rm);
+}
+export function plumeParams(dt) {
+  const fl = 0.93 + 0.07 * Math.sin(state.simT * 47) * Math.sin(state.simT * 29 + 1),
+    u = PU;
+  let lc = [1, 0.6, 0.3],
+    li = 0;
+  k3.fire *= Math.exp(-dt * 3.2);
+  k3.fire = Math.max(k3.fire, state.sT > 0 ? state.ign * 0.5 : 0);
+  [li, lc] = M3[state.mi].plume(u, fl);
+  return [li * fl, lc];
+}

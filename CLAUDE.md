@@ -23,7 +23,7 @@ Machines 0–2 also have a hand-drawn 2D canvas renderer (fallback). Machines wi
 
 ## Architecture
 
-`index.html` (markup) + `src/style.css` + `src/main.js`. The code was moved verbatim from v11 by scripts, so it is still in v11's dense style; module and variable names below are the v11 names.
+`index.html` (markup) + `src/style.css` + `src/main.js`. The code was moved verbatim from v11 by scripts and then formatted with Prettier (`npm run format`; `.prettierrc.json`, 120 columns), so variable names are still v11's short ones (`N`, `E`, `fu`, `hg` ... see the state list below).
 
 ```
 src/
@@ -157,5 +157,6 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 ## Working style for this project
 
 - Small, verifiable steps; run the page after every change. Keep diffs focused.
+- Before committing: `npm run format`, `npm run lint`, `npm run build` (includes the chunk check). For changes that shouldn't alter behaviour, also the golden suite (see Testing).
 - Before adding facts, find a source; record it in `info.s` and `docs/SOURCES.md`.
 - Kingsley is a software developer (C#/.NET, Next.js), not an aerospace engineer — explain physics choices briefly in plain language when they matter.

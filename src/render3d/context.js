@@ -3,6 +3,6 @@
 // assigned by create*() below, when init3D runs
 export let k3;
 
-export function createContext(){k3={};
+export function createContext() {
+  k3 = {};
 }
-

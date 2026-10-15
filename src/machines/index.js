@@ -11,4 +11,4 @@ import m7 from './sky-crane/machine.js';
 /* ---------- machines: everything that differs between engines lives here ----------
    ab: has an afterburner zone (lever detent at MIL); stall: can surge; idle: spool target at lever 0; up/dn: spool time constants;
    coast: spin-down tau with fuel off; cN/cT: starter speed and duration; e/f: EGT and fuel-flow curves; teb: green light-off flash */
-export const MC=[m0,m1,m2,m3,m4,m5,m6,m7];
+export const MC = [m0, m1, m2, m3, m4, m5, m6, m7];
