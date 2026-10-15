@@ -1,8 +1,7 @@
 // The machine table MC and every machine-specific helper (sim steps, voices, insets, RS-25 2D drawing). Split into src/machines/<name>/ in step 5.
 import { S, thump } from '../audio/audio.js';
-import { master } from '../core/engine.js';
 import { state } from '../core/state.js';
-import { MONO, g, sm } from '../core/util.js';
+import { MONO, g } from '../core/util.js';
 import { say } from '../hud/controls.js';
 import { applyRaw } from '../input/lever.js';
 import { SQ } from '../sequence/sequence.js';
@@ -12,44 +11,12 @@ import m2 from './shuttle/machine.js';
 import m3 from './hall/machine.js';
 import m4 from './saturn-v/machine.js';
 import m5 from './harrier/machine.js';
+import m6 from './nk-12/machine.js';
 
 /* ---------- machines: everything that differs between engines lives here ----------
    ab: has an afterburner zone (lever detent at MIL); stall: can surge; idle: spool target at lever 0; up/dn: spool time constants;
    coast: spin-down tau with fuel off; cN/cT: starter speed and duration; e/f: EGT and fuel-flow curves; teb: green light-off flash */
-export const MC=[m0,m1,m2,m3,m4,m5,{reset:()=>{state.prp=0;state.beta=86},
- n:'NK-12 TURBOPROP',btn:'NK-12',need3d:1,clu:dt=>tpStep(dt),inset:1,insetF:propInset,sub:'Kuznetsov NK-12 turboprop with contra-rotating propellers, on an outdoor test stand.',hint:'Throttle up: the RPM holds steady while the blades bite harder.',
- nxf:.4,ab:0,stall:0,idle:.08,up:1.4,dn:1.1,coast:2.2,cN:.25,cT:4,tk:[1.4,.12],ign:.6,lk:.2,e0f:380,lt:.5,teb:0,
- e:[300,250,0],f:[.5,6,1.3,0],off:'FUEL OFF',st:'STARTING',cl:'RUNDOWN',cut:'Fuel off. The propellers feather and stop...',wait:'Let the propellers stop before restarting.',
- r:()=>0,shk:()=>state.prp*.35+state.N*state.N*.9+state.kick*8,gl:()=>[0,0],skyG:()=>0,hzk:()=>0,hzg:()=>[0,0],hza:()=>0,blk:()=>0,
- g:[{t:'RPM',cap:'RPM %',min:0,max:110,maj:20,mn:10,red:105,d:1,f:v=>v|0},
-    {t:'PWR',cap:'POWER MW',min:0,max:12,maj:2,mn:1,red:11.03,d:1,f:v=>v.toFixed(1)},
-    {t:'BLADE',cap:'BLADE ANGLE \u00b0',min:0,max:90,maj:15,mn:5,red:90,d:1,f:v=>v.toFixed(0)}],
- gv:()=>[state.prp*100,tpP()/1e6,state.beta],
- lv:[['MAX',1,'t'],['HALF',.5],['GROUND IDLE',0,'b']],
- lp:()=>[['FEATHER',state.beta>80,'#d9822b'],['CONST RPM',state.ph==2&&state.prp>.97,'#3fcf7a']],
- mc:[[0,'#000'],[1,'#000']],dk:1,bl:0,bd:{ts:0,xt:0,hh:0,fh:0,doors:0},pl:null,spike:0,draw:()=>{},rear:()=>{},au:auTP,
- sqc:'ENGINE START',
- sq:[{cap:'GROUND IDLE: BLADES AT FINE PITCH',wait:2.5},
-  {cap:'POWER UP: THE GOVERNOR CATCHES THE RPM',lever:.35,dur:2,wait:1.5,view:1},
-  {cap:'MORE POWER: SAME RPM, COARSER BLADES',lever:1,dur:4,wait:2.5,view:0},
-  {cap:'ABOUT 11 MW INTO THE PROPELLERS',wait:3,view:2},
-  {cap:'BACK TO GROUND IDLE',lever:0,dur:2.5,wait:1.5,view:0},
-  {cap:'FUEL OFF: THE BLADES FEATHER',do:()=>master(),wait:4.5,view:1}],
- info:{f:['The Kuznetsov NK-12 is the most powerful turboprop engine to enter service. Four of them power the Tupolev Tu-95 "Bear".',
-  'A turboprop is a gas turbine that spends almost all of its energy turning a propeller instead of making a jet. The NK-12 drives two large four-bladed propellers that turn in opposite directions on the same axis.',
-  'A 14-stage axial compressor feeds cannular combustors, and a five-stage turbine drives both the compressor and the propellers.',
-  'Maximum power is quoted at 11,000 kW (14,750 shp) plus only 2.78 kN of residual jet thrust, at 9,250 rpm. The NK-12MV is rated at 14,795 hp (11,033 kW). Nearly all the push comes from the propellers.',
-  'The Tu-95 has constant-speed, fully feathering propellers. A governor holds the rpm by changing the blade angle, so more power makes the blades take a bigger bite instead of spinning faster. When the engine stops, the blades turn edge-on to the air (feather) so they do not windmill.',
-  'The Tu-95 is one of the loudest military aircraft, particularly because the tips of its propeller blades are supersonic.',
-  'The engine is about 6 m long and 1.15 m across, weighs about 2,900 kg dry and burns about 0.219 kg of fuel per kWh.'],
-  a:['The rpm schedule, blade angles and power curve against the lever are illustrative, not NK-12 data.',
-  'Static thrust (the PROPS figure) is an estimate from simple momentum theory with an assumed figure of merit of 0.6, not a published number.',
-  'The propellers are drawn turning far slower than real so they do not strobe on screen. The blur disc is a visual aid.',
-  'Sources disagree on the propeller diameter (5.6 m or 6.2 m); 5.6 m is used. The engine, nacelle and stand are simplified hand-built models.',
-  'The sound is synthesized, including the beat between the two propellers.'],
-  cut:'CUTAWAY removes half of the cowling. Inner dots trace the engine\'s own air: blue intake air is squeezed by the compressor (white), burned (orange) and expanded through the turbine, which drives the propellers through a reduction gearbox. The outer band shows the far larger stream of air the propellers push back. Speeds are slowed enormously.',
-  s:[['Kuznetsov NK-12 (Wikipedia)','https://en.wikipedia.org/wiki/Kuznetsov_NK-12'],['Tupolev Tu-95 (Wikipedia)','https://en.wikipedia.org/wiki/Tupolev_Tu-95']]}
-},{onSelect:()=>{state.raw2=0;skyReset()},seqPre:()=>({cap:'POWERED DESCENT',do:()=>skyReset(),wait:.1}),
+export const MC=[m0,m1,m2,m3,m4,m5,m6,{onSelect:()=>{state.raw2=0;skyReset()},seqPre:()=>({cap:'POWERED DESCENT',do:()=>skyReset(),wait:.1}),
  n:'MARS SKY CRANE',btn:'SKY CRANE',need3d:1,sky:1,nozzle:1,inset:1,insetF:craneInset,clu:dt=>skyStep(dt),camA:v=>skyCam(v),sub:'Mars 2020 descent stage lowering the Perseverance rover on bridles, Jezero Crater.',hint:'HOVER to stop falling, BRIDLES to lower the rover.',
  nxf:.4,ab:0,stall:0,idle:0,up:.3,dn:.3,coast:.4,cN:0,cT:1.5,tk:[9,1],ign:.35,lk:.1,e0f:60,lt:.3,teb:0,
  e:[20,200,0],f:[0,1,1,0],off:'ENGINES OFF',st:'PRIMING',cl:'SHUTDOWN',cut:'Engines off!',wait:'Wait for the engines to stop.',
@@ -84,11 +51,6 @@ export const MC=[m0,m1,m2,m3,m4,m5,{reset:()=>{state.prp=0;state.beta=86},
   cut:['CUTAWAY lifts the thermal blankets off the descent stage. Blue dots trace hydrazine from the tanks to the engines, where a catalyst decomposes it into hot gas (pale violet) with no ignition needed. Speeds are slowed enormously.','SCHLIEREN is drawn from the toy\'s exhaust model. Mars\'s air is less than 1% as dense as Earth\'s, so a real schlieren image would be far fainter.','THERMAL is false colour by temperature, like an infrared camera. The temperatures are illustrative; the warm box at the rover\'s tail is its nuclear power source.'],
   s:[['Perseverance Touches Down on Mars (NASA)','https://science.nasa.gov/photojournal/perseverance-touches-down-on-mars-illustration/'],['Mars 2020 landing quick facts (NASA JPL)','https://www.jpl.nasa.gov/news/press_kits/mars_2020/landing/quick_facts'],['MSL descent stage (Spaceflight101)','https://spaceflight101.com/msl/?p=311'],['The Sun Sets on Mars (NASA)','https://science.nasa.gov/?p=926395'],['Sky crane (Wikipedia)','https://en.wikipedia.org/wiki/Sky_crane_(landing_system)']]}
 }];
-/* NK-12 turboprop. Power comes from the lever; a governor holds RPM by changing blade pitch, so once governed, more power means coarser blades, not faster ones.
-   On shutdown the blades feather (turn edge-on). Static propeller thrust is a momentum-theory estimate with an assumed figure of merit of 0.6 */
-export const TPW=11.03e6,TPJ=2780,tpP=()=>state.ph==2?TPW*state.N*state.fu:0,tpT=()=>2.79*Math.pow(tpP(),2/3)*sm(.3,.9,state.prp);
-export function tpStep(dt){const tR=state.ph==1?.55*sm(0,state.M.cT,state.st):state.ph==2?.8+.2*sm(.08,.3,state.N):0;state.prp+=(tR-state.prp)*(1-Math.exp(-dt/(tR>state.prp?1.2:state.ph==3?1.4:.8)));
- const tB=state.ph==2?8+30*Math.pow(Math.max(0,(state.N-state.M.idle)/(1-state.M.idle)),.8):state.ph==1&&state.st>1?10:86;state.beta+=Math.max(-25*dt,Math.min(25*dt,tB-state.beta))}
 /* Mars 2020 sky crane. Mars gravity 3.71 m/s2, rover 1,025 kg. Assumed: descent stage 1,100 kg at this point, engines canted 20 deg, fuel use ignored.
    The lever sets total thrust (fraction of 8 x 3,060 N); each lit engine runs between 400 N and 3,060 N, backups at about 1% */
 export const GM=3.71,MR=1025,MS=1100,MLE=3060,MLN=400,CANT=Math.cos(20*Math.PI/180),RH=1.75,BL=6.4;
@@ -120,33 +82,12 @@ export function skyStep(dt){
  if(sc.td&&!sc.cut&&state.alt>RH+sc.bl){state.alt=RH+sc.bl;state.vz=Math.min(state.vz,0)}   /* taut bridles: the rover holds the stage down until they are cut */
  if(state.alt<RH&&(sc.td||sc.bl<.05)){state.alt=RH;state.vz=Math.max(state.vz,0)}
  if(state.alt>80){state.alt=80;state.vz=Math.min(state.vz,0)}}
-/* NK-12: the propellers' beating growl, a turbine whine, and the roar of a huge mass of air */
-export function auTP(s,V,pm){const nn=state.N*state.fu,bp=state.prp*42*4,bt2=1+.35*Math.sin(state.simT*6.283*2.3);
- s(S.rum.gn.gain,state.prp*.35+nn*.55+state.sg*.08+state.ign*.4);s(S.rum.fl.frequency,70+nn*90);
- s(S.roar.gn.gain,nn*nn*.28+state.prp*.05+state.ign*.25);s(S.roar.fl.frequency,300+nn*700);
- s(S.sg.gn.gain,state.prp*(.05+nn*.25)*bt2+state.sg*.08);s(S.so.frequency,Math.max(30,bp)*pm);s(S.sg.fl.frequency,180+nn*500);
- s(S.sg2.gn.gain,state.prp*(.03+nn*.12));s(S.so2.frequency,Math.max(20,bp*1.02)*pm);
- s(S.wh.gn.gain,state.prp*.05+state.spd*.1);s(S.osc.frequency,(400+state.prp*2200)*pm);s(S.wh.fl.frequency,(1500+state.prp*2500)*pm);
- s(S.wh2.gn.gain,state.prp*.02);s(S.osc2.frequency,(400+state.prp*2200)*2.01*pm);s(S.crk.gn.gain,0)}
 /* hydrazine engines: a harsh hissing roar that fades as the stage flies off */
 export function auSC(s,V,pm){const nn=state.N*state.fu,cl=sc.done?0:Math.exp(-Math.hypot(sc.x,state.alt-10)/90);
  s(S.rum.gn.gain,(nn*1.1+state.ign*.4)*cl);s(S.rum.fl.frequency,70+nn*120);
  s(S.roar.gn.gain,(nn*.75+state.ign*.3)*cl*(1+.15*Math.sin(state.simT*23)));s(S.roar.fl.frequency,700+nn*1400);
  s(S.crk.gn.gain,nn*(.1+Math.random()*.35)*cl,.02);s(S.crk.fl.frequency,1800);
  s(S.wh.gn.gain,0);s(S.wh2.gn.gain,0);s(S.sg.gn.gain,0);s(S.sg2.gn.gain,0)}
-/* turboprop panel: a blade section at its pitch angle to the plane of rotation, the thrust arrow, and where the thrust comes from */
-export function propInset(x,y,w,h){
- g.globalCompositeOperation='source-over';g.globalAlpha=1;g.fillStyle='rgba(14,17,24,.85)';g.strokeStyle='#2a3040';g.lineWidth=1;g.fillRect(x,y,w,h);g.strokeRect(x+.5,y+.5,w-1,h-1);
- g.font=`600 9px ${MONO}`;g.textBaseline='middle';g.textAlign='left';g.fillStyle='#6c7482';g.fillText('PROPELLER',x+8,y+11);
- const cs=state.ph==2&&state.prp>.97;g.textAlign='right';g.fillStyle=state.beta>80?'#d9822b':cs?'#3fcf7a':'#6c7482';g.fillText(state.beta>80?'FEATHERED':cs?'CONSTANT SPEED':'',x+w-8,y+11);
- const s2=h-22,bx=x+8,cx=bx+s2/2,cy=y+16+s2*.62,b=state.beta*Math.PI/180,L2=s2*.34,T=tpT();
- g.strokeStyle='#4a5160';g.setLineDash([3,3]);g.beginPath();g.moveTo(bx,cy);g.lineTo(bx+s2,cy);g.stroke();g.setLineDash([]);
- g.fillStyle='#6c7482';g.textAlign='left';g.fillText('\u2192 SPIN',bx,cy+9);
- g.save();g.translate(cx,cy);g.rotate(-b);g.fillStyle='#b4bccb';g.beginPath();g.moveTo(L2,0);g.quadraticCurveTo(0,-L2*.2,-L2,-L2*.04);g.quadraticCurveTo(-L2*1.04,0,-L2,L2*.05);g.quadraticCurveTo(0,L2*.08,L2,0);g.fill();g.restore();
- const al=Math.min(s2*.5,3+T/140e3*s2*.48);g.strokeStyle='#ff9a3a';g.fillStyle='#ff9a3a';g.lineWidth=2;g.beginPath();g.moveTo(cx,cy-4);g.lineTo(cx,cy-4-al);g.stroke();g.lineWidth=1;
- if(al>6){g.beginPath();g.moveTo(cx,cy-8-al);g.lineTo(cx-4,cy-2-al);g.lineTo(cx+4,cy-2-al);g.closePath();g.fill()}
- g.textAlign='left';const tx=x+s2+18,lh=Math.min(13,(h-22)/4),ty=y+24;
- [['PROPS','\u2248'+(T/1000).toFixed(0)+' kN'],['JET',(state.ph==2?TPJ*state.N*state.fu/1000:0).toFixed(1)+' kN'],['SHAFT',(tpP()/1e6).toFixed(1)+' MW'],['BLADE',state.beta.toFixed(0)+'\u00b0']].forEach((l,i)=>{g.fillStyle='#6c7482';g.fillText(l[0],tx,ty+i*lh);g.fillStyle='#d8dde6';g.fillText(l[1],tx+46,ty+i*lh)})}
 /* sky crane panel: side view of descent stage, bridles and rover over the ground (to scale, 40 m tall) */
 export function craneInset(x,y,w,h){
  g.globalCompositeOperation='source-over';g.globalAlpha=1;g.fillStyle='rgba(14,17,24,.85)';g.strokeStyle='#2a3040';g.lineWidth=1;g.fillRect(x,y,w,h);g.strokeRect(x+.5,y+.5,w-1,h-1);
