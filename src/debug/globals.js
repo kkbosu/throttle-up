@@ -629,6 +629,7 @@ d('VN', () => m6.VN);
 d('SN', () => m6.SN);
 d('ZT', () => m6.ZT);
 d('MONO', () => m6.MONO);
+d('SHAKE', () => m6.SHAKE);
 d('lab', () => m7.lab);
 d('say', () => m7.say);
 d('act', () => m7.act);

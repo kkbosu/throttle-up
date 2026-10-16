@@ -20,3 +20,6 @@ export const SL = [1, 0.5, 0.2],
   SN = ['VOID', 'DESERT DAWN', 'NIGHT'],
   ZT = [1, 2.3, 1, 1];
 export const MONO = 'ui-monospace,Menlo,Consolas,monospace';
+/* Camera shake, 3D and 2D, scaled per machine by M.shk(). Off: it was a stylistic cue, not a measured effect.
+   Set to 1 to bring it back. (The stall flash and phone vibration are separate and stay on.) */
+export const SHAKE = 0;

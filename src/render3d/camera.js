@@ -2,7 +2,7 @@
 import { M3 } from '../machines/three.js';
 import * as T from 'three';
 import { state } from '../core/state.js';
-import { cv } from '../core/util.js';
+import { SHAKE, cv } from '../core/util.js';
 import { k3 } from './context.js';
 import { V3, cam } from './kit.js';
 import { CFG } from './machine.js';
@@ -92,7 +92,7 @@ export function camera(dr) {
   cP.lerp(tmp, k);
   cT.lerp(T0, k);
   k3.camSnap = false;
-  const s = state.M.shk() * 0.0026 * (state.view == 1 ? 0.6 : 1),
+  const s = SHAKE * state.M.shk() * 0.0026 * (state.view == 1 ? 0.6 : 1),
     t = state.simT;
   /* Shake moves the camera and its aim point together: a pure sideways jolt, like a camera on a vibrating stand.
      Re-aiming at a fixed point turned each jolt into a small rotation, which made distant scenery jump and flicker. */

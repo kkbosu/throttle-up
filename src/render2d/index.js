@@ -1,7 +1,7 @@
 // 2D renderer (fallback for machines 0-2): off-screen buffers, particles, stars, sky, heat haze, bloom, frame draw.
 import { fail3D } from '../core/loader3d.js';
 import { state } from '../core/state.js';
-import { ZT, cv, g, mk, sm } from '../core/util.js';
+import { SHAKE, ZT, cv, g, mk, sm } from '../core/util.js';
 
 /* ---------- off-screen buffers: bloom + heat haze ---------- */
 export const B0 = mk(8, 8),
@@ -221,7 +221,7 @@ export function draw(dt, dr) {
   }
   state.zm += (ZT[state.view] - state.zm) * (1 - Math.exp(-dr * 5));
   sky();
-  const sh = state.M.shk() * state.u,
+  const sh = SHAKE * state.M.shk() * state.u,
     r = state.M.r(),
     T = state.simT,
     jx = Math.sin(T * 191) + Math.sin(T * 313 + 1.3),
