@@ -4,7 +4,7 @@ Throttle Up is a browser toy (heading toward a game) where you throttle up real 
 
 **Source of truth:** the Vite project in `src/` (no framework, plain JavaScript, three@0.160.0 from npm). Run it with `npm install` once, then `npm run dev`; `npm run build` + `npm run preview` serves the production build. ES modules don't run from `file://`, so the built page needs a server (GitHub Pages is fine).
 
-`legacy/throttle-up-v11.html` is the original single-file version the project was split from. It still runs from disk (Three.js from the jsDelivr CDN). The split was verified identical to it, pixel for pixel; since 2026-10-16 the game intentionally differs (EARTH view at high orbit, previous-machine control, heat haze kept off the nozzle), so it is kept for history and the golden reference now comes from the build (see Testing).
+`legacy/throttle-up-v11.html` is the original single-file version the project was split from. It still runs from disk (Three.js from the jsDelivr CDN). The split was verified identical to it, pixel for pixel; since 2026-10-16 the game intentionally differs (EARTH view at high orbit, previous-machine control, heat haze kept off the nozzle, camera shake off, SR-71 spike inset shown), so it is kept for history and the golden reference now comes from the build (see Testing).
 
 ## Machines (index = `?m=` URL param)
 
@@ -148,7 +148,6 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 - Saturn V schlieren is busy where the plume meets the deflector.
 - In the Hall EARTH view under the TERMINATOR scene the craft is a dark silhouette.
 - Propellers are drawn slower than real (anti-strobe), stated in INFO.
-- The SR-71 spike inset (`machines/sr-71/inset.js`) is never shown: the SR-71 entry has no `inset` flag, yet its INFO text about the inlet spike ends "Watch the inset." Inherited from v11 and kept for parity; fix it deliberately (add `inset:1`, check the phone layout).
 - All testing so far was software-rendered; performance on real phones unknown.
 
 ## Roadmap (agreed)

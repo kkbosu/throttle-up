@@ -120,6 +120,7 @@ export default {
     dc: [SP.b, SP.b],
   },
   spike: 1,
+  inset: 1,
   draw: (r, dt) => {
     plume(r, dt);
     body(r);
@@ -159,6 +160,7 @@ export default {
       'The RPM dial is a percentage of 7,400 rpm, so idle reads about 53. I could not find sourced EGT limits, so the EGT scale and its warning lamp are illustrative.',
       'Fuel flow is scaled so full afterburner is about 26,000 lb/h per engine. That comes from the 8,000 gal/h cruise figure, assuming it covers both engines and about 6.5 lb per gallon. The dry figure is a guess.',
       'The nacelle, nozzle and ejector flaps are simplified hand-built models, and the sound is synthesized.',
+      'The inlet inset is a schematic. The spike travel, the Mach numbers at which it moves, and the terminal shock moving behind the throat when the inlet starts (about Mach 1.7) follow the source; the shapes and shock angles are illustrative.',
       'The ground cart and cradles are a generic test setup; real ground runs were usually done with the engine in the aircraft.',
     ],
     s: [
