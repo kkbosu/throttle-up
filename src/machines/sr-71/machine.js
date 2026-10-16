@@ -70,7 +70,7 @@ export default {
   cut: 'Fuel cut. Rotor coasting down...',
   wait: 'Let the rotor spool down before restarting.',
   r: () => (34 + 20 * state.A) * state.u,
-  shk: () => state.N * state.N * 1.3 + state.A * 4.4 + state.kick * 12,
+  shk: () => state.N * state.N * 1.3 + state.A * 2.2 + state.kick * 12,
   gl: () => [
     state.A * 0.32 + state.N * state.N * 0.06 * state.fu + state.ign * 0.2 + state.gn * 0.1,
     200 + state.A * 800 + state.N * 120,

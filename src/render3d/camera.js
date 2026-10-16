@@ -8,7 +8,7 @@ import { V3, cam } from './kit.js';
 import { CFG } from './machine.js';
 
 // assigned by create*() below, when init3D runs
-export let cP, cT, tmp, sph;
+export let cP, cT, tmp, sph, SH, LK;
 
 export function createCamera() {
   /* ======================= camera: smooth glide between presets, drag to orbit, wheel to zoom, shake ======================= */
@@ -21,6 +21,8 @@ export function createCamera() {
   cT = V3();
   tmp = V3();
   sph = new T.Spherical();
+  SH = V3();
+  LK = V3();
   cv.addEventListener('pointerdown', (e) => {
     const r = state.SWR;
     if (e.clientX >= r.x && e.clientX <= r.x + r.w && e.clientY >= r.y && e.clientY <= r.y + r.h) return;
@@ -92,10 +94,13 @@ export function camera(dr) {
   k3.camSnap = false;
   const s = state.M.shk() * 0.0026 * (state.view == 1 ? 0.6 : 1),
     t = state.simT;
-  cam.position.set(
-    cP.x + (Math.sin(t * 191) + Math.sin(t * 313 + 1.3)) * s,
-    cP.y + (Math.sin(t * 227 + 0.4) + Math.sin(t * 359 + 2.1)) * s,
-    cP.z + Math.sin(t * 263 + 0.8) * s,
+  /* Shake moves the camera and its aim point together: a pure sideways jolt, like a camera on a vibrating stand.
+     Re-aiming at a fixed point turned each jolt into a small rotation, which made distant scenery jump and flicker. */
+  SH.set(
+    (Math.sin(t * 191) + Math.sin(t * 313 + 1.3)) * s,
+    (Math.sin(t * 227 + 0.4) + Math.sin(t * 359 + 2.1)) * s,
+    Math.sin(t * 263 + 0.8) * s,
   );
-  cam.lookAt(cT);
+  cam.position.copy(cP).add(SH);
+  cam.lookAt(LK.copy(cT).add(SH));
 }
