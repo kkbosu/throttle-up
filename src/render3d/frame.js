@@ -18,7 +18,7 @@ import { applyScene, sKey } from './scenes.js';
 import { sky } from './sky.js';
 
 // assigned by create*() below, when init3D runs
-export let pr0;
+export let pr0, ZA;
 
 export function createFrame() {
   k3.lastPh = 0;
@@ -27,6 +27,7 @@ export function createFrame() {
 export function createFrame2() {
   /* ======================= frame ======================= */
   pr0 = V3();
+  ZA = V3();
 }
 
 export function render(dt, dr) {
@@ -89,6 +90,9 @@ export function render(dt, dr) {
   cu.uT.value = state.simT;
   cu.uHaze.value = state.Q > 0 ? (2.2 + state.A * 2.2) * k3.pr * (state.view == 2 ? 0.35 : 1) : 0;
   cu.uKick.value = state.kick * 0.2 + (state.sT > 0 ? state.ign * 0.05 : 0);
+  /* nozzle exit depth along the view, and how far the hot exit reaches sideways (one bell, or the whole cluster) */
+  cu.uZA.value = -ZA.setFromMatrixPosition(e.anchor.matrixWorld).applyMatrix4(cam.matrixWorldInverse).z;
+  cu.uZR.value = PU.uR0.value + (PU.uCl.value > 0.5 ? PU.uMR.value : 0);
   k3.bloom.strength = 0.35 + state.A * 0.15;
   k3.comp.render(dr);
   SPK.L.length = Math.min(SPK.L.length, 400);

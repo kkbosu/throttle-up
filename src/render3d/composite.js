@@ -24,6 +24,11 @@ export function createComposite() {
     uniforms: {
       tMain: { value: null },
       tPlume: { value: null },
+      tDepth: { value: null },
+      uNear: { value: 0.2 },
+      uFar: { value: 9000 },
+      uZA: { value: 0 },
+      uZR: { value: 0 },
       uRes: { value: new T.Vector2() },
       uT: { value: 0 },
       uHaze: { value: 0 },
@@ -31,7 +36,9 @@ export function createComposite() {
       uMode: { value: 0 },
     },
     vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
-    fragmentShader: `uniform sampler2D tMain,tPlume;uniform vec2 uRes;uniform float uT,uHaze,uKick,uMode;varying vec2 vUv;
+    fragmentShader: `#include <packing>
+ uniform sampler2D tMain,tPlume,tDepth;uniform vec2 uRes;uniform float uT,uHaze,uKick,uMode,uNear,uFar,uZA,uZR;varying vec2 vUv;
+ float vz(vec2 uv){return -perspectiveDepthToViewZ(texture2D(tDepth,uv).x,uNear,uFar);}
  vec3 lin(vec3 c){return pow(c,vec3(2.2));}
  vec3 iron(float v){v=clamp(v,0.,1.);vec3 a=vec3(0.,0.,.06),b=vec3(.32,0.,.5),c=vec3(.82,.1,.36),d=vec3(1.,.47,0.),e=vec3(1.,.86,.12),f=vec3(1.,1.,.94);
   return lin(v<.2?mix(a,b,v/.2):v<.4?mix(b,c,(v-.2)/.2):v<.6?mix(c,d,(v-.4)/.2):v<.8?mix(d,e,(v-.6)/.2):mix(e,f,(v-.8)/.2));}
@@ -46,7 +53,10 @@ export function createComposite() {
    gl_FragColor=vec4(vec3(max(v,0.))*vec3(1.,.97,.92),1.);return;}
   float h=1.-exp(-pl.a);
   vec2 w=vec2(sin(vUv.y*uRes.y*.11+uT*9.+sin(vUv.x*uRes.x*.04+uT*3.)*2.),cos(vUv.x*uRes.x*.09-uT*7.+sin(vUv.y*uRes.y*.03)*2.));
-  vec3 c=texture2D(tMain,vUv+w*h*uHaze/uRes).rgb+pl.rgb+uKick*vec3(1.,.86,.72);gl_FragColor=vec4(c,1.);}`,
+  /* heat haze: refract only what lies behind the hot gas (further than the nozzle exit uZA plus its radius uZR), and never
+     across an object's outline. The half-res plume blurs a pixel or two past edges, which made the nozzle lip ripple. */
+  vec2 o=w*h*uHaze/uRes;float z0=vz(vUv),dz=abs(vz(vUv+o)-z0);o*=smoothstep(uZA+uZR,uZA+uZR+1.,z0)*(1.-smoothstep(.04*z0+.15,.08*z0+.3,dz));
+  vec3 c=texture2D(tMain,vUv+o).rgb+pl.rgb+uKick*vec3(1.,.86,.72);gl_FragColor=vec4(c,1.);}`,
   };
 }
 
@@ -92,6 +102,9 @@ export function setup() {
   k3.flowKey = '';
   k3.cpass.uniforms.tMain.value = k3.rtM.texture;
   k3.cpass.uniforms.tPlume.value = k3.rtP.texture;
+  k3.cpass.uniforms.tDepth.value = k3.rtM.depthTexture;
+  k3.cpass.uniforms.uNear.value = cam.near;
+  k3.cpass.uniforms.uFar.value = cam.far;
   k3.cpass.uniforms.uRes.value.set(w, h);
   cam.aspect = state.W / state.H;
   cam.updateProjectionMatrix();
