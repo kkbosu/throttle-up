@@ -1,6 +1,7 @@
 // HALL thruster: the 3D side. Builder (the model), cfg (plume box, shadow area, camera presets, ground) and renderer hooks (plume, particles, thermal lens, flame light, tracers, EARTH view).
 import * as T from 'three';
 import { state } from '../../core/state.js';
+import { sm } from '../../core/util.js';
 import { earth, earthU } from '../../render3d/earth.js';
 import { CAT, MT, V3, beam, box, canvasTex, cyl, lathe, pipe, std } from '../../render3d/kit.js';
 import { TH, thSet } from '../../render3d/lenses.js';
@@ -309,7 +310,13 @@ export function buildHT() {
       t1.tip.material.color.setRGB(3 * ht + 0.8 * nn, 1.1 * ht + 1.1 * nn, 0.2 * ht + 2.6 * nn);
       t2.tip.material.color.setRGB(0, 0, 0);
       const al = Math.max(100, (orb.r - RE) / 1e3);
-      earth.position.set(0, -(6371 + al), 0);
+      /* Earth is drawn at true scale (1 unit = 1 km) up to 7,000 km from its centre. Further out it is shrunk and
+         brought closer by the same factor, so it covers exactly the same angle (all the eye can judge) but never
+         falls beyond the camera's 9,000-unit far plane, which hid it above ~9,000 km altitude. */
+      const ed = 6371 + al,
+        ek = Math.min(1, 7000 / ed);
+      earth.position.set(0, -ed * ek, 0);
+      earth.scale.setScalar(ek);
       earthU.uRot.value += dt * Math.min(WF[state.sl], 60) * Math.sqrt(MU / (orb.r * orb.r * orb.r));
       earthU.uT.value += dt * Math.min(WF[state.sl], 60);
     },
@@ -375,8 +382,12 @@ export default {
   flowSize: 0.0035,
   cam(P0, T0) {
     if (state.view == 3) {
+      /* Camera elevation above the craft. Low orbit: look down at the craft with the horizon just behind it.
+         As Earth shrinks (rho = its angular radius from the craft), tilt so Earth's disc sits just below the craft
+         instead of behind it; the blend starts above ~4,600 km and is complete by ~15,600 km. */
       const h = Math.max(100, (orb.r - RE) / 1e3),
-        pc = Math.acos(6371 / (6371 + h)) + 0.13,
+        rho = Math.asin(6371 / (6371 + h)),
+        pc = Math.acos(6371 / (6371 + h)) + 0.13 - 0.165 * sm(0.6, 0.3, rho),
         hd = V3(-1, 0, 0.12).normalize();
       P0.copy(T0).addScaledVector(hd, Math.cos(pc) * 12);
       P0.y += Math.sin(pc) * 12;
