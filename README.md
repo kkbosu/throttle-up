@@ -2,6 +2,8 @@
 
 Throttle Up is a browser toy, on its way to becoming a game, where you push the throttle on real engines and machines and watch, hear and read what happens: an afterburning turbojet, the SR-71's J58, the Space Shuttle's RS-25, a Hall thruster on a spacecraft in Earth orbit, the five F-1s of a Saturn V first stage, the Harrier's Pegasus, the NK-12 turboprop and the Mars 2020 sky crane lowering Perseverance. Each machine runs on a simplified physics model with Three.js graphics, synthesized sound, a guided SEQUENCE walkthrough and an INFO panel that cites its sources (collected in [docs/SOURCES.md](docs/SOURCES.md)) and says plainly what is approximated. If 3D isn't available, the first three engines fall back to a 2D renderer.
 
+Play it at **https://kkbosu.github.io/throttle-up/** (works best on a desktop or a recent phone with WebGL 2).
+
 ## Run it
 
 Needs Node.js (LTS).

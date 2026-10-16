@@ -93,6 +93,12 @@ Story: `sqc` + `sq[]` SEQUENCE steps (`{cap, lever|()=>, dur, wait, until(), max
 
 **To add a machine:** create `src/machines/<name>/machine.js` (default export = the MC entry; its sim, voice, inset) and `src/machines/<name>/three.js` (default export `{cfg, build, plume, emit, thermal, flame, ...}`), then add it at the same position in `machines/index.js` and `machines/three.js`. Add its sources to `info.s` and `docs/SOURCES.md`, and its expected SEQUENCE outcome to `OUTCOME` in `tools/check.mjs`. New ground types or scene sets go in `render3d/ground.js` / `render3d/scenes.js`.
 
+## Hosting
+
+Live at https://kkbosu.github.io/throttle-up/ (GitHub Pages, repo `kkbosu/throttle-up`, public). The local remote uses the SSH alias `git@github.com-dev:kkbosu/throttle-up.git` (a `~/.ssh/config` host for the right account).
+- `.github/workflows/deploy.yml`: every push to `main` runs lint, format check and `npm run check` (which builds the site) in headless Chromium, then publishes `dist/` to Pages; pull requests get the checks only. One-time repo setting: Settings > Pages > Source: GitHub Actions.
+- Sharing: `index.html` has the description, Open Graph / Twitter tags (absolute URLs to the live site) and the favicon. `public/` holds `favicon.svg`, `apple-touch-icon.png` and `og.png` (the 1200x630 preview, rendered from the game). Regenerate the PNGs with `node tools/site-images.mjs` when the visuals change (`--try <dir>` renders the candidate shots).
+
 ## Non-negotiable conventions
 
 - **Credibility first.** Every user-facing fact in INFO must come from a source listed in that machine's `info.s` (see `docs/SOURCES.md`). Anything modelled, assumed or simplified goes in `info.a` ("WHAT IS APPROXIMATED"), stated plainly. Don't state numbers you can't source (e.g. NK-12 propeller rpm, sky-crane descent stage mass are deliberately not claimed as fact).
