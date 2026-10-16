@@ -82,7 +82,7 @@ export function wireInput() {
       i: 'inf',
       l: 'lens',
     }[k];
-    if (m && state.ph) act(m);
+    if (m && state.ph) act(m == 'mach' && e.shiftKey ? 'machp' : m); /* Shift+N: previous machine */
   });
   addEventListener('keyup', (e) => (K[e.key.toLowerCase()] = 0));
 }

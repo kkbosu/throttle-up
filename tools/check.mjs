@@ -175,6 +175,21 @@ const scenarios = [
     },
   },
   { id: 'stall-2d-m0', q: 2, m: 0, r2d: true, ctx: SMALL, init: COUNTERS, run: stallRun },
+  // previous / next machine: the joined ◀ | MACHINE ▶ control and N / Shift+N (not in v11)
+  ...[false, true].map(r2d => ({
+    id: r2d ? 'nav-2d' : 'nav-3d', q: 2, m: 0, r2d, ctx: SMALL, notV11: true,
+    async run(page, rec) {
+      const c = checker(page, rec);
+      const prev = r2d ? 'SHUTTLE' : 'SKY CRANE';   // in 2D, previous skips the 3D-only machines
+      const is = async (want, how) => { await c.frames(1); const b = await c.ev('M.btn'); c.expect(b === want, `${how}: ${want} (got ${b})`); };
+      await c.start();
+      c.expect((await c.ev(() => document.querySelector('#ctl [data-k=mach]').textContent)) === 'MACHINE: F-TYPE ▶', 'machine button reads "MACHINE: F-TYPE ▶"');
+      await page.click('#ctl [data-k=machp]'); await is(prev, '◀ goes to the previous machine');
+      await page.click('#ctl [data-k=mach]'); await is('F-TYPE', 'MACHINE goes to the next machine');
+      await page.keyboard.press('Shift+N'); await is(prev, 'Shift+N goes to the previous machine');
+      await page.keyboard.press('n'); await is('F-TYPE', 'N goes to the next machine');
+    },
+  })),
   {
     id: 'live-m0', m: 0, manual: false, ctx: SMALL,
     async run(page, rec) {
@@ -190,7 +205,7 @@ if (V11) base = V11_URL;
 else if (!base) { server = await serveBuild(); base = server.url; }
 console.log(`checking ${base}`);
 
-const todo = scenarios.filter(s => ONLY.test(s.id));
+const todo = scenarios.filter(s => ONLY.test(s.id) && !(V11 && s.notV11));
 const t0 = Date.now();
 let failed = 0;
 await pool(todo, JOBS, async (browser, sc) => {

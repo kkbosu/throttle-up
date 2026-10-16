@@ -179,6 +179,21 @@ canvas {
   color: #fff;
   background: rgba(40, 48, 64, 0.9);
 }
+/* previous / next machine: one joined control, [◀][MACHINE: X ▶], that wraps as a unit */
+#ctl .mpair {
+  display: flex;
+}
+#ctl button[data-k='machp'] {
+  padding-left: 10px;
+  padding-right: 10px;
+  border-right-width: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+#ctl button[data-k='mach'] {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
 #ctl button[data-k='seq'] {
   border-color: #7a5228;
   color: #ffb36b;
@@ -283,6 +298,10 @@ canvas {
     padding: 7px 10px;
     font-size: 10px;
     letter-spacing: 0.08em;
+  }
+  #ctl button[data-k='machp'] {
+    padding-left: 8px;
+    padding-right: 8px;
   }
 }
 #ov {

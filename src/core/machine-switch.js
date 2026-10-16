@@ -16,6 +16,13 @@ export function nextM(i) {
   } while (MC[j].need3d && !state.G3 && j !== i);
   return j;
 }
+export function prevM(i) {
+  let j = i;
+  do {
+    j = (j - 1 + MC.length) % MC.length;
+  } while (MC[j].need3d && !state.G3 && j !== i);
+  return j;
+}
 export function chips() {
   [...$('mch').children].forEach((b, j) => (b.style.display = MC[j].need3d && !state.G3 ? 'none' : ''));
   if (state.M.need3d && !state.G3) setMachine(0);

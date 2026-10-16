@@ -1,7 +1,7 @@
 // Controls: button labels (lab), button actions (act), lever labels, hint text, the START overlay.
 import { initAudio } from '../audio/audio.js';
 import { master } from '../core/engine.js';
-import { nextM, setMachine } from '../core/machine-switch.js';
+import { nextM, prevM, setMachine } from '../core/machine-switch.js';
 import { state } from '../core/state.js';
 import { $, SL, SLN, SN, SNM, VN } from '../core/util.js';
 import { showInfo } from '../info/info.js';
@@ -14,7 +14,7 @@ export function lab() {
   const sb = q('seq');
   sb.textContent = SQ.on ? '■ STOP SEQUENCE' : '▶ SEQUENCE';
   sb.classList.toggle('run', !!SQ.on);
-  q('mach').textContent = 'MACHINE: ' + state.M.btn;
+  q('mach').textContent = 'MACHINE: ' + state.M.btn + ' ▶';
   q('view').textContent = 'VIEW: ' + VN[state.view];
   q('exp').textContent = state.G3
     ? 'CUTAWAY: ' + (state.exposed ? 'ON' : 'OFF')
@@ -55,6 +55,7 @@ export function act(k) {
   } else if (k == 'flt') {
     if (state.M.stall) state.faults = !state.faults;
   } else if (k == 'mach') setMachine(nextM(state.mi));
+  else if (k == 'machp') setMachine(prevM(state.mi));
   else if (k == 'seq') {
     SQ.on ? seqStop(false) : seqStart();
   } else if (k == 'inf') showInfo();
