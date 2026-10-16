@@ -37,9 +37,14 @@ canvas {
   line-height: 1.9;
   color: var(--dim);
 }
+/* the hint wraps before the lever column: its tracks and labels sit on the right (130px, or 230px with two levers) */
 #hint {
   margin-top: 2px;
   transition: opacity 1.2s;
+  max-width: calc(100vw - 188px);
+}
+body:has(#tq.two) #hint {
+  max-width: calc(100vw - 258px);
 }
 #tq {
   position: fixed;
@@ -293,6 +298,15 @@ canvas {
   }
   #hud {
     max-width: calc(100% - 110px);
+  }
+  #hint {
+    max-width: calc(100vw - 133px);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    line-height: 1.6;
+  }
+  body:has(#tq.two) #hint {
+    max-width: calc(100vw - 208px);
   }
   #ctl button {
     padding: 7px 10px;

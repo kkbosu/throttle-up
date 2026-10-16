@@ -118,6 +118,7 @@ Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim up
 - machines 0–2 in 2D (`?r=2d`) and the fallback from `?m=3&r=2d` to F-TYPE;
 - the compressor stall, deterministic in `?manual` mode. A slow ramp doesn't stall; a slam stalls with bangs and beeps and recovers; pulling back clears it early; FAULTS off prevents it;
 - previous/next machine: the joined ◀ | MACHINE ▶ control and N / Shift+N, in 3D and 2D;
+- the hint text never runs under the lever column (tracks or labels) for any machine, even with the longest messages, on a 390×780 phone, an 800×600 window and 1280×720;
 - a short real-time run.
 
 `--only <regex>` picks scenarios; `--v11` runs the checks that apply to `legacy/throttle-up-v11.html` there (all pass; the navigation checks are skipped); `PAGE_URL` points at a running server. Unlike the golden suite it doesn't compare with v11, so it stays meaningful after intentional changes. Extend `OUTCOME` in `tools/check.mjs` when adding a machine. Shared Playwright setup (seeded random, CDN routing, build + preview) lives in `tools/harness.mjs`.
@@ -148,7 +149,6 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 - In the Hall EARTH view under the TERMINATOR scene the craft is a dark silhouette.
 - Propellers are drawn slower than real (anti-strobe), stated in INFO.
 - The SR-71 spike inset (`machines/sr-71/inset.js`) is never shown: the SR-71 entry has no `inset` flag, yet its INFO text about the inlet spike ends "Watch the inset." Inherited from v11 and kept for parity; fix it deliberately (add `inset:1`, check the phone layout).
-- On phones, long hint texts (e.g. Harrier's) run underneath the lever track and are cut off.
 - All testing so far was software-rendered; performance on real phones unknown.
 
 ## Roadmap (agreed)

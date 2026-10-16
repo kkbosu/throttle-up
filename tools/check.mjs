@@ -10,7 +10,7 @@
 // per-machine outcome), machines 0-2 in 2D, the 2D fallback for a 3D-only machine, the compressor stall
 // (deterministic, in ?manual mode), and a short real-time run.
 
-import { FF, V11_URL, load, newPage, pool, serveBuild } from './harness.mjs';
+import { DESKTOP, FF, PHONE, V11_URL, load, newPage, pool, serveBuild } from './harness.mjs';
 
 const args = process.argv.slice(2);
 const opt = (name, def) => { const i = args.indexOf(name); return i < 0 ? def : args.splice(i, 2)[1]; };
@@ -188,6 +188,33 @@ const scenarios = [
       await page.click('#ctl [data-k=mach]'); await is('F-TYPE', 'MACHINE goes to the next machine');
       await page.keyboard.press('Shift+N'); await is(prev, 'Shift+N goes to the previous machine');
       await page.keyboard.press('n'); await is('F-TYPE', 'N goes to the next machine');
+    },
+  })),
+  // The hint text must never run under the lever column (tracks or their labels), on any machine, at any width,
+  // even with the longest messages. Checked on a phone, a laptop and a narrow window.
+  ...[['phone', PHONE], ['desktop', DESKTOP], ['narrow', { viewport: { width: 800, height: 600 }, deviceScaleFactor: 1 }]].map(([name, ctx]) => ({
+    id: `hint-${name}`, q: 0, m: 0, ctx, notV11: true,
+    async run(page, rec) {
+      const c = checker(page, rec);
+      await c.start();
+      for (let m = 0; m < 8; m++) {
+        const r = await c.ev(m => {
+          setMachine(m); step(1);
+          const box = el => { const b = el.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
+          const levers = [...document.querySelectorAll('#trk, #trk2, #lbs > *, #lbs2 > *')]
+            // visible tracks, and lever labels that have text
+            .filter(el => el.offsetParent && el.getBoundingClientRect().width > 0 && (el.id.startsWith('trk') || el.textContent !== ''))
+            .map(el => ({ name: el.id || el.textContent, ...box(el) }));
+          const hint = document.getElementById('hint'), out = [];
+          for (const text of [M.hint, 'The descent stage flew off to crash a safe distance away. ENGINE to fly it again.', 'COMPRESSOR STALL! Ease the throttle back.']) {
+            hint.textContent = text;
+            const h = box(hint);
+            for (const l of levers) if (h.r > l.l && h.l < l.r && h.b > l.t && h.t < l.b) out.push(`"${text.slice(0, 24)}..." overlaps ${l.name} (hint right ${Math.round(h.r)}, lever left ${Math.round(l.l)})`);
+          }
+          return { btn: M.btn, out };
+        }, m);
+        for (const o of r.out.slice(0, 2)) c.expect(false, `${r.btn}: ${o}`);
+      }
     },
   })),
   {
