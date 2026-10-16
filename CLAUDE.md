@@ -4,7 +4,7 @@ Throttle Up is a browser toy (heading toward a game) where you throttle up real 
 
 **Source of truth:** the Vite project in `src/` (no framework, plain JavaScript, three@0.160.0 from npm). Run it with `npm install` once, then `npm run dev`; `npm run build` + `npm run preview` serves the production build. ES modules don't run from `file://`, so the built page needs a server (GitHub Pages is fine).
 
-`legacy/throttle-up-v11.html` is the original single-file version the project was split from. It still runs from disk (Three.js from the jsDelivr CDN) and is kept as the reference the golden suite compares against: the split was verified to render and behave identically, pixel for pixel. Retire it once intentional changes start (then regenerate the golden reference from the build; see Testing).
+`legacy/throttle-up-v11.html` is the original single-file version the project was split from. It still runs from disk (Three.js from the jsDelivr CDN). The split was verified identical to it, pixel for pixel; since 2026-10-16 the game intentionally differs (EARTH view at high orbit, previous-machine control, heat haze kept off the nozzle), so it is kept for history and the golden reference now comes from the build (see Testing).
 
 ## Machines (index = `?m=` URL param)
 
@@ -117,11 +117,12 @@ Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim up
 - SEQUENCE runs to "Sequence complete." with a per-machine outcome: F-TYPE full afterburner, SR-71 Mach 2.8+, shuttle and NK-12 full power, Hall raises its orbit, Saturn V all five F-1s lit, Harrier lifts off, sky crane touches down;
 - machines 0–2 in 2D (`?r=2d`) and the fallback from `?m=3&r=2d` to F-TYPE;
 - the compressor stall, deterministic in `?manual` mode. A slow ramp doesn't stall; a slam stalls with bangs and beeps and recovers; pulling back clears it early; FAULTS off prevents it;
+- previous/next machine: the joined ◀ | MACHINE ▶ control and N / Shift+N, in 3D and 2D;
 - a short real-time run.
 
-`--only <regex>` picks scenarios; `--v11` runs the same checks on `legacy/throttle-up-v11.html` (all pass there too); `PAGE_URL` points at a running server. Unlike the golden suite it doesn't compare with v11, so it stays meaningful after intentional changes. Extend `OUTCOME` in `tools/check.mjs` when adding a machine. Shared Playwright setup (seeded random, CDN routing, build + preview) lives in `tools/harness.mjs`.
+`--only <regex>` picks scenarios; `--v11` runs the checks that apply to `legacy/throttle-up-v11.html` there (all pass; the navigation checks are skipped); `PAGE_URL` points at a running server. Unlike the golden suite it doesn't compare with v11, so it stays meaningful after intentional changes. Extend `OUTCOME` in `tools/check.mjs` when adding a machine. Shared Playwright setup (seeded random, CDN routing, build + preview) lives in `tools/harness.mjs`.
 
-**Golden suite (Node Playwright, the parity check for the Vite split):** `npm run snapshots` drives `legacy/throttle-up-v11.html` through 38 scenarios and writes 290 screenshots plus `manifest.json` to `snapshots/golden`. The scenarios cover:
+**Golden suite (Node Playwright, guards refactors):** `npm run snapshots` builds the app, serves it, and drives it through 38 scenarios, writing 290 screenshots plus `manifest.json` to `snapshots/golden` (it was the parity check for the Vite split against v11; `--v11` still records the legacy file). The scenarios cover:
 - every machine in every view, with cutaway, lenses and scenes, at power, and with INFO open;
 - every SEQUENCE;
 - the 2D renderer and its fallback;
@@ -134,7 +135,7 @@ The manifest records sim state, `Math.random` counts, an audio-parameter hash, I
 - three@0.160.0 is served from `node_modules`;
 - the Chromium flags make compositing deterministic.
 
-Check the Vite build with `npm run snapshots -- --serve snapshots/after` (it builds, starts `vite preview`, and runs the suite), then `npm run compare -- snapshots/golden snapshots/after`. That must report 0 differences. `--only <regex>` reruns selected scenarios into an existing folder; `compare --partial` compares only the scenarios a run contains. `snapshots/` is gitignored; regenerate it from v11 (about 6 min). Any refactor that should not change behaviour must pass this. When a change is *meant* to alter what you see or hear, review the diff images in `snapshots/after/_diff/`, then make the build the new reference: `npm run snapshots -- --serve snapshots/golden`.
+Workflow: record the reference from a known-good commit (`npm run snapshots`), make the change, record again (`npm run snapshots -- snapshots/after`), then `npm run compare -- snapshots/golden snapshots/after`. A refactor that should not change behaviour must report 0 differences. When a change is *meant* to alter what you see or hear, review the diff images in `snapshots/after/_diff/` and the manifest differences (sim state should usually stay identical), then record the new reference. `--only <regex>` reruns selected scenarios into an existing folder; `compare --partial` compares only the scenarios a run contains. `snapshots/` is gitignored (about 6 min to record).
 
 `legacy/tests/` holds the Playwright (Python) scripts used during development in a cloud sandbox with a software GPU, superseded by `npm run check` and the golden suite but kept for reference: `t10.py M OUT` screenshots a machine through views/lenses/scenes, `t10s.py OUT` runs SEQUENCE for machines 6 and 7, `t11s.py` runs Hall + sky crane sequences and checks the 2D chip list, `t10f.py` cycles all machines/scenes/quality and REC, `r10_stall.py 0` is the compressor-stall regression in 2D. They test the running Vite app (`npm run dev`, or set `PAGE_URL`). Needs `pip install playwright` and `playwright install chromium` (the repo's `.venv` has both). On a real GPU you can drop the SwiftShader flags in `h3.py`.
 
@@ -147,6 +148,7 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 - In the Hall EARTH view under the TERMINATOR scene the craft is a dark silhouette.
 - Propellers are drawn slower than real (anti-strobe), stated in INFO.
 - The SR-71 spike inset (`machines/sr-71/inset.js`) is never shown: the SR-71 entry has no `inset` flag, yet its INFO text about the inlet spike ends "Watch the inset." Inherited from v11 and kept for parity; fix it deliberately (add `inset:1`, check the phone layout).
+- On phones, long hint texts (e.g. Harrier's) run underneath the lever track and are cut off.
 - All testing so far was software-rendered; performance on real phones unknown.
 
 ## Roadmap (agreed)

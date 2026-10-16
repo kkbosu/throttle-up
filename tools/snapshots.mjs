@@ -1,11 +1,13 @@
 // Golden suite: drives the page through its test hooks and records screenshots plus a manifest
 // (sim state, Math.random call counts, an audio-parameter trace, INFO html, chip list, errors).
-// Used to prove the Vite split behaves exactly like legacy/throttle-up-v11.html:
+// It proved the Vite split identical to legacy/throttle-up-v11.html; now it guards refactors: record a reference
+// from a known-good build, change code, record again, compare.
 //
-//   node tools/snapshots.mjs                         -> snapshots/golden from legacy/throttle-up-v11.html
-//   node tools/snapshots.mjs --serve snapshots/after -> builds the Vite app and tests it via `vite preview`
-//   PAGE_URL=http://localhost:5173/ node tools/snapshots.mjs snapshots/dev   (any running server)
+//   node tools/snapshots.mjs                     -> builds the app, serves it, records snapshots/golden
+//   node tools/snapshots.mjs snapshots/after     -> same, into another folder
 //   node tools/compare.mjs snapshots/golden snapshots/after
+//   node tools/snapshots.mjs --v11 snapshots/v11 -> records legacy/throttle-up-v11.html instead
+//   PAGE_URL=http://localhost:5173/ node tools/snapshots.mjs snapshots/dev   (any running server)
 //
 // Options: --only <regex> (scenario ids; replaces just those in an existing run), --jobs <n> (parallel
 // browsers, default 3). HEADED=1 shows the browser.
@@ -21,13 +23,14 @@ const args = process.argv.slice(2);
 const opt = (name, def) => { const i = args.indexOf(name); return i < 0 ? def : args.splice(i, 2)[1]; };
 const ONLY = new RegExp(opt('--only', '.'));
 const JOBS = +opt('--jobs', 3);
-const SERVE = args.includes('--serve') && !!args.splice(args.indexOf('--serve'), 1);
+const V11 = args.includes('--v11') && !!args.splice(args.indexOf('--v11'), 1);
+if (args.includes('--serve')) args.splice(args.indexOf('--serve'), 1);   // the default now; accepted for old commands
 const OUT = resolve(ROOT, args[0] || 'snapshots/golden');
-let PAGE = process.env.PAGE_URL || V11_URL;
+let PAGE = process.env.PAGE_URL || (V11 ? V11_URL : null);
 
-// --serve: build the Vite app and test it through `vite preview` (parity is always checked on the build).
+// Default: build the Vite app and test it through `vite preview` (references are always recorded from a build).
 let server = null;
-if (SERVE) {
+if (!PAGE) {
   server = await serveBuild();
   PAGE = server.url;
   console.log(`serving the build at ${PAGE}`);
