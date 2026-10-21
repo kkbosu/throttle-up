@@ -56,8 +56,27 @@ export function createCamera() {
   k3.lastView = -1;
 }
 
+/* DRONE view: high above the machine, about 60° down, slowly circling (one orbit in ~105 s of sim time).
+   Defaults come from the SIDE preset; a machine can tune it with cfg.drone {t: target, d: distance, el: elevation
+   in radians, hw: half-width to keep in frame}. */
+function droneCam() {
+  const cf = CFG[state.mi],
+    sd = cf.cams[0],
+    o = cf.drone || {},
+    t = o.t || sd[1],
+    hw = o.hw || sd[2] * 1.6,
+    d = o.d || hw * 3.2,
+    el = o.el || 1.05,
+    az = Math.atan2(sd[0][2] - sd[1][2], sd[0][0] - sd[1][0]) + state.simT * 0.06;
+  return [
+    [t[0] + Math.cos(el) * Math.cos(az) * d, t[1] + Math.sin(el) * d, t[2] + Math.cos(el) * Math.sin(az) * d],
+    t,
+    hw,
+  ];
+}
+
 export function camera(dr) {
-  const c = CFG[state.mi].cams[state.view];
+  const c = state.view == 4 ? droneCam() : CFG[state.mi].cams[state.view];
   if (state.view !== k3.lastView) {
     k3.lastView = state.view;
     k3.yaw = k3.pit = 0;

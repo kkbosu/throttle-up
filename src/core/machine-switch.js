@@ -16,6 +16,10 @@ export function nextM(i) {
   } while (MC[j].need3d && !state.G3 && j !== i);
   return j;
 }
+/* views on offer: 2D has SIDE, CLOSE-UP, REAR; 3D adds EARTH for the machine in orbit, DRONE for the others */
+export function views() {
+  return !state.G3 ? [0, 1, 2] : state.M.space ? [0, 1, 2, 3] : [0, 1, 2, 4];
+}
 export function prevM(i) {
   let j = i;
   do {
@@ -41,7 +45,7 @@ export function setMachine(i) {
     if (m.reset) m.reset();
   });
   if (state.M.onSelect) state.M.onSelect();
-  if (state.view > 2 && !(state.M.space && state.G3)) state.view = 0;
+  if (!views().includes(state.view)) state.view = 0;
   if (state.M.space && state.lens == 1) state.lens = 0;
   if (state.W) state.nx = state.W * state.M.nxf;
   state.N =

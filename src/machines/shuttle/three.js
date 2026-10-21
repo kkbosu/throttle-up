@@ -401,6 +401,8 @@ export function buildSS() {
 
 export default {
   cfg: {
+    /* DRONE: aim where the plume leaves the trench (+x), high and further out so stand, bell and steam all show */
+    drone: { t: [4, 2, 0], d: 70, el: 0.72, hw: 16 },
     box: [7, 3.2],
     sc: [1, 6, 0],
     sh: 17,

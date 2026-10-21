@@ -612,6 +612,7 @@ d('frame', () => m3.frame);
 d('step', () => m3.step);
 d('nextM', () => m4.nextM);
 d('prevM', () => m4.prevM);
+d('views', () => m4.views);
 d('chips', () => m4.chips);
 d('setMachine', () => m4.setMachine);
 d('wireMachineSwitch', () => m4.wireMachineSwitch);

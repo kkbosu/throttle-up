@@ -8,7 +8,8 @@ export const VV = [
   { v: 1.05, raw: 0.12, hs: 1 },
   { v: 1.35, raw: 0.42, hs: 5 },
   { v: 0.9, raw: 0, hs: -3 },
-]; /* per view: level, grit (waveshaper mix), treble (dB) */
+  { v: 0.6, raw: 0, hs: -7 },
+]; /* per view (SIDE, CLOSE-UP, REAR, EARTH, DRONE): level, grit (waveshaper mix), treble (dB) */
 export function initAudio() {
   try {
     state.AC = new (window.AudioContext || window.webkitAudioContext)();

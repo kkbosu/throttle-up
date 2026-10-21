@@ -1,7 +1,7 @@
 // Controls: button labels (lab), button actions (act), lever labels, hint text, the START overlay.
 import { initAudio } from '../audio/audio.js';
 import { master } from '../core/engine.js';
-import { nextM, prevM, setMachine } from '../core/machine-switch.js';
+import { nextM, prevM, setMachine, views } from '../core/machine-switch.js';
 import { state } from '../core/state.js';
 import { $, SL, SLN, SN, SNM, VN } from '../core/util.js';
 import { showInfo } from '../info/info.js';
@@ -41,8 +41,10 @@ export function say(t) {
   state.hinted = true;
 }
 export function act(k) {
-  if (k == 'view') state.view = (state.view + 1) % (state.M.space && state.G3 ? 4 : 3);
-  else if (k == 'exp') state.exposed ^= 1;
+  if (k == 'view') {
+    const v = views();
+    state.view = v[(v.indexOf(state.view) + 1) % v.length];
+  } else if (k == 'exp') state.exposed ^= 1;
   else if (k == 'scn') state.scene = (state.scene + 1) % 3;
   else if (k == 'slow') {
     state.sl = (state.sl + 1) % 3;

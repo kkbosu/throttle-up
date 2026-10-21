@@ -318,6 +318,8 @@ export function buildF1() {
 
 export default {
   cfg: {
+    /* DRONE: aim where the exhaust leaves the deflector (+x), high enough to take in the whole stage and the steam */
+    drone: { t: [10, 6, 0], d: 190, el: 0.78, hw: 48 },
     box: [16, 8],
     sc: [2, 10, 0],
     sh: 26,

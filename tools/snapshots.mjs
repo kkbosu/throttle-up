@@ -95,7 +95,7 @@ const MACHINES = [0, 1, 2, 3, 4, 5, 6, 7];
 const POWER = 'raw=1;applyRaw()';
 
 async function viewsAndCutaway(t) {
-  const views = (await t.ev('M.space&&!!G3')) ? [0, 1, 2, 3] : [0, 1, 2];
+  const views = await t.ev('!G3 ? [0, 1, 2] : M.space ? [0, 1, 2, 3] : [0, 1, 2, 4]');
   for (const e of [0, 1]) for (const v of views) {
     await t.shot(`v${v}${e ? '-cut' : ''}`, { view: v, exposed: e });
   }

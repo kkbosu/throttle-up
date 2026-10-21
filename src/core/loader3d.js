@@ -1,5 +1,5 @@
 // 3D loader: fetches three and the renderer chunk; anything goes wrong (no WebGL2, offline, error) and the 2D renderer carries on.
-import { chips } from './machine-switch.js';
+import { chips, views } from './machine-switch.js';
 import { state } from './state.js';
 import { $, SN } from './util.js';
 import { lab } from '../hud/controls.js';
@@ -29,6 +29,7 @@ export function ready3D(ok, X) {
 export function fail3D() {
   state.G3 = null;
   state.lens = 0;
+  if (!views().includes(state.view)) state.view = 0;
   $('gl').style.display = 'none';
   SN.splice(0, 3, 'VOID', 'DESERT DAWN', 'NIGHT');
   chips();

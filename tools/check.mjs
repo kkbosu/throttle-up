@@ -74,11 +74,13 @@ async function machineRun(page, rec, m, r2d) {
   await c.frames(2);
 
   const space = await c.ev('!!M.space');
-  const nViews = has3D && space ? 4 : 3;
-  for (let i = 1; i <= nViews; i++) {
+  // 2D: SIDE, CLOSE-UP, REAR; 3D adds EARTH for the machine in orbit, DRONE for the others
+  const list = !has3D ? [0, 1, 2] : space ? [0, 1, 2, 3] : [0, 1, 2, 4];
+  for (let i = 1; i <= list.length; i++) {
     await c.act('view'); await c.frames(2);
     const [v, label, VNv] = await c.ev(() => [view, document.querySelector('#ctl [data-k=view]').textContent, VN[view]]);
-    c.expect(v === i % nViews, `view cycles (${i % nViews} expected, got ${v})`);
+    const want = list[i % list.length];
+    c.expect(v === want, `view cycles (${want} expected, got ${v})`);
     c.expect(label === 'VIEW: ' + VNv, `view button reads VIEW: ${VNv}`);
   }
   for (const e of [1, 0]) { await c.act('exp'); await c.frames(2); c.expect((await c.ev('exposed')) === e, `cutaway ${e ? 'on' : 'off'}`); }
