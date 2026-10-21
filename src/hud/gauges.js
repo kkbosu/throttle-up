@@ -71,10 +71,15 @@ export function gauges(dr) {
       y = state.gy,
       cx = x + R,
       cy = y + R;
-    g.fillStyle = '#6c7482';
+    /* caption sits over the 3D scene: light text with a dark halo, legible on bright sky and at night */
     g.font = `9px ${MONO}`;
     g.textAlign = 'center';
     g.textBaseline = 'middle';
+    g.lineJoin = 'round';
+    g.lineWidth = 3;
+    g.strokeStyle = 'rgba(6,8,12,.85)';
+    g.strokeText(c.cap, cx, y - 8);
+    g.fillStyle = '#c3cad6';
     g.fillText(c.cap, cx, y - 8);
     g.drawImage(state.FC[i], x, y, state.dsz, state.dsz);
     const v = Math.max(c.min, Math.min(c.max * 1.03, vals[i] + (Math.random() - 0.5) * c.max * 0.006 * jit));
@@ -122,7 +127,7 @@ export function gauges(dr) {
     g.lineWidth = 1;
     g.fillRect(x, ly, state.dsz, lh);
     g.strokeRect(x + 0.5, ly + 0.5, state.dsz - 1, lh - 1);
-    g.fillStyle = l[1] ? '#0a0c10' : '#3a404c';
+    g.fillStyle = l[1] ? '#0a0c10' : '#5d6573';
     g.fillText(l[0], x + state.dsz / 2, ly + lh / 2 + 0.5);
   });
   /* engine master switch */
@@ -140,7 +145,7 @@ export function gauges(dr) {
   g.font = `600 10px ${MONO}`;
   g.textAlign = 'left';
   g.textBaseline = 'middle';
-  g.fillStyle = '#6c7482';
+  g.fillStyle = '#8a93a2';
   g.fillText('ENGINE', state.gx + 10, sy + sh / 2 + 0.5);
   g.fillStyle = on ? '#1f5a38' : '#232a36';
   g.strokeStyle = on ? '#3fcf7a' : '#4a5160';
@@ -156,7 +161,7 @@ export function gauges(dr) {
   g.fill();
   g.textAlign = 'right';
   const msg = state.ph == 1 ? state.M.st : state.ph == 2 ? 'RUN' : state.N > 0.02 ? state.M.cl : 'OFF';
-  g.fillStyle = on ? '#3fcf7a' : state.N > 0.02 ? '#ff9a3a' : '#6c7482';
+  g.fillStyle = on ? '#3fcf7a' : state.N > 0.02 ? '#ff9a3a' : '#8a93a2';
   g.fillText(msg, state.gx + sw - 10, sy + sh / 2 + 0.5);
   g.textAlign = 'left';
   /* SR-71 inlet spike schematic: beside the dials if there is room, else under the switch */

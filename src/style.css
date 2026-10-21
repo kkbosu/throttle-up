@@ -3,6 +3,9 @@
   --bg: #05060a;
   --fg: #d8dde6;
   --dim: #6c7482;
+  /* text drawn straight over the 3D scene: light, with a dark halo so it reads on bright sky and at night alike */
+  --over: #c3cad6;
+  --halo: 0 0 3px rgba(4, 6, 10, 0.95), 0 1px 2px rgba(4, 6, 10, 0.9);
   box-sizing: border-box;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -35,7 +38,8 @@ canvas {
   font-size: 12px;
   letter-spacing: 0.14em;
   line-height: 1.9;
-  color: var(--dim);
+  color: var(--over);
+  text-shadow: var(--halo);
 }
 /* the hint wraps before the lever column: its tracks and labels sit on the right (130px, or 230px with two levers) */
 #hint {
@@ -141,7 +145,8 @@ body:has(#tq.two) #hint {
   right: 50px;
   font-size: 10px;
   letter-spacing: 0.14em;
-  color: var(--dim);
+  color: var(--over);
+  text-shadow: var(--halo);
   transform: translateY(50%);
   white-space: nowrap;
 }
@@ -211,8 +216,9 @@ body:has(#tq.two) #hint {
   display: inline-block;
   margin-left: 10px;
   padding: 0 8px;
-  border: 1px solid #2a3040;
+  border: 1px solid rgba(195, 202, 214, 0.5);
   border-radius: 3px;
+  background: rgba(8, 10, 15, 0.45);
   font-size: 10px;
   line-height: 18px;
   letter-spacing: 0.14em;
