@@ -6,6 +6,7 @@ import { SHAKE, cv } from '../core/util.js';
 import { k3 } from './context.js';
 import { V3, cam } from './kit.js';
 import { CFG } from './machine.js';
+import { PU } from './plume.js';
 
 // assigned by create*() below, when init3D runs
 export let cP, cT, tmp, sph, SH, LK;
@@ -77,6 +78,13 @@ function droneCam() {
 
 export function camera(dr) {
   const c = state.view == 4 ? droneCam() : CFG[state.mi].cams[state.view];
+  /* the drone is hundreds of metres out: with the near plane at 0.2 m the depth buffer can't tell a pad from the
+     ground just under it, and they flicker; push the near plane out while it flies */
+  const nr = state.view == 4 ? 1 : 0.2;
+  if (cam.near !== nr) {
+    cam.near = PU.uNear.value = k3.cpass.uniforms.uNear.value = nr;
+    cam.updateProjectionMatrix();
+  }
   if (state.view !== k3.lastView) {
     k3.lastView = state.view;
     k3.yaw = k3.pit = 0;
