@@ -21,7 +21,10 @@ export function createMachine() {
 
 export function applyMachine() {
   k3.MA = state.mi;
-  ENG.forEach((e, i) => (e.G.visible = i == state.mi));
+  ENG.forEach((e, i) => {
+    e.G.visible = i == state.mi;
+    if (e.P) e.P.visible = i == state.mi;
+  });
   const c = CFG[state.mi];
   setPlumeBox(c.box[0], c.box[1]);
   /* land: the machine builds its own ground and horizon (Starbase) */

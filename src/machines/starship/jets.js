@@ -33,11 +33,13 @@ export function buildJets(E, engines, bell, exitR) {
     blending: T.AdditiveBlending,
     vertexShader: `attribute float aG,aSd;varying float vS,vF,vG,vSd;
  void main(){mat4 mw=modelViewMatrix*instanceMatrix;vec4 mv=mw*vec4(position,1.);
-  vec3 n=normalize(mat3(mw)*vec3(0.,position.y,position.z));vF=abs(dot(n,normalize(-mv.xyz)));
+  vec3 n=normalize(mat3(mw)*vec3(0.,position.y,position.z));vF=clamp(abs(dot(n,normalize(-mv.xyz))),0.,1.);
   vS=position.x;vG=aG;vSd=aSd;gl_Position=projectionMatrix*mv;}`,
     fragmentShader: `uniform float uT,uI,uDia,uCut;uniform float uW[3];varying float vS,vF,vG,vSd;
  void main(){float w=vG<.5?uW[0]:vG<1.5?uW[1]:uW[2];if(w<.004)discard;
-  float s=vS,x=s*${JL.toFixed(1)},th=pow(vF,1.4),ax=pow(vF,7.);
+  /* plain products only: vF reaches 0 on the jet's outline, and some Direct3D drivers compute sqrt and pow there as
+     0 x infinity = NaN, which showed as black specks along the jets */
+  float s=vS,x=s*${JL.toFixed(1)},f2=vF*vF,th=vF*(.4+.6*vF),ax=f2*f2*f2*vF;
   float fl=.84+.16*sin(uT*71.+vSd*40.+x*2.3)*sin(uT*37.+vSd*13.);
   /* translucent violet core just below the nozzle */
   vec3 c=vec3(.36,.26,1.)*exp(-s*3.2)*.06*th;
@@ -47,7 +49,8 @@ export function buildJets(E, engines, bell, exitR) {
   /* the jet mixing with air: an orange fringe that grows downstream */
   c+=vec3(1.,.5,.15)*smoothstep(.04,.3,s)*exp(-s*1.3)*th*.12;
   c*=w*uI*fl*(1.-smoothstep(uCut-.4,uCut,s));
-  gl_FragColor=vec4(c,1.);}`,
+  gl_FragColor=vec4(c,1.);
+}`,
   });
   const im = new T.InstancedMesh(g, m, n),
     M4 = new T.Matrix4(),

@@ -13,7 +13,7 @@ export let SPK, SMK, FIR, FLW, W3, AX;
 
 export function createParticles() {
   SPK = Pool(400, 0);
-  SMK = Pool(420, 1);
+  SMK = Pool(900, 1);
   FIR = Pool(200, 0, 0);
   FLW = Pool(700, 0, 0.03);
 }
