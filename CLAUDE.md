@@ -18,7 +18,7 @@ Throttle Up is a browser toy (heading toward a game) where you throttle up real 
 | 5 | HARRIER | Pegasus jump jet on a hover pad | yes | second lever = nozzle angle; vertical hover physics |
 | 6 | NK-12 | Kuznetsov NK-12 turboprop, contra-rotating props, test stand | yes | constant-speed propeller (RPM holds, blade pitch coarsens), feathering |
 | 7 | SKY CRANE | Mars 2020 descent stage lowering Perseverance, Jezero Crater | yes | Mars gravity, 8 MLEs (4 drop to ~1%), second lever = bridle payout, auto cut + flyaway |
-| 8 | STARSHIP | Super Heavy booster (33 Raptor 3) static fire on the orbital launch mount, Starbase | yes | lever lights the centre 3, middle ring and outer ring, then throttles all 33 from 40 to 100%; trench steam both ways |
+| 8 | STARSHIP | Super Heavy booster (33 Raptor 3) static fire on Pad 2's launch mount at Starbase, on the Gulf coast | yes | lever lights the centre 3, middle ring and outer ring, then throttles all 33 from 40 to 100%; dual flame trench (fire and steam both ways); its own coastal site (beach, sea, lagoons, tank farm, Pad 1) |
 
 Machines 0–2 also have a hand-drawn 2D canvas renderer (fallback). Machines with `need3d:1` are hidden when 3D is unavailable.
 
@@ -66,6 +66,8 @@ src/
     <name>/inset.js       inset panel (hall, harrier, nk-12, sky-crane, sr-71)
     shuttle/draw2d.js     the RS-25's 2D renderer
     shared/jet3d.js       3D hooks F-TYPE and SR-71 share;  shared/gimbal.js: RS-25/F-1 gimbal wobble
+    starship/             three.js (cfg, hooks) builds booster.js (skin, frost, fins, bells), jets.js (33 jet shader)
+                          and site.js (Starbase: land, water, mount and trench, towers, tank farm); runs in isolated()
   debug/globals.js        test bridge: every main-chunk export and state key on window
 ```
 
@@ -83,13 +85,14 @@ Story: `sqc` + `sq[]` SEQUENCE steps (`{cap, lever|()=>, dur, wait, until(), max
 
 ### 3D side (`machines/<name>/three.js`) — fields
 
-`cfg:{box:[len,radius], sc, sh, cams:[[pos,target,halfWidthFit] x3 or 4], mt, space?, mars?, flat?, drone?}` (`flat` hides the distant mountains; views: 0 SIDE, 1 CLOSE-UP, 2 REAR, 3 EARTH for the machine in orbit, 4 DRONE for the others; `drone:{t,d,el,hw}` tunes the circling drone: target, distance, elevation in radians, half-width to keep in frame; defaults come from the SIDE preset), `build()` → `{G, E, anchor, lens, labels, flow, upd(dt)}` (plume runs along `anchor`'s local +X; labels/tracers in `E`'s local coords), `plume(u,fl)` → `[lightIntensity, lightColour]` (sets plume uniforms), `emit(dt,ax)`, `thermal(amb,nn,fh)`, `flame()` (flame-light position). Optional: `thFh(nn)`, `thR:[cold,ground]`, `flap()`, `inner()` (metal glow), `flowStr`, `flowSize`, `flowSpeed()`, `cam(P0,T0)` (Hall's EARTH view), `portrait` (swing round on portrait phones), `burst` (stall fireballs). A hook a machine leaves out gets the shared default.
+`cfg:{box:[len,radius], sc, sh, cams:[[pos,target,halfWidthFit] x3 or 4], mt, space?, mars?, land?, shD?, shF?, drone?}` (`land`: the machine builds its own ground and horizon, so the shared ground, mountains and trees are hidden; `shD`/`shF`: sun distance and shadow far plane for scenes bigger than the default 60/120 m; views: 0 SIDE, 1 CLOSE-UP, 2 REAR, 3 EARTH for the machine in orbit, 4 DRONE for the others; `drone:{t,d,el,hw}` tunes the circling drone: target, distance, elevation in radians, half-width to keep in frame; defaults come from the SIDE preset; while it flies, the camera's near plane moves out to 1 m so distant pads don't z-fight with the ground), `build()` → `{G, E, anchor, lens, labels, flow, upd(dt)}` (plume runs along `anchor`'s local +X; labels/tracers in `E`'s local coords), `plume(u,fl)` → `[lightIntensity, lightColour]` (sets plume uniforms), `emit(dt,ax)`, `thermal(amb,nn,fh)`, `flame()` (flame-light position). Optional: `thFh(nn)`, `thR:[cold,ground]`, `flap()`, `inner()` (metal glow), `flowStr`, `flowSize`, `flowSpeed()`, `cam(P0,T0)` (Hall's EARTH view), `portrait` (swing round on portrait phones), `burst` (stall fireballs). A hook a machine leaves out gets the shared default.
 
 ### Rules the split relies on
 
 - **Load order.** Modules do no work when they load except build constants. Listeners and DOM setup go in a module's `wireX()`, called from `main.js` in v11's order. Every three.js object is created inside `init3D` (`createX()` / `build()`), in v11's order: object ids and the random numbers three draws for UUIDs depend on it.
 - **Import cycles exist** (the machine table, controls and renderer modules reference each other). Anything read *while modules are loading* must be a function declaration; a `const` or default export read that early is silently `undefined` in the bundle. That's why `M3` is filled by `loadM3()` and `jet3d.js` exports only functions.
 - **Three.js stays out of the main chunk.** `npm run build` runs `tools/check-chunks.mjs`, which fails if the entry chunk reaches three, `render3d/` or a machine's `three.js` (`?r=2d` must never download three).
+- **A big builder runs in `isolated()`** (`render3d/kit.js`): its own seeded `Math.random`, so the UUIDs and textures it draws don't shift the random numbers every other machine gets. Starship does this; a new machine with a large model should too.
 - `npm run lint` (ESLint `no-undef`): a forgotten import would otherwise silently resolve to an element with that id (`hd`, `trk`, `tq` are both).
 
 **To add a machine:** create `src/machines/<name>/machine.js` (default export = the MC entry; its sim, voice, inset) and `src/machines/<name>/three.js` (default export `{cfg, build, plume, emit, thermal, flame, ...}`), then add it at the same position in `machines/index.js` and `machines/three.js`. Add its sources to `info.s` and `docs/SOURCES.md`, and its expected SEQUENCE outcome to `OUTCOME` in `tools/check.mjs`. New ground types or scene sets go in `render3d/ground.js` / `render3d/scenes.js`.
@@ -155,6 +158,7 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 - Saturn V schlieren is busy where the plume meets the deflector.
 - In the Hall EARTH view under the TERMINATOR scene the craft is a dark silhouette.
 - Propellers are drawn slower than real (anti-strobe), stated in INFO.
+- Starship's mount, tower and tank farm are blocky up close; its site is placed by eye (stated in INFO). Its scene is the heaviest (about 2x the software-rendered frame time of the others).
 - All testing so far was software-rendered; performance on real phones unknown.
 
 ## Roadmap (agreed)

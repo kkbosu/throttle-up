@@ -24,10 +24,11 @@ export function applyMachine() {
   ENG.forEach((e, i) => (e.G.visible = i == state.mi));
   const c = CFG[state.mi];
   setPlumeBox(c.box[0], c.box[1]);
-  mountains.visible = (!!c.mt || !!c.mars) && !c.space && !c.flat; /* flat: no mountains on the horizon (Starbase) */
-  trees.visible = !c.mt && !c.space && !c.mars;
+  /* land: the machine builds its own ground and horizon (Starbase) */
+  mountains.visible = (!!c.mt || !!c.mars) && !c.space && !c.land;
+  trees.visible = !c.mt && !c.space && !c.mars && !c.land;
   rocks.visible = !!c.mars;
-  ground.visible = !c.space;
+  ground.visible = !c.space && !c.land;
   earth.visible = !!c.space;
   k3.curS = -1;
   gMat.map = c.mars ? marsC : c.mt ? lakeC : grassC;
@@ -37,7 +38,7 @@ export function applyMachine() {
   sc.left = sc.bottom = -c.sh;
   sc.right = sc.top = c.sh;
   sc.near = 1;
-  sc.far = 120;
+  sc.far = c.shF || 120;
   sc.updateProjectionMatrix();
   sun.target.position.set(...c.sc);
   placeSun();

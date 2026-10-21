@@ -157,21 +157,24 @@ export function updParticles(dt, lc, li) {
     p.vx *= Math.exp(-dt * (p.k == 2 || p.k == 6 ? 0.35 : p.k == 7 ? 1.6 : p.k == 8 ? 0.7 : 0.8));
     p.vz *= p.k == 7 ? Math.exp(-dt * 1.6) : p.k == 8 ? Math.exp(-dt * 0.3) : 1;
     p.vz *= Math.exp(-dt * 0.6);
-    p.vy += dt * (p.k == 2 ? 1.2 : p.k == 8 ? -0.2 : 0.6);
+    p.vy += dt * (p.k == 2 ? 1.2 : p.k == 8 ? -0.2 : p.k == 9 ? -0.6 : 0.6);
     p.vy *= Math.exp(-dt * 0.3);
     const sz = p.s0 + (p.s1 - p.s0) * Math.pow(f, 0.55),
       fa = Math.min(1, f * 8) * (1 - f);
-    return p.k == 8
-      ? [sz, 0.52, 0.33, 0.2, fa * 0.42]
-      : p.k == 6
-        ? [sz, 0.32, 0.26, 0.2, fa * 0.5]
-        : p.k == 7
-          ? [sz, 0.62, 0.55, 0.44, fa * 0.38]
-          : p.k == 1
-            ? [sz, 0.06, 0.055, 0.05, fa * 0.7]
-            : p.k == 2
-              ? [sz, 0.92, 0.93, 0.95, fa * 0.5]
-              : [sz, 0.9, 0.92, 0.95, fa * 0.22];
+    /* k 9: cold vapour off a frosted tank, sinking */
+    return p.k == 9
+      ? [sz, 0.93, 0.95, 0.98, fa * 0.3]
+      : p.k == 8
+        ? [sz, 0.52, 0.33, 0.2, fa * 0.42]
+        : p.k == 6
+          ? [sz, 0.32, 0.26, 0.2, fa * 0.5]
+          : p.k == 7
+            ? [sz, 0.62, 0.55, 0.44, fa * 0.38]
+            : p.k == 1
+              ? [sz, 0.06, 0.055, 0.05, fa * 0.7]
+              : p.k == 2
+                ? [sz, 0.92, 0.93, 0.95, fa * 0.5]
+                : [sz, 0.9, 0.92, 0.95, fa * 0.22];
   });
 }
 /* ======================= fire puffs: compressor-stall fireballs, light-off flash ======================= */

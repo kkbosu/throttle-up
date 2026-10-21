@@ -214,5 +214,5 @@ export function applyScene(s) {
 export function placeSun() {
   const c = CFG[state.mi] || CFG[0],
     d = V3(...k3.curP.sun).normalize();
-  sun.position.set(...c.sc).addScaledVector(d, 60);
+  sun.position.set(...c.sc).addScaledVector(d, c.shD || 60);
 }

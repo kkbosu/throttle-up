@@ -130,21 +130,23 @@ export default {
   ],
   info: {
     f: [
-      "Super Heavy is the first stage of SpaceX's Starship. The Block 3 booster is 72.3 m tall and 9 m wide and carries about 3,650 t of propellant: 2,860 t of liquid oxygen and 790 t of liquid methane.",
+      "Super Heavy is the first stage of SpaceX's Starship. The Block 3 booster is 72.3 m tall and 9 m wide and carries about 3,650 t of propellant: 2,860 t of liquid oxygen and 790 t of liquid methane. It is built from rings of rolled stainless steel.",
       'It has 33 Raptor 3 engines. Each makes about 250 tf (2,452 kN) at sea level; the booster is quoted at 80.8 MN in total.',
       'Raptor burns subcooled liquid methane with liquid oxygen, about 3.6 kg of oxygen per kg of methane, in a full-flow staged combustion cycle, and can throttle between 40 and 100%.',
       'The thirteen engines in the centre and middle rings gimbal on electric actuators.',
       'The oxygen tank is at the bottom and the methane tank on top. Methane reaches the engines through a single downcomer pipe that runs down through the oxygen tank.',
-      'Three grid fins sit on the methane tank. Two have hardpoints: the launch tower\'s "chopstick" arms use them to lift the booster onto the orbital launch mount, and to catch it when it flies back. Twenty clamps hold it down on the mount.',
-      "Pad 2's mount has a water-cooled steel plate on its top level, and beneath it a flame bucket built from many steel pipes, which reduces sound levels and protects the pad. A water deluge system runs during firings.",
-      'Static fires on the mount are short. Booster 19 fired all 33 Raptor 3 engines on Pad 2 on 15 April 2026. In February 2023 an earlier booster lit 31 of its 33 engines at once.',
+      'Three electrically actuated grid fins sit on the methane tank, in a 90/90/180 degree arrangement. Two have hardpoints: the launch tower\'s "chopstick" arms use them to lift the booster onto the orbital launch mount, and to catch it when it flies back. Twenty clamps hold it down on the mount.',
+      'Starbase is next to Boca Chica Beach on the Gulf of Mexico, about 27 km east of Brownsville, Texas. Its launch site has two pads, each with an orbital launch mount and an integration tower, and a tank farm that stores methane, liquid oxygen, water, nitrogen, helium and hydraulic fluid.',
+      "Pad 2's mount has a water-cooled steel plate on its top level, and beneath it a flame bucket built from many steel pipes, which reduces sound levels and protects the pad. Its flame trench runs both ways, and a water deluge system runs during firings.",
+      'Static fires on the mount are short. Booster 19 fired all 33 Raptor 3 engines on Pad 2 on 15 April 2026, and on 7 May 2026 completed a full-duration static fire of 14 seconds, with clouds of mist forming on either side of the mount. In February 2023 an earlier booster lit 31 of its 33 engines at once.',
     ],
     a: [
       'The start order here (centre 3, then the middle ring of 10, then the outer 20) and its timing are a simplification. The sources used here do not give the real ignition sequence.',
-      'A real static fire lasts a few seconds. Here the engines run as long as you like, and once all 33 are lit the lever sets their throttle from 40 to 100%.',
+      "A real static fire lasts seconds (Booster 19's full-duration test was 14 s). Here the engines run as long as you like, and once all 33 are lit the lever sets their throttle from 40 to 100%.",
       "Thrust is the quoted 80.8 MN scaled by how many engines are lit and by throttle. Propellant flow is derived, not quoted: from Raptor 3's thrust and sea-level specific impulse (about 350 s) and the 3.6:1 mixture ratio, and it is assumed to scale with thrust.",
-      "The booster, mount, flame bucket, tower and chopsticks are simplified hand-built models. Apart from the booster's height and width, their sizes are estimated, and Starbase's surroundings are generic.",
-      'The plume is drawn as one merged column that brightens as engine groups light. Its colours are illustrative, and the sound is synthesized.',
+      "The booster, mount, flame bucket, tower and chopsticks are simplified hand-built models; apart from the booster's height and width their sizes are estimated. The frost over the tanks, the welds and the cable raceway are drawn to look plausible, not copied from a particular booster.",
+      'The site is an impression placed by eye, not a survey: the beach, dunes and lagoons, the tank farm, Pad 1 along the coast and the build site on the horizon.',
+      'The 33 jets with their shock diamonds, the merged plume, the flame in the trench and the steam are drawn, not simulated. Their colours are illustrative, and the sound is synthesized.',
     ],
     cut: "CUTAWAY removes half of the booster's skin. Pale blue dots are liquid oxygen flowing down from the lower tank to the engines; green dots are liquid methane coming down the downcomer pipe from the upper tank, through the oxygen tank; orange is the exhaust. Speeds are slowed enormously so you can follow them.",
     s: [
@@ -154,6 +156,10 @@ export default {
       [
         'Starship Flight 12 inches closer to launch with booster and ship static fires (Space Explored, April 2026)',
         'https://spaceexplored.com/2026/04/18/starship-flight-12-inches-closer-to-launch-with-booster-and-ship-static-fires/',
+      ],
+      [
+        'Flight 12 Starship Booster 19 performs a full-duration 33-engine static fire test ahead of launch (Tesla Oracle, May 2026)',
+        'https://www.teslaoracle.com/2026/05/09/flight-12-starship-booster-19-performs-a-full-duration-33-engine-static-fire-test-ahead-of-launch/',
       ],
       [
         "SpaceX test-fires 31 engines on Starship's gigantic Super Heavy booster (Spaceflight Now, February 2023)",

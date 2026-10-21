@@ -46,4 +46,5 @@ Extracted from the INFO panels (now in `src/machines/<name>/machine.js`; origina
 - [SpaceX Raptor (Wikipedia)](https://en.wikipedia.org/wiki/SpaceX_Raptor)
 - [SpaceX Starbase (Wikipedia)](https://en.wikipedia.org/wiki/SpaceX_Starbase)
 - [Starship Flight 12 inches closer to launch with booster and ship static fires (Space Explored, April 2026)](https://spaceexplored.com/2026/04/18/starship-flight-12-inches-closer-to-launch-with-booster-and-ship-static-fires/)
+- [Flight 12 Starship Booster 19 performs a full-duration 33-engine static fire test ahead of launch (Tesla Oracle, May 2026)](https://www.teslaoracle.com/2026/05/09/flight-12-starship-booster-19-performs-a-full-duration-33-engine-static-fire-test-ahead-of-launch/)
 - [SpaceX test-fires 31 engines on Starship's gigantic Super Heavy booster (Spaceflight Now, February 2023)](https://spaceflightnow.com/2023/02/09/spacex-test-fires-31-engines-on-starships-gigantic-super-heavy-booster/)
