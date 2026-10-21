@@ -5,6 +5,7 @@
 //
 //   node tools/site-images.mjs                    -> both (the preview uses the shot chosen in SHOT)
 //   node tools/site-images.mjs --try <dir>        -> every preview candidate in CANDIDATES, to compare
+//                                 [--only <regex>]   (just the candidates whose name matches)
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { FF, ROOT, launch, load, newPage, serveBuild } from './harness.mjs';
@@ -15,13 +16,20 @@ const CANDIDATES = {
   'ftype-night-close': { m: 0, view: 1, scenes: 2, lever: 1, secs: 12 },
   'saturn-night-side': { m: 4, view: 0, scenes: 2, lever: 1, secs: 14 },
   'shuttle-day-side': { m: 2, view: 0, scenes: 1, lever: 1, secs: 10 },
+  // t sets the sim clock before the shot; the DRONE view's heading round the pad follows it (0.06 rad/s)
+  'starship-dusk-drone-15': { m: 8, view: 4, scenes: 0, lever: 1, secs: 14, t: 15 },
+  'starship-dusk-drone-9': { m: 8, view: 4, scenes: 0, lever: 1, secs: 14, t: 9 },
+  'starship-dusk-side': { m: 8, view: 0, scenes: 0, lever: 1, secs: 14 },
+  'starship-night-side': { m: 8, view: 0, scenes: 2, lever: 1, secs: 14 },
+  'starship-dusk-rear': { m: 8, view: 2, scenes: 0, lever: 1, secs: 14 },
 };
-const SHOT = 'ftype-night-close';
+const SHOT = 'starship-dusk-drone-9';
 const TAGLINE = 'Throttle up real engines. Watch, hear and read what happens.';
 
 const args = process.argv.slice(2);
 const tryDir = args.includes('--try') ? args[args.indexOf('--try') + 1] : null;
-const shots = tryDir ? Object.entries(CANDIDATES) : [[SHOT, CANDIDATES[SHOT]]];
+const only = args.includes('--only') ? new RegExp(args[args.indexOf('--only') + 1]) : null;
+const shots = tryDir ? Object.entries(CANDIDATES).filter(([n]) => !only || only.test(n)) : [[SHOT, CANDIDATES[SHOT]]];
 const ctx = { viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 };
 
 const srv = await serveBuild();
@@ -35,7 +43,7 @@ for (const [name, s] of shots) {
   await page.evaluate(FF, 6);
   await page.evaluate((l) => { raw = l; applyRaw(); }, s.lever);
   await page.evaluate(FF, s.secs);
-  await page.evaluate((s) => { for (let i = 0; i < s.scenes; i++) act('scn'); view = s.view; lab(); step(1); G3.snap(); step(6); }, s);
+  await page.evaluate((s) => { if (s.t != null) simT = s.t; for (let i = 0; i < s.scenes; i++) act('scn'); view = s.view; lab(); step(1); G3.snap(); step(6); }, s);
   // hide the HUD, levers and buttons; add the title band
   await page.addStyleTag({ content: '#c,#tq,#ctl,#hud,#ov,#inf,#clip{display:none!important}' });
   await page.evaluate((tag) => {
