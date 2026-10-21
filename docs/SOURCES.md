@@ -40,3 +40,10 @@ Extracted from the INFO panels (now in `src/machines/<name>/machine.js`; origina
 - [The Sun Sets on Mars (NASA)](https://science.nasa.gov/?p=926395)
 - [Sky crane (Wikipedia)](https://en.wikipedia.org/wiki/Sky_crane_(landing_system))
 
+
+## STARSHIP SUPER HEAVY
+- [SpaceX Super Heavy (Wikipedia)](https://en.wikipedia.org/wiki/SpaceX_Super_Heavy)
+- [SpaceX Raptor (Wikipedia)](https://en.wikipedia.org/wiki/SpaceX_Raptor)
+- [SpaceX Starbase (Wikipedia)](https://en.wikipedia.org/wiki/SpaceX_Starbase)
+- [Starship Flight 12 inches closer to launch with booster and ship static fires (Space Explored, April 2026)](https://spaceexplored.com/2026/04/18/starship-flight-12-inches-closer-to-launch-with-booster-and-ship-static-fires/)
+- [SpaceX test-fires 31 engines on Starship's gigantic Super Heavy booster (Spaceflight Now, February 2023)](https://spaceflightnow.com/2023/02/09/spacex-test-fires-31-engines-on-starships-gigantic-super-heavy-booster/)

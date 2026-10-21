@@ -24,7 +24,7 @@ export function applyMachine() {
   ENG.forEach((e, i) => (e.G.visible = i == state.mi));
   const c = CFG[state.mi];
   setPlumeBox(c.box[0], c.box[1]);
-  mountains.visible = (!!c.mt || !!c.mars) && !c.space;
+  mountains.visible = (!!c.mt || !!c.mars) && !c.space && !c.flat; /* flat: no mountains on the horizon (Starbase) */
   trees.visible = !c.mt && !c.space && !c.mars;
   rocks.visible = !!c.mars;
   ground.visible = !c.space;

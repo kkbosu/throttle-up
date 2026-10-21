@@ -43,6 +43,7 @@ const OUTCOME = [
   ['HARRIER', 'lifts off', r => r.mx.alt > 1],
   ['NK-12', 'reaches full power', r => r.mx.N > 0.9],
   ['SKY CRANE', 'puts the rover down', r => !!r.td],
+  ['STARSHIP', 'lights all 33 Raptors and reaches full throttle', r => r.mx.N > 0.95],
 ];
 
 function checker(page, rec) {
@@ -67,7 +68,8 @@ async function machineRun(page, rec, m, r2d) {
   const c = checker(page, rec);
   const has3D = !r2d;
   const chips = await c.chips();
-  c.expect(chips.length === (has3D ? 8 : 3), `${has3D ? 8 : 3} machine buttons (got ${chips.length})`);
+  const wantChips = await c.ev('MC.filter((m) => !m.need3d || !!G3).length');
+  c.expect(chips.length === wantChips && chips.length >= (has3D ? 8 : 3), `${wantChips} machine buttons (got ${chips.length})`);
   c.expect((await c.ev('!!G3')) === has3D, has3D ? '3D renderer running' : '2D renderer (no 3D)');
   c.expect((await c.ev('M.btn')) === OUTCOME[m][0], `machine ${OUTCOME[m][0]} selected`);
   await c.start();
@@ -166,7 +168,7 @@ async function stallRun(page, rec) {
 }
 
 const scenarios = [
-  ...[0, 1, 2, 3, 4, 5, 6, 7].map(m => ({ id: `3d-m${m}`, q: 2, m, ctx: SMALL, run: (p, r) => machineRun(p, r, m, false) })),
+  ...[0, 1, 2, 3, 4, 5, 6, 7, 8].map(m => ({ id: `3d-m${m}`, q: 2, m, ctx: SMALL, notV11: m > 7, run: (p, r) => machineRun(p, r, m, false) })),
   ...[0, 1, 2].map(m => ({ id: `2d-m${m}`, q: 2, m, r2d: true, ctx: SMALL, run: (p, r) => machineRun(p, r, m, true) })),
   {
     id: '2d-fallback-m3', q: 2, m: 3, r2d: true, ctx: SMALL,
@@ -182,7 +184,8 @@ const scenarios = [
     id: r2d ? 'nav-2d' : 'nav-3d', q: 2, m: 0, r2d, ctx: SMALL, notV11: true,
     async run(page, rec) {
       const c = checker(page, rec);
-      const prev = r2d ? 'SHUTTLE' : 'SKY CRANE';   // in 2D, previous skips the 3D-only machines
+      // previous from the first machine wraps to the last; in 2D it skips the 3D-only machines
+      const prev = r2d ? 'SHUTTLE' : await page.evaluate(() => MC[MC.length - 1].btn);
       const is = async (want, how) => { await c.frames(1); const b = await c.ev('M.btn'); c.expect(b === want, `${how}: ${want} (got ${b})`); };
       await c.start();
       c.expect((await c.ev(() => document.querySelector('#ctl [data-k=mach]').textContent)) === 'MACHINE: F-TYPE ▶', 'machine button reads "MACHINE: F-TYPE ▶"');
@@ -199,7 +202,8 @@ const scenarios = [
     async run(page, rec) {
       const c = checker(page, rec);
       await c.start();
-      for (let m = 0; m < 8; m++) {
+      const count = await c.ev('MC.length');
+      for (let m = 0; m < count; m++) {
         const r = await c.ev(m => {
           setMachine(m); step(1);
           const box = el => { const b = el.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };

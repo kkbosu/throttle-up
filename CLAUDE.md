@@ -18,6 +18,7 @@ Throttle Up is a browser toy (heading toward a game) where you throttle up real 
 | 5 | HARRIER | Pegasus jump jet on a hover pad | yes | second lever = nozzle angle; vertical hover physics |
 | 6 | NK-12 | Kuznetsov NK-12 turboprop, contra-rotating props, test stand | yes | constant-speed propeller (RPM holds, blade pitch coarsens), feathering |
 | 7 | SKY CRANE | Mars 2020 descent stage lowering Perseverance, Jezero Crater | yes | Mars gravity, 8 MLEs (4 drop to ~1%), second lever = bridle payout, auto cut + flyaway |
+| 8 | STARSHIP | Super Heavy booster (33 Raptor 3) static fire on the orbital launch mount, Starbase | yes | lever lights the centre 3, middle ring and outer ring, then throttles all 33 from 40 to 100%; trench steam both ways |
 
 Machines 0–2 also have a hand-drawn 2D canvas renderer (fallback). Machines with `need3d:1` are hidden when 3D is unavailable.
 
@@ -73,7 +74,7 @@ Frame: `frame(t)` → `seqTick` → `keys` → `update` → `audio` → 2D `draw
 ### Machine table entry (`MC[i]`, `machines/<name>/machine.js`) — key fields
 
 `n` title, `btn` chip label, `sub` subtitle, `hint`, flags `need3d, space, warp, orbit, hover, nozzle, sky, inset, spike`, `insetF` (inset drawer).
-Hooks: `clu(dt)` per-frame machine step (Hall orbit, Saturn V, Harrier hover, NK-12, sky crane), `reset()` (runs for every machine on any switch), `onSelect()` (sky crane), `seqPre()` (sky crane's SEQUENCE pre-step), `camA(view)`, `warpName(i)` (Hall).
+Hooks: `clu(dt)` per-frame machine step (Hall orbit, Saturn V, Harrier hover, NK-12, sky crane, Starship), `reset()` (runs for every machine on any switch), `onSelect()` (sky crane), `seqPre()` (sky crane's SEQUENCE pre-step), `camA(view)`, `warpName(i)` (Hall).
 Engine model: `idle, up, dn, coast, cN, cT, tk, ign, lk, e0f, lt, ab, stall, e:[EGT curve], f:[fuel curve]`.
 UI: `g` (3 gauges: `{t,cap,min,max,maj,mn,red,d,f}`), `gv()` values, `lv`/`lv2` lever labels `[text,pos,'t'|'b']`, `lp()` lamps, status words `off/st/cl/cut/wait`.
 Feel: `shk()` camera shake strength (currently switched off for every machine: `SHAKE = 0` in `core/util.js`; it was a stylistic cue, not a measured effect), `au(s,V,pm)` audio voice.
@@ -82,7 +83,7 @@ Story: `sqc` + `sq[]` SEQUENCE steps (`{cap, lever|()=>, dur, wait, until(), max
 
 ### 3D side (`machines/<name>/three.js`) — fields
 
-`cfg:{box:[len,radius], sc, sh, cams:[[pos,target,halfWidthFit] x3 or 4], mt, space?, mars?, drone?}` (views: 0 SIDE, 1 CLOSE-UP, 2 REAR, 3 EARTH for the machine in orbit, 4 DRONE for the others; `drone:{t,d,el,hw}` tunes the circling drone: target, distance, elevation in radians, half-width to keep in frame; defaults come from the SIDE preset), `build()` → `{G, E, anchor, lens, labels, flow, upd(dt)}` (plume runs along `anchor`'s local +X; labels/tracers in `E`'s local coords), `plume(u,fl)` → `[lightIntensity, lightColour]` (sets plume uniforms), `emit(dt,ax)`, `thermal(amb,nn,fh)`, `flame()` (flame-light position). Optional: `thFh(nn)`, `thR:[cold,ground]`, `flap()`, `inner()` (metal glow), `flowStr`, `flowSize`, `flowSpeed()`, `cam(P0,T0)` (Hall's EARTH view), `portrait` (swing round on portrait phones), `burst` (stall fireballs). A hook a machine leaves out gets the shared default.
+`cfg:{box:[len,radius], sc, sh, cams:[[pos,target,halfWidthFit] x3 or 4], mt, space?, mars?, flat?, drone?}` (`flat` hides the distant mountains; views: 0 SIDE, 1 CLOSE-UP, 2 REAR, 3 EARTH for the machine in orbit, 4 DRONE for the others; `drone:{t,d,el,hw}` tunes the circling drone: target, distance, elevation in radians, half-width to keep in frame; defaults come from the SIDE preset), `build()` → `{G, E, anchor, lens, labels, flow, upd(dt)}` (plume runs along `anchor`'s local +X; labels/tracers in `E`'s local coords), `plume(u,fl)` → `[lightIntensity, lightColour]` (sets plume uniforms), `emit(dt,ax)`, `thermal(amb,nn,fh)`, `flame()` (flame-light position). Optional: `thFh(nn)`, `thR:[cold,ground]`, `flap()`, `inner()` (metal glow), `flowStr`, `flowSize`, `flowSpeed()`, `cam(P0,T0)` (Hall's EARTH view), `portrait` (swing round on portrait phones), `burst` (stall fireballs). A hook a machine leaves out gets the shared default.
 
 ### Rules the split relies on
 
@@ -120,7 +121,7 @@ Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim up
 
 **Behaviour checks (`npm run check`, about 2 min):** builds the app, serves it, and asserts that the game works, failing on any console or page error. Covers:
 - every machine in 3D: engine reaches RUN; views cycle, with the button label checked; cutaway; lenses (Hall skips schlieren); scenes; INFO opens and closes;
-- SEQUENCE runs to "Sequence complete." with a per-machine outcome: F-TYPE full afterburner, SR-71 Mach 2.8+, shuttle and NK-12 full power, Hall raises its orbit, Saturn V all five F-1s lit, Harrier lifts off, sky crane touches down;
+- SEQUENCE runs to "Sequence complete." with a per-machine outcome: F-TYPE full afterburner, SR-71 Mach 2.8+, shuttle and NK-12 full power, Hall raises its orbit, Saturn V all five F-1s lit, Harrier lifts off, sky crane touches down, Starship lights all 33 at full throttle;
 - machines 0–2 in 2D (`?r=2d`) and the fallback from `?m=3&r=2d` to F-TYPE;
 - the compressor stall, deterministic in `?manual` mode. A slow ramp doesn't stall; a slam stalls with bangs and beeps and recovers; pulling back clears it early; FAULTS off prevents it;
 - previous/next machine: the joined ◀ | MACHINE ▶ control and N / Shift+N, in 3D and 2D;
@@ -129,7 +130,7 @@ Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim up
 
 `--only <regex>` picks scenarios; `--v11` runs the checks that apply to `legacy/throttle-up-v11.html` there (all pass; the navigation checks are skipped); `PAGE_URL` points at a running server. Unlike the golden suite it doesn't compare with v11, so it stays meaningful after intentional changes. Extend `OUTCOME` in `tools/check.mjs` when adding a machine. Shared Playwright setup (seeded random, CDN routing, build + preview) lives in `tools/harness.mjs`.
 
-**Golden suite (Node Playwright, guards refactors):** `npm run snapshots` builds the app, serves it, and drives it through 38 scenarios, writing 290 screenshots plus `manifest.json` to `snapshots/golden` (it was the parity check for the Vite split against v11; `--v11` still records the legacy file). The scenarios cover:
+**Golden suite (Node Playwright, guards refactors):** `npm run snapshots` builds the app, serves it, and drives it through 41 scenarios, writing 333 screenshots plus `manifest.json` to `snapshots/golden` (it was the parity check for the Vite split against v11; `--v11` still records the legacy file). The scenarios cover:
 - every machine in every view, with cutaway, lenses and scenes, at power, and with INFO open;
 - every SEQUENCE;
 - the 2D renderer and its fallback;

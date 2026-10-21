@@ -22,6 +22,7 @@ export function tv(t) {
 }
 export function tcol(t, k) {
   if (k == 6) return [1.8, 1.0, 0.3];
+  if (k == 8) return [0.55, 1.6, 0.7]; /* liquid methane */
   if (k == 7) return [0.6, 0.55, 0.5];
   if (k == 4) return t < 0.35 ? [0.55, 0.55, 0.6] : [0.55 + 0.3 * (1 - t), 0.75, 2.4];
   if (k == 5) return [1.7, 1.5, 0.35];

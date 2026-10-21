@@ -91,7 +91,7 @@ function makeT(page, sc, record) {
   return t;
 }
 
-const MACHINES = [0, 1, 2, 3, 4, 5, 6, 7];
+const MACHINES = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 const POWER = 'raw=1;applyRaw()';
 
 async function viewsAndCutaway(t) {
