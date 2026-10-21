@@ -4,7 +4,7 @@ import * as T from 'three';
 import { state } from '../../core/state.js';
 import { k3 } from '../../render3d/context.js';
 import { padTex } from '../../render3d/ground.js';
-import { CAT, MT, V3, beam, box, canvasTex, cyl, lathe, pipe, rnd, std } from '../../render3d/kit.js';
+import { CAT, MT, V3, beam, box, canvasTex, cyl, isolated, lathe, pipe, rnd, std } from '../../render3d/kit.js';
 import { TH, thSet } from '../../render3d/lenses.js';
 import { SMK } from '../../render3d/particles.js';
 import { lightPole } from '../../render3d/props.js';
@@ -380,7 +380,7 @@ export default {
     mt: 1,
     flat: 1,
   },
-  build: buildSH,
+  build: () => isolated(buildSH),
   plume(u, fl) {
     let li, lc;
     {

@@ -280,6 +280,24 @@ export function createKit() {
   onCase = (x, r, a) => [x, Math.cos(a) * r, Math.sin(a) * r];
 }
 
+/* Run a builder with its own seeded Math.random (three.js draws four per object for its UUID), so a machine's model
+   can grow without shifting the random numbers every other machine's particles and textures get afterwards. */
+export function isolated(fn, seed = 0x5eed) {
+  const keep = Math.random;
+  let a = seed;
+  Math.random = () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  try {
+    return fn();
+  } finally {
+    Math.random = keep;
+  }
+}
+
 /* ---------------- materials ---------------- */
 export function canvasTex(w, h, fn, srgb = true, rep) {
   const c = mk(w, h),
