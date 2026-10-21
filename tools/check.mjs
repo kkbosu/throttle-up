@@ -257,6 +257,8 @@ await pool(todo, JOBS, async (browser, sc) => {
   const bad = [...rec.fails, ...[...counts].map(([e, n]) => (n > 1 ? `${e}  (×${n})` : e))];
   if (bad.length) failed++;
   console.log(`${bad.length ? 'FAIL' : 'ok  '} ${sc.id.padEnd(15)} ${((Date.now() - s0) / 1000).toFixed(1)}s` + bad.map(b => `\n       - ${b}`).join(''));
+  // on GitHub Actions each failure is also an annotation: the public API shows those without signing in, unlike logs
+  if (process.env.GITHUB_ACTIONS) for (const b of bad) console.log(`::error title=check ${sc.id}::${b.replace(/%/g, '%25').replace(/\r?\n/g, '%0A')}`);
 });
 if (server) await server.close();
 console.log(`\n${todo.length - failed}/${todo.length} scenarios passed  (${((Date.now() - t0) / 1000).toFixed(0)}s)`);
