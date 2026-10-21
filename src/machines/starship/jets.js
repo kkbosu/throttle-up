@@ -43,7 +43,7 @@ export function buildJets(E, engines, bell, exitR) {
   vec3 c=vec3(.36,.26,1.)*exp(-s*3.2)*.06*th;
   /* shock diamonds: bright bands, sharpest on the jet's axis, fading downstream */
   float ph=x/1.2-.4;
-  if(ph>0.){float f=fract(ph);c+=vec3(1.8,1.3,.7)*exp(-pow((f-.5)/.12,2.))*exp(-x/6.)*ax*uDia*.45;}
+  if(ph>0.){float f=fract(ph),q=(f-.5)/.12;c+=vec3(1.8,1.3,.7)*exp(-q*q)*exp(-x/6.)*ax*uDia*.45;}
   /* the jet mixing with air: an orange fringe that grows downstream */
   c+=vec3(1.,.5,.15)*smoothstep(.04,.3,s)*exp(-s*1.3)*th*.12;
   c*=w*uI*fl*(1.-smoothstep(uCut-.4,uCut,s));

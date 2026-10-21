@@ -55,8 +55,11 @@ export function createComposite() {
   vec2 w=vec2(sin(vUv.y*uRes.y*.11+uT*9.+sin(vUv.x*uRes.x*.04+uT*3.)*2.),cos(vUv.x*uRes.x*.09-uT*7.+sin(vUv.y*uRes.y*.03)*2.));
   /* heat haze: refract only what lies behind the hot gas (further than the nozzle exit uZA plus its radius uZR), and never
      across an object's outline. The half-res plume blurs a pixel or two past edges, which made the nozzle lip ripple. */
+  if(any(isnan(pl))||any(isinf(pl)))pl=vec4(0.);h=1.-exp(-pl.a);
   vec2 o=w*h*uHaze/uRes;float z0=vz(vUv),dz=abs(vz(vUv+o)-z0);o*=smoothstep(uZA+uZR,uZA+uZR+1.,z0)*(1.-smoothstep(.04*z0+.15,.08*z0+.3,dz));
-  vec3 c=texture2D(tMain,vUv+o).rgb+pl.rgb+uKick*vec3(1.,.86,.72);gl_FragColor=vec4(c,1.);}`,
+  vec3 c=texture2D(tMain,vUv+o).rgb+pl.rgb+uKick*vec3(1.,.86,.72);
+  /* never pass a NaN or infinity on: the bloom blur would smear one bad pixel into a growing black rectangle */
+  if(any(isnan(c))||any(isinf(c)))c=vec3(0.);gl_FragColor=vec4(clamp(c,0.,6e4),1.);}`,
   };
 }
 

@@ -82,7 +82,7 @@ export function createPlume() {
     float rm=r/(uMR*(1.+.05*x)*tb);core=mix(c,exp(-rm*rm*2.)*min(1.,wt/2.5),smoothstep(uMg.x,uMg.y,x));k=core*exp(-u*1.8);}
    vec3 e=ramp(k)*core*exp(-u*1.15)*(1.-smoothstep(.62,1.05,u))*(.5+nz)*uI;
    float ph=x/uDiaSp-uDiaOff;
-   if(ph>0.){float fp=fract(ph),tri=1.-abs(2.*fp-1.),rd2=R*uDiaR*(1.-.05*floor(ph));
+   if(ph>0.){float fp=fract(ph),tri=1.-abs(2.*fp-1.),rd2=R*uDiaR*max(1.-.05*floor(ph),.05);
     float lens=smoothstep(0.,.45,tri*.95-r/rd2)*tri*tri+.35*exp(-pow(r/rd2,2.)*3.)*tri*tri*tri,disk=exp(-pow((fp-.5)/.06,2.))*smoothstep(rd2,rd2*.4,r);
     e+=uDC*mix(lens,disk,uDisk)*exp(-x/(uDiaSp*uDiaN))*uDia*(.75+.5*nz);}
    e=mix(e,uGC*dot(e,vec3(.34)),clamp(uGreen*exp(-u*1.2),0.,1.));

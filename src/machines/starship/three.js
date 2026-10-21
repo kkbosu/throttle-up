@@ -164,7 +164,13 @@ export default {
       ),
     );
     u.uI.value = (state.N > 0.01 ? 0.6 : 0) * fl2 + ig * 0.5;
+    /* the jets draw the shock diamonds; still set the spacing, or the last machine's would leak in */
     u.uDia.value = 0;
+    u.uDiaSp.value = 2.0;
+    u.uDiaN.value = 3;
+    u.uDiaOff.value = 0.25;
+    u.uDiaR.value = 0.6;
+    u.uDC.value.set(4.4, 3.8, 3.2);
     u.uDisk.value = 0;
     u.uGreen.value = 0;
     u.uHeat.value = state.N * 1.8 + ig * 0.5;
