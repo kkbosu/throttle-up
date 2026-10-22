@@ -166,7 +166,7 @@ function speckle(base, n, lo, hi, a, rep, size = 256) {
 /* ---------- ground and water ---------- */
 function buildLand(G) {
   /* one mesh out to 4 km: about 5 m between vertices near the pad, coarser towards the horizon */
-  const S = 300,
+  const S = 200,
     warp = (u) => 900 * u + 3100 * Math.pow(u, 5),
     pos = [],
     col = [],
@@ -224,7 +224,7 @@ function buildLand(G) {
 
   /* scrub and dune grass: low clumps where the ground is green */
   const N = 2600,
-    cg = new T.IcosahedronGeometry(1, 1);
+    cg = new T.IcosahedronGeometry(1, 0);
   cg.translate(0, 0.35, 0);
   const shrubs = new T.InstancedMesh(cg, std({ color: 0xffffff, roughness: 0.92 }), N),
     M4 = new T.Matrix4(),

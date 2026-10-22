@@ -115,7 +115,7 @@ Live at https://kkbosu.github.io/throttle-up/ (GitHub Pages, repo `kkbosu/thrott
 
 ## Testing
 
-URL params: `?m=N` machine, `?q=0|1|2` quality, `?r=2d` force 2D, `?manual` stop the render loop so tests drive frames, `?fps` frame-time readout under the title (fps, average and 95th-percentile frame time over 2 s, quality level, render size, GPU name; `hud/fps.js`), for real-device reports.
+URL params: `?m=N` machine, `?q=0|1|2` quality, `?r=2d` force 2D, `?manual` stop the render loop so tests drive frames, `?fps` frame-time readout under the title (fps, average and 95th-percentile frame time over 2 s; JavaScript time per frame, triangles and draw calls; quality level, render size, GPU name; `hud/fps.js`), for real-device reports.
 
 Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim update); fast-forward without rendering:
 ```js
@@ -160,7 +160,7 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 - In the Hall EARTH view under the TERMINATOR scene the craft is a dark silhouette.
 - Propellers are drawn slower than real (anti-strobe), stated in INFO.
 - Starship's mount, tower and tank farm are blocky up close; its site is placed by eye (stated in INFO). Its scene is the heaviest (about 2x the software-rendered frame time of the others).
-- All testing so far was software-rendered; performance on real phones unknown.
+- Real phones: first numbers from a Mali-G52 Android (2026-10-22, `?fps`): Starship at 25 fps SIDE / 19 fps DRONE with auto quality already at Q0 (blurry, 0.7 px per CSS px), at 450k triangles a frame; its ground and scrub were then cut to about 194k. Auto quality only ever steps down. Other machines not yet measured on a phone.
 
 ## Roadmap (agreed)
 
