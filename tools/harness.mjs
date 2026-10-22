@@ -107,6 +107,7 @@ export async function load(page, base, sc) {
   if (sc.q != null) qs.set('q', sc.q);
   qs.set('m', sc.m);
   if (sc.r2d) qs.set('r', '2d');
+  if (sc.fps) qs.set('fps', '');
   let url = `${base}?${qs}`;
   if (sc.manual !== false) url += '&manual';
   await page.goto(url);

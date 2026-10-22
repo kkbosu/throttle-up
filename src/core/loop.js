@@ -4,6 +4,7 @@ import { update } from './engine.js';
 import { MAN, QP } from './params.js';
 import { state } from './state.js';
 import { $, cv } from './util.js';
+import { fpsTick } from '../hud/fps.js';
 import { gauges } from '../hud/gauges.js';
 import { keys } from '../input/lever.js';
 import { RC, rc, recLab, recOverlay, stopRec } from '../recorder/recorder.js';
@@ -31,6 +32,7 @@ export function adapt(dr) {
   }
 }
 export function frame(t) {
+  fpsTick(t, t - state.last);
   const dr = Math.min(0.05, (t - state.last) / 1000 || 0.016);
   state.last = t;
   adapt(dr);

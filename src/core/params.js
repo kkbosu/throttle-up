@@ -6,3 +6,5 @@
 export const QP = new URLSearchParams(location.search).get('q');
 /* test hook: ?manual stops the loop so a slow test machine can step frames one at a time */
 export const MAN = new URLSearchParams(location.search).has('manual');
+/* ?fps: show the frame-time readout (hud/fps.js) */
+export const FPS = new URLSearchParams(location.search).has('fps');

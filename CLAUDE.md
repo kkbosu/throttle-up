@@ -33,14 +33,14 @@ src/
   main.js                 boot: wires listeners in v11's order (wireX()), picks ?m, resize, loop, 3D loader
   core/state.js           `state`: every shared mutable variable (N, A, E, F, ph, raw, raw2, view, exposed, scene,
                           lens, mi, M, simT, alt, vz, ...) with its initial value. Code reads/writes state.N etc.
-  core/params.js          ?q (QP) and ?manual (MAN); ?m is read in main.js, ?r=2d in core/loader3d.js
+  core/params.js          ?q (QP), ?manual (MAN) and ?fps (FPS); ?m is read in main.js, ?r=2d in core/loader3d.js
   core/util.js            $, cv/g (HUD canvas), mk, sm (smoothstep), label tables, MONO font
   core/engine.js          update(dt): generic engine model, stall/surge, master switch; M.clu(dt) per-machine step
   core/machine-switch.js  setMachine (resets, then every machine's reset() and the selected one's onSelect()), chips
   core/loop.js            frame(), adapt(), step() test hook
   core/loader3d.js        load3D(): fetches three + the renderer chunk; ready3D/fail3D fall back to 2D
   hud/                    layout.js (resize), gauges.js (gauges, lamps, engine switch, inset placement),
-                          controls.js (lab, act, lever labels, START overlay)
+                          controls.js (lab, act, lever labels, START overlay), fps.js (?fps readout)
   input/lever.js          lever(s) with the MIL detent, keyboard
   audio/audio.js          Web Audio graph and one-shot sounds (per-machine voices live in the machine folders)
   sequence/sequence.js    SEQUENCE player (SQ, seqStart/Next/Stop/Tick/Cap)
@@ -115,7 +115,7 @@ Live at https://kkbosu.github.io/throttle-up/ (GitHub Pages, repo `kkbosu/thrott
 
 ## Testing
 
-URL params: `?m=N` machine, `?q=0|1|2` quality, `?r=2d` force 2D, `?manual` stop the render loop so tests drive frames.
+URL params: `?m=N` machine, `?q=0|1|2` quality, `?r=2d` force 2D, `?manual` stop the render loop so tests drive frames, `?fps` frame-time readout under the title (fps, average and 95th-percentile frame time over 2 s, quality level, render size, GPU name; `hud/fps.js`), for real-device reports.
 
 Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim update); fast-forward without rendering:
 ```js
@@ -130,7 +130,7 @@ Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim up
 - the compressor stall, deterministic in `?manual` mode. A slow ramp doesn't stall; a slam stalls with bangs and beeps and recovers; pulling back clears it early; FAULTS off prevents it;
 - previous/next machine: the joined ◀ | MACHINE ▶ control and N / Shift+N, in 3D and 2D;
 - the hint text never runs under the lever column (tracks or labels) for any machine, even with the longest messages, on a 390×780 phone, an 800×600 window and 1280×720;
-- a short real-time run.
+- a short real-time run, and the `?fps` readout (fills in on a phone, gauges below it; absent without the parameter).
 
 `--only <regex>` picks scenarios; `--v11` runs the checks that apply to `legacy/throttle-up-v11.html` there (all pass; the navigation checks are skipped); `PAGE_URL` points at a running server. Unlike the golden suite it doesn't compare with v11, so it stays meaningful after intentional changes. Extend `OUTCOME` in `tools/check.mjs` when adding a machine. Shared Playwright setup (seeded random, CDN routing, build + preview) lives in `tools/harness.mjs`.
 

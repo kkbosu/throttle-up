@@ -228,7 +228,22 @@ const scenarios = [
     async run(page, rec) {
       await page.click('#ov span');
       await page.waitForTimeout(2500);
-      checker(page, rec).expect(await page.evaluate(() => ph >= 1 && simT > 0 && !!G3), 'real-time loop runs with 3D');
+      const c = checker(page, rec);
+      c.expect(await page.evaluate(() => ph >= 1 && simT > 0 && !!G3), 'real-time loop runs with 3D');
+      c.expect(!(await page.$('#fps')), 'no frame-time readout without ?fps');
+    },
+  },
+  {
+    // ?fps: the readout fills in (frame rate, quality, 3D size, GPU) and the gauges sit below it
+    id: 'fps-m8', m: 8, manual: false, fps: true, ctx: PHONE,
+    async run(page, rec) {
+      const c = checker(page, rec);
+      await page.click('#ov span');
+      await page.waitForFunction(() => /^\d+ fps/.test(document.querySelector('#fps div').textContent), null, { timeout: 30_000 });
+      const r = await c.ev(() => ({ t: [...document.querySelectorAll('#fps div')].map(d => d.textContent), b: document.getElementById('fps').getBoundingClientRect().bottom, gy }));
+      c.expect(/^Q[0-2] auto · 3D \d+×\d+ · STARSHIP$/.test(r.t[1]), `readout shows quality and 3D size (got "${r.t[1]}")`);
+      c.expect(r.t[2].length > 0, 'readout shows the GPU');
+      c.expect(r.gy > r.b, `gauges below the readout (gauges at ${r.gy}, readout ends at ${r.b})`);
     },
   },
 ];

@@ -47,6 +47,27 @@ canvas {
   transition: opacity 1.2s;
   max-width: calc(100vw - 188px);
 }
+/* ?fps readout: between the title and the hint, so the gauges (placed under #hud) move down to make room */
+#fps {
+  height: 6em; /* 4 lines, always: the gauges are placed under #hud only on resize */
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+  max-width: calc(100vw - 188px);
+}
+#fps div {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* the GPU name may take two lines */
+#fps div:last-child {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
 body:has(#tq.two) #hint {
   max-width: calc(100vw - 258px);
 }
