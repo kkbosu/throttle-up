@@ -23,6 +23,8 @@ export function applyMachine() {
   k3.MA = state.mi;
   ENG.forEach((e, i) => {
     e.G.visible = i == state.mi;
+    /* three updates the matrices of hidden objects too: skip the other machines (about 850 objects every frame) */
+    e.G.matrixWorldAutoUpdate = i == state.mi;
     if (e.P) e.P.visible = i == state.mi;
   });
   const c = CFG[state.mi];
