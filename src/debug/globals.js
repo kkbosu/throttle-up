@@ -507,6 +507,48 @@ d(
   },
 );
 d(
+  'lowRes',
+  () => state.lowRes,
+  (v) => {
+    state.lowRes = v;
+  },
+);
+d(
+  'emaJ',
+  () => state.emaJ,
+  (v) => {
+    state.emaJ = v;
+  },
+);
+d(
+  'jsT',
+  () => state.jsT,
+  (v) => {
+    state.jsT = v;
+  },
+);
+d(
+  'fastT',
+  () => state.fastT,
+  (v) => {
+    state.fastT = v;
+  },
+);
+d(
+  'qUpT',
+  () => state.qUpT,
+  (v) => {
+    state.qUpT = v;
+  },
+);
+d(
+  'qCeil',
+  () => state.qCeil,
+  (v) => {
+    state.qCeil = v;
+  },
+);
+d(
   'GC',
   () => state.GC,
   (v) => {
@@ -618,6 +660,8 @@ d('setMachine', () => m4.setMachine);
 d('wireMachineSwitch', () => m4.wireMachineSwitch);
 d('QP', () => m5.QP);
 d('MAN', () => m5.MAN);
+d('FPS', () => m5.FPS);
+d('NOMERGE', () => m5.NOMERGE);
 d('$', () => m6.$);
 d('cv', () => m6.cv);
 d('g', () => m6.g);

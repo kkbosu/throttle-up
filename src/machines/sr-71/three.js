@@ -381,6 +381,8 @@ export function buildSR() {
           al: () => sm(1.8, 2.6, state.mach),
         })),
       ),
+    /* what upd() moves or shows/hides: not merged (render3d/merge.js) */
+    keep: [...doors, ...doors.map((h) => h.children[0]), spike, shell, noz, tf, shellH, j58H, tubes, inside, nozH, rot],
     upd(dt) {
       const o = 1 - sm(0.6, 1.2, state.mach);
       doors.forEach((h) => {

@@ -103,6 +103,8 @@ export function buildSH() {
         t1: 0,
       },
     ],
+    /* what upd() moves or shows/hides: not merged (render3d/merge.js) */
+    keep: [booster.full, booster.half, ...site.keep],
     upd() {
       const ex = state.exposed;
       booster.full.visible = !ex;

@@ -295,6 +295,8 @@ export function buildHT() {
         t1: 0,
       },
     ],
+    /* what upd() moves or shows/hides: not merged (render3d/merge.js) */
+    keep: [t1, t2].flatMap((t) => [t.full, t.half, t.inner]),
     upd(dt) {
       const nn = state.N * state.fu,
         ex = state.exposed;

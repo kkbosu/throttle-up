@@ -37,7 +37,8 @@ src/
   core/util.js            $, cv/g (HUD canvas), mk, sm (smoothstep), label tables, MONO font
   core/engine.js          update(dt): generic engine model, stall/surge, master switch; M.clu(dt) per-machine step
   core/machine-switch.js  setMachine (resets, then every machine's reset() and the selected one's onSelect()), chips
-  core/loop.js            frame(), adapt(), step() test hook
+  core/loop.js            frame(), adapt() (auto quality, 4 levels: Q2, Q1, Q0, Q0 at 0.7 resolution; CPU-bound
+                          frames skip the resolution drops), step() test hook
   core/loader3d.js        load3D(): fetches three + the renderer chunk; ready3D/fail3D fall back to 2D
   hud/                    layout.js (resize), gauges.js (gauges, lamps, engine switch, inset placement),
                           controls.js (lab, act, lever labels, START overlay), fps.js (?fps readout)
@@ -58,6 +59,8 @@ src/
     composite, camera, flow (cutaway tracers), overlay (labels, legend), frame (render())
     machine.js            CFG (= M3.map(m=>m.cfg)), applyMachine();  builders.js: ENG (= M3.map(m=>m.build()))
     context.js            k3: renderer state several modules reassign (camera, plume, targets, accumulators)
+    merge.js              static-parts pass after all builds: merges static meshes per material, freezes static
+                          matrices, gives instanced meshes their own material copies (see the rule below)
   machines/
     index.js              MC = [...] in machine order (index = ?m = chip order)
     three.js              M3 = [...] the 3D side, same order (filled by loadM3() when init3D starts)
@@ -85,7 +88,7 @@ Story: `sqc` + `sq[]` SEQUENCE steps (`{cap, lever|()=>, dur, wait, until(), max
 
 ### 3D side (`machines/<name>/three.js`) — fields
 
-`cfg:{box:[len,radius], sc, sh, cams:[[pos,target,halfWidthFit] x3 or 4], mt, space?, mars?, land?, shD?, shF?, drone?}` (`land`: the machine builds its own ground and horizon, so the shared ground, mountains and trees are hidden; `shD`/`shF`: sun distance and shadow far plane for scenes bigger than the default 60/120 m; views: 0 SIDE, 1 CLOSE-UP, 2 REAR, 3 EARTH for the machine in orbit, 4 DRONE for the others; `drone:{t,d,el,hw}` tunes the circling drone: target, distance, elevation in radians, half-width to keep in frame; defaults come from the SIDE preset; while it flies, the camera's near plane moves out to 1 m so distant pads don't z-fight with the ground), `build()` → `{G, E, anchor, lens, labels, flow, upd(dt), P?}` (`P`: the machine's own volume mesh for the half-res plume pass, shown only while it is selected, e.g. Starship's trench flame) (plume runs along `anchor`'s local +X; labels/tracers in `E`'s local coords), `plume(u,fl)` → `[lightIntensity, lightColour]` (sets plume uniforms), `emit(dt,ax)`, `thermal(amb,nn,fh)`, `flame()` (flame-light position). Optional: `thFh(nn)`, `thR:[cold,ground]`, `flap()`, `inner()` (metal glow), `flowStr`, `flowSize`, `flowSpeed()`, `cam(P0,T0)` (Hall's EARTH view), `portrait` (swing round on portrait phones), `burst` (stall fireballs). A hook a machine leaves out gets the shared default.
+`cfg:{box:[len,radius], sc, sh, cams:[[pos,target,halfWidthFit] x3 or 4], mt, space?, mars?, land?, shD?, shF?, drone?}` (`land`: the machine builds its own ground and horizon, so the shared ground, mountains and trees are hidden; `shD`/`shF`: sun distance and shadow far plane for scenes bigger than the default 60/120 m; views: 0 SIDE, 1 CLOSE-UP, 2 REAR, 3 EARTH for the machine in orbit, 4 DRONE for the others; `drone:{t,d,el,hw}` tunes the circling drone: target, distance, elevation in radians, half-width to keep in frame; defaults come from the SIDE preset; while it flies, the camera's near plane moves out to 1 m so distant pads don't z-fight with the ground), `build()` → `{G, E, anchor, lens, labels, flow, upd(dt), P?, keep?}` (`keep`: every object any hook moves, shows/hides or re-materials; see the static-parts rule) (`P`: the machine's own volume mesh for the half-res plume pass, shown only while it is selected, e.g. Starship's trench flame) (plume runs along `anchor`'s local +X; labels/tracers in `E`'s local coords), `plume(u,fl)` → `[lightIntensity, lightColour]` (sets plume uniforms), `emit(dt,ax)`, `thermal(amb,nn,fh)`, `flame()` (flame-light position). Optional: `thFh(nn)`, `thR:[cold,ground]`, `flap()`, `inner()` (metal glow), `flowStr`, `flowSize`, `flowSpeed()`, `cam(P0,T0)` (Hall's EARTH view), `portrait` (swing round on portrait phones), `burst` (stall fireballs). A hook a machine leaves out gets the shared default.
 
 ### Rules the split relies on
 
@@ -94,9 +97,10 @@ Story: `sqc` + `sq[]` SEQUENCE steps (`{cap, lever|()=>, dur, wait, until(), max
 - **Three.js stays out of the main chunk.** `npm run build` runs `tools/check-chunks.mjs`, which fails if the entry chunk reaches three, `render3d/` or a machine's `three.js` (`?r=2d` must never download three).
 - **A big builder runs in `isolated()`** (`render3d/kit.js`): its own seeded `Math.random`, so the UUIDs and textures it draws don't shift the random numbers every other machine gets. Starship does this; a new machine with a large model should too.
 - **Shaders must not produce NaN on real GPUs.** Software rendering (all automated tests) hides it, but on Direct3D a NaN pixel shows black and bloom smears it. Avoid `pow`/`sqrt` of values that can reach 0 or go negative, and divisions that can reach 0/0. To test on this machine's real GPU, launch Playwright's Chromium with `--use-angle=d3d11 --enable-gpu --ignore-gpu-blocklist` (no SwiftShader flags).
+- **Static parts are merged and frozen** (`render3d/merge.js`, for phones, where every draw call and matrix update costs main-thread time). Everything in a machine's group that isn't in its build's `keep` (or under a kept object, relative to it) is treated as never moving: its meshes are merged per material and its matrices frozen (`matrixAutoUpdate = false`). A kept object is its own rigid part, so its static children merge under it and still move with it. Changing a material's properties is fine (merged meshes share it); moving, hiding or swapping the material of a non-kept object is not. `npm run check` catches it ("static part changed (add it to keep)", naming the object). `?nomerge` turns the pass off for comparison.
 - `npm run lint` (ESLint `no-undef`): a forgotten import would otherwise silently resolve to an element with that id (`hd`, `trk`, `tq` are both).
 
-**To add a machine:** create `src/machines/<name>/machine.js` (default export = the MC entry; its sim, voice, inset) and `src/machines/<name>/three.js` (default export `{cfg, build, plume, emit, thermal, flame, ...}`), then add it at the same position in `machines/index.js` and `machines/three.js`. Add its sources to `info.s` and `docs/SOURCES.md`, and its expected SEQUENCE outcome to `OUTCOME` in `tools/check.mjs`. New ground types or scene sets go in `render3d/ground.js` / `render3d/scenes.js`.
+**To add a machine:** create `src/machines/<name>/machine.js` (default export = the MC entry; its sim, voice, inset) and `src/machines/<name>/three.js` (default export `{cfg, build, plume, emit, thermal, flame, ...}`; list what its hooks move in `keep`), then add it at the same position in `machines/index.js` and `machines/three.js`. Add its sources to `info.s` and `docs/SOURCES.md`, and its expected SEQUENCE outcome to `OUTCOME` in `tools/check.mjs`. New ground types or scene sets go in `render3d/ground.js` / `render3d/scenes.js`.
 
 ## Hosting
 
@@ -115,7 +119,7 @@ Live at https://kkbosu.github.io/throttle-up/ (GitHub Pages, repo `kkbosu/thrott
 
 ## Testing
 
-URL params: `?m=N` machine, `?q=0|1|2` quality, `?r=2d` force 2D, `?manual` stop the render loop so tests drive frames, `?fps` frame-time readout under the title (fps, average and 95th-percentile frame time over 2 s; JavaScript time per frame, triangles and draw calls; quality level, render size, GPU name; `hud/fps.js`), for real-device reports.
+URL params: `?m=N` machine, `?q=0|1|2` quality, `?r=2d` force 2D, `?manual` stop the render loop so tests drive frames, `?fps` frame-time readout under the title (fps, average and 95th-percentile frame time over 2 s; JavaScript time per frame, triangles and draw calls; quality level, render size, GPU name; `hud/fps.js`), for real-device reports; `?nomerge` skips the static-parts pass (`render3d/merge.js`) to compare.
 
 Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim update); fast-forward without rendering:
 ```js
@@ -129,6 +133,7 @@ Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim up
 - machines 0–2 in 2D (`?r=2d`) and the fallback from `?m=3&r=2d` to F-TYPE;
 - the compressor stall, deterministic in `?manual` mode. A slow ramp doesn't stall; a slam stalls with bangs and beeps and recovers; pulling back clears it early; FAULTS off prevents it;
 - previous/next machine: the joined ◀ | MACHINE ▶ control and N / Shift+N, in 3D and 2D;
+- the static-parts guard: in every 3D machine run, no merged or frozen part moves, hides or changes material;
 - the hint text never runs under the lever column (tracks or labels) for any machine, even with the longest messages, on a 390×780 phone, an 800×600 window and 1280×720;
 - a short real-time run, and the `?fps` readout (fills in at phone size, gauges below it; absent without the parameter).
 
@@ -160,7 +165,7 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 - In the Hall EARTH view under the TERMINATOR scene the craft is a dark silhouette.
 - Propellers are drawn slower than real (anti-strobe), stated in INFO.
 - Starship's mount, tower and tank farm are blocky up close; its site is placed by eye (stated in INFO). Its scene is the heaviest (about 2x the software-rendered frame time of the others).
-- Real phones: first numbers from a Mali-G52 Android (2026-10-22, `?fps`): Starship at 25 fps SIDE / 19 fps DRONE with auto quality already at Q0 (blurry, 0.7 px per CSS px), at 450k triangles a frame; its ground and scrub were then cut to about 194k. Auto quality only ever steps down. Other machines not yet measured on a phone.
+- Real phones: first numbers from a Mali-G52 Android (2026-10-22, `?fps`): Starship at 25 fps SIDE / 19 fps DRONE with auto quality already at Q0 (blurry, 0.7 px per CSS px), at 450k triangles a frame; its ground and scrub were then cut to about 194k. JavaScript was most of the frame (33 of 43 ms; F-TYPE 18 of 20), so it is CPU-bound: the static-parts pass and CPU-aware auto quality followed (2026-10-22; about 30-40% less JavaScript per frame at 6x CPU throttling, full resolution kept). Not yet re-measured on the phone.
 
 ## Roadmap (agreed)
 

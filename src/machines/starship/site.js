@@ -360,7 +360,7 @@ function buildWater(G) {
     G.add(m);
     return m;
   });
-  return (t) => {
+  const upd = (t) => {
     waves.offset.set(t * 0.004, t * 0.0065);
     foam.forEach((m) => {
       const f = (t / 9 + m.userData.ph) % 1;
@@ -368,6 +368,8 @@ function buildWater(G) {
       m.material.opacity = Math.sin(f * Math.PI) * 0.85;
     });
   };
+  upd.foam = foam; /* they move: not static (render3d/merge.js) */
+  return upd;
 }
 
 /* ---------- concrete, gravel, roads ---------- */
@@ -953,6 +955,7 @@ export function buildSite(G) {
   return {
     lens,
     TL: mount.TL,
+    keep: water.foam,
     upd() {
       const t = state.simT;
       water(t);

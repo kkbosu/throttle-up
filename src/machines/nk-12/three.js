@@ -321,6 +321,8 @@ export function buildTP() {
         ],
       },
     ],
+    /* what upd() moves or shows/hides: not merged (render3d/merge.js) */
+    keep: [cow, cowH, inn, pF.P, spin, pR.P, rot, ...pF.piv, ...pR.piv, disc],
     upd(dt) {
       const ex = state.exposed;
       cow.visible = !ex;

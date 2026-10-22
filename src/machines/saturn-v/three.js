@@ -304,6 +304,8 @@ export function buildF1() {
         ],
       },
     ],
+    /* what upd() moves or shows/hides: not merged (render3d/merge.js) */
+    keep: engines.flatMap((e) => [e.gim, e.full, e.half]),
     upd(dt) {
       const ex = state.exposed;
       cE.full.visible = !ex;

@@ -46,12 +46,52 @@ const OUTCOME = [
   ['STARSHIP', 'lights all 33 Raptors and reaches full throttle', r => r.mx.N > 0.95],
 ];
 
+// Merged static meshes (render3d/merge.js): the originals stay in the scene, hidden. If one moves, changes material
+// or shadow flags, or is shown again, a moving part was merged by mistake (its builder must list it in keep).
+// __mgInit records the selected machine's originals; __mgCheck, run after every rendered step, names the topmost
+// object that changed.
+const MERGE_GUARD = `(() => {
+  const rel = (m, root) => { const a = [], b = []; root.matrixWorld.clone().invert().multiply(m.matrixWorld).elements.forEach(v => a.push(v)); return a; };
+  const chain = (m, root) => { const c = []; for (let o = m.parent; o && o !== root; o = o.parent) c.push(o); return c; };
+  const desc = (o, root) => { const p = []; for (let x = o; x && x !== root; x = x.parent) p.unshift(x.type + '#' + x.parent.children.indexOf(x)); const w = o.getWorldPosition(new o.position.constructor()); return p.join('/') + (o.isMesh ? ' ' + o.geometry.type + ' ' + o.material.type + (o.material.color ? ' #' + o.material.color.getHexString() : '') : ' (' + o.children.length + ' children)') + ' at ' + [w.x, w.y, w.z].map(v => v.toFixed(2)).join(','); };
+  window.__mgInit = () => {
+    const S = window.__mg = { list: [], anc: new Map(), bad: new Map() };
+    for (const [m, root] of (G3 && G3.merged) || []) {
+      if (!root.visible) continue;
+      S.list.push({ m, root, r: rel(m, root), mat: m.material, cs: m.castShadow, rs: m.receiveShadow });
+      for (const o of [m, ...chain(m, root)]) if (!S.anc.has(o)) S.anc.set(o, { root, v: o.visible, e: o.matrix.elements.slice() });
+    }
+    /* frozen objects (matrixAutoUpdate off): if code moves one, its position/rotation/scale no longer match */
+    S.frozen = ((G3 && G3.frozen) || []).filter(([, root]) => root.visible).map(([o, root]) => ({ o, root }));
+    return S.list.length;
+  };
+  window.__mgCheck = (where) => {
+    const S = window.__mg; if (!S) return;
+    for (const { o, root } of S.frozen) {
+      const e = o.matrix.clone().compose(o.position, o.quaternion, o.scale).elements;
+      if (!e.some((v, i) => Math.abs(v - o.matrix.elements[i]) > 1e-5)) continue;
+      const k = desc(o, root);
+      if (![...S.bad.keys()].some(b => b.replace(/ at .*/, '') === k.replace(/ at .*/, ''))) S.bad.set(k, where + ' moved (frozen)');
+    }
+    for (const x of S.list) {
+      const r = rel(x.m, x.root), moved = r.some((v, i) => Math.abs(v - x.r[i]) > 1e-5);
+      const hid = chain(x.m, x.root).some(o => !o.visible) !== chain(x.m, x.root).some(o => !S.anc.get(o).v);
+      if (!(moved || hid || x.m.visible || x.m.material !== x.mat || x.m.castShadow !== x.cs || x.m.receiveShadow !== x.rs)) continue;
+      /* blame the topmost object whose own matrix or visibility changed (else the mesh itself) */
+      let culprit = x.m;
+      for (const o of [x.m, ...chain(x.m, x.root)]) { const b = S.anc.get(o); if (o.visible !== b.v || o.matrix.elements.some((v, i) => Math.abs(v - b.e[i]) > 1e-6)) culprit = o; }
+      const k = desc(culprit, x.root), kk = k.replace(/ at .*/, '');
+      if (![...S.bad.keys()].some(b => b.replace(/ at .*/, '') === kk)) S.bad.set(k, where + (moved ? ' moved' : '') + (hid || x.m.visible ? ' visibility' : '') + (x.m.material !== x.mat ? ' material' : '') + (x.m.castShadow !== x.cs || x.m.receiveShadow !== x.rs ? ' shadow' : ''));
+    }
+  };
+})();`;
+
 function checker(page, rec) {
   const ev = (fn, arg) => page.evaluate(fn, arg);
   const expect = (ok, msg) => { if (!ok) rec.fails.push(msg); return ok; };
   return {
     ev, expect,
-    frames: n => ev(n => step(n), n),
+    frames: n => ev(n => { step(n); if (window.__mgCheck) __mgCheck('view ' + view + ' lens ' + lens + ' cut ' + exposed + ' scene ' + scene + ' seq ' + (SQ.on ? SQ.i : '-')); }, n),
     act: a => ev(a => act(a), a),
     chips: () => ev(() => [...document.querySelectorAll('#mch button')].filter(b => b.style.display !== 'none').map(b => b.textContent)),
     async start() {
@@ -78,6 +118,7 @@ async function machineRun(page, rec, m, r2d) {
   c.expect((await c.ev('M.btn')) === OUTCOME[m][0], `machine ${OUTCOME[m][0]} selected`);
   await c.start();
   await c.frames(2);
+  const merged = has3D && !V11 ? await c.ev(() => __mgInit()) : 0;
 
   const space = await c.ev('!!M.space');
   // 2D: SIDE, CLOSE-UP, REAR; 3D adds EARTH for the machine in orbit, DRONE for the others
@@ -125,6 +166,11 @@ async function machineRun(page, rec, m, r2d) {
   const out = await c.ev(() => ({ mx: window.__mx, dv: orb.dv, td: sc.td, hint: document.getElementById('hint').textContent }));
   c.expect(out.hint === 'Sequence complete.', `SEQUENCE ends with "Sequence complete." (got "${out.hint}")`);
   c.expect(OUTCOME[m][2](out), `SEQUENCE: ${OUTCOME[m][0]} ${OUTCOME[m][1]}`);
+  if (has3D && !V11) {
+    const bad = await c.ev(() => [...window.__mg.bad].map(([k, w]) => k + '  <- ' + w));
+    c.expect(merged > 0, 'static meshes were merged');
+    for (const b of bad) c.expect(false, 'static part changed (add it to keep): ' + b);
+  }
 }
 
 // Compressor stall on the F-TYPE in 2D, frame by frame at 16 ms. Math.random is forced low around each slam
@@ -172,7 +218,7 @@ async function stallRun(page, rec) {
 }
 
 const scenarios = [
-  ...[0, 1, 2, 3, 4, 5, 6, 7, 8].map(m => ({ id: `3d-m${m}`, q: 2, m, ctx: SMALL, notV11: m > 7, run: (p, r) => machineRun(p, r, m, false) })),
+  ...[0, 1, 2, 3, 4, 5, 6, 7, 8].map(m => ({ id: `3d-m${m}`, q: 2, m, ctx: SMALL, init: MERGE_GUARD, notV11: m > 7, run: (p, r) => machineRun(p, r, m, false) })),
   ...[0, 1, 2].map(m => ({ id: `2d-m${m}`, q: 2, m, r2d: true, ctx: SMALL, run: (p, r) => machineRun(p, r, m, true) })),
   {
     id: '2d-fallback-m3', q: 2, m: 3, r2d: true, ctx: SMALL,

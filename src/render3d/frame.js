@@ -16,6 +16,7 @@ import { FIR, SPK, axisPt, burst, emitters, updParticles } from './particles.js'
 import { PU, plumeParams } from './plume.js';
 import { applyScene, sKey } from './scenes.js';
 import { sky } from './sky.js';
+import { syncMaterials } from './merge.js';
 
 // assigned by create*() below, when init3D runs
 export let pr0, ZA;
@@ -31,7 +32,7 @@ export function createFrame2() {
 }
 
 export function render(dt, dr) {
-  if (k3.QA !== state.Q) setup();
+  if (k3.QA !== state.Q || k3.LR !== state.lowRes) setup();
   if (k3.MA !== state.mi) applyMachine();
   if (k3.curS !== sKey(state.scene)) applyScene(state.scene);
   const e = ENG[state.mi];
@@ -54,6 +55,7 @@ export function render(dt, dr) {
   if (k3.lastPh == 1 && state.ph == 2) burst(10, false);
   k3.lastPh = state.ph;
   flowSetup();
+  syncMaterials();
   scn.updateMatrixWorld();
   flowUpd(dt);
   FIR.upd(dt, (p, dt) => {

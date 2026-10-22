@@ -383,6 +383,8 @@ export function buildSS() {
         t1: 0.1,
       },
     ],
+    /* what upd() moves or shows/hides: not merged (render3d/merge.js) */
+    keep: [gim, bell, bellIn, rgF, mcc, thr, bellH, rgH, mccH],
     upd(dt) {
       const gm = gimb();
       gim.rotation.z = -Math.PI / 2 + gm * 0.55;

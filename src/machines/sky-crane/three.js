@@ -278,6 +278,8 @@ export function buildSC() {
       }
       return P;
     },
+    /* what upd() moves or shows/hides: not merged (render3d/merge.js) */
+    keep: [ST, RV, deck, ...cords],
     upd(dt) {
       const vis = !sc.done;
       ST.visible = vis;

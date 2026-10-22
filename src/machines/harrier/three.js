@@ -327,6 +327,8 @@ export function buildHR() {
         t1: 0.95,
       },
     ],
+    /* what upd() moves or shows/hides: not merged (render3d/merge.js) */
+    keep: [fus, fusH, peg, rot, AC, ...NZ, anchor],
     upd(dt) {
       const ex = state.exposed;
       fus.visible = !ex;

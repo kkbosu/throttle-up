@@ -18,6 +18,6 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['three', 'three/addons/postprocessing/EffectComposer.js', 'three/addons/postprocessing/ShaderPass.js',
-      'three/addons/postprocessing/UnrealBloomPass.js', 'three/addons/postprocessing/OutputPass.js'],
+      'three/addons/postprocessing/UnrealBloomPass.js', 'three/addons/postprocessing/OutputPass.js', 'three/addons/utils/BufferGeometryUtils.js'],
   },
 });

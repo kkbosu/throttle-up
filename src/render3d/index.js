@@ -11,7 +11,7 @@ import { createEarth } from './earth.js';
 import { createFlow } from './flow.js';
 import { createFrame, createFrame2, render } from './frame.js';
 import { createGround } from './ground.js';
-import { R, createKit, glc } from './kit.js';
+import { CAT, R, createKit, glc, isolated, scn } from './kit.js';
 import { createLenses } from './lenses.js';
 import { createLights } from './lights.js';
 import { applyMachine, createMachine } from './machine.js';
@@ -20,6 +20,8 @@ import { burst, createParticles, createParticles2 } from './particles.js';
 import { createPlume, createPlume2 } from './plume.js';
 import { applyScene, createScenes } from './scenes.js';
 import { createSky } from './sky.js';
+import { FROZEN, MERGED, splitInstanced } from './merge.js';
+import { NOMERGE } from '../core/params.js';
 
 /* =====================================================================================
    3D RENDERER (Three.js). The simulation above is unchanged; this only draws it.
@@ -53,6 +55,11 @@ export function init3D() {
   setup();
   applyScene(state.scene);
   applyMachine();
+  if (!NOMERGE) {
+    /* the scene itself never moves; instanced meshes get their own copies of shared materials (merge.js) */
+    scn.matrixAutoUpdate = false;
+    isolated(() => splitInstanced(scn, CAT), 0x5711);
+  }
   return {
     canvas: glc,
     render,
@@ -68,5 +75,7 @@ export function init3D() {
       k3.camSnap = true;
     },
     R,
+    merged: MERGED,
+    frozen: FROZEN,
   };
 }

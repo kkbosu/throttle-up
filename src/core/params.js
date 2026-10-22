@@ -8,3 +8,5 @@ export const QP = new URLSearchParams(location.search).get('q');
 export const MAN = new URLSearchParams(location.search).has('manual');
 /* ?fps: show the frame-time readout (hud/fps.js) */
 export const FPS = new URLSearchParams(location.search).has('fps');
+/* ?nomerge: skip the static-parts pass (render3d/merge.js: merging, freezing, instanced materials), to compare */
+export const NOMERGE = new URLSearchParams(location.search).has('nomerge');

@@ -429,6 +429,8 @@ export function buildF() {
     inner,
     anchor,
     lens: [lp1, lp2],
+    /* what upd() moves or shows/hides: not merged (render3d/merge.js) */
+    keep: [outer, half, liner, split, rotor, ...actu.flatMap(([, c, rod]) => [c, rod])],
     upd(dt) {
       /* exit radius: open at idle, closes toward MIL, opens wide with the afterburner */
       const re = 0.45 - 0.1 * sm(0.3, 0.95, state.N) + 0.17 * state.A,

@@ -65,8 +65,9 @@ export function createComposite() {
 
 export function setup() {
   k3.QA = state.Q;
+  k3.LR = state.lowRes;
   const D2 = Math.min(devicePixelRatio || 1, 2);
-  k3.pr = state.Q > 1 ? Math.min(D2, 1.5) : state.Q > 0 ? Math.min(D2, 1) : 0.7;
+  k3.pr = state.Q > 1 ? Math.min(D2, 1.5) : state.Q > 0 || !state.lowRes ? Math.min(D2, 1) : 0.7;
   const w = Math.max(2, Math.round(state.W * k3.pr)),
     h = Math.max(2, Math.round(state.H * k3.pr));
   if (k3.rtM) {

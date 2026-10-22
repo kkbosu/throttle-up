@@ -18,24 +18,50 @@ export function ui() {
   $('abz').style.opacity = 0.25 + state.A * 0.75;
   if (state.M.nozzle) $('hd2').style.bottom = state.raw2 * 100 + '%';
 }
-export function adapt(dr) {
-  state.emaT += (dr * 1000 - state.emaT) * 0.05;
-  if (QP === null && state.Q > 0 && state.ph && !document.hidden) {
-    if (state.emaT > 26) {
-      state.slowT += dr;
-      if (state.slowT > 1.5) {
-        state.Q--;
-        state.slowT = 0;
-        state.emaT = 16;
-      }
-    } else state.slowT = 0;
-  }
+/* Quality levels, best first: 3 = Q2, 2 = Q1, 1 = Q0 at full resolution, 0 = Q0 at 0.7 resolution. Slow frames
+   (under ~38 fps for 1.5 s) step down; when the frame is mostly JavaScript (CPU-bound, as on many phones), a lower
+   resolution would only blur the picture, so it drops straight to level 1 (no shadows or bloom, which do save
+   draw calls) and no further. Fast frames (over ~52 fps for 5 s) step back up, but not to a level that was too
+   slow within 15 s of reaching it. ?q pins the quality. */
+const level = () => (state.Q > 0 ? state.Q + 1 : state.lowRes ? 0 : 1);
+function setLevel(L) {
+  state.Q = Math.max(0, L - 1);
+  state.lowRes = L === 0;
+  state.slowT = state.fastT = 0;
+  state.emaT = 16;
+}
+export function adapt(dr, real) {
+  state.emaT += (real * 1000 - state.emaT) * 0.05;
+  state.emaJ += (state.jsT - state.emaJ) * 0.05;
+  if (QP !== null || !state.ph || document.hidden) return;
+  const L = level(),
+    now = performance.now();
+  if (state.emaT > 26) {
+    state.fastT = 0;
+    state.slowT += real;
+    if (state.slowT > 1.5) {
+      const cpu = state.emaJ > 0.7 * state.emaT,
+        to = cpu ? Math.min(L, 1) : Math.max(0, L - 1);
+      if (to < L) {
+        if (now - state.qUpT < 15000) state.qCeil = L;
+        setLevel(to);
+      } else state.slowT = 0;
+    }
+  } else if (state.emaT < 19 && L < 3 && L + 1 < state.qCeil) {
+    state.slowT = 0;
+    state.fastT += real;
+    if (state.fastT > 5) {
+      setLevel(L + 1);
+      state.qUpT = now;
+    }
+  } else state.slowT = state.fastT = 0;
 }
 export function frame(t) {
   fpsTick(t, t - state.last);
-  const dr = Math.min(0.05, (t - state.last) / 1000 || 0.016);
+  const j0 = performance.now(),
+    dr = Math.min(0.05, (t - state.last) / 1000 || 0.016);
+  adapt(dr, Math.min(0.25, (t - state.last) / 1000 || 0.016));
   state.last = t;
-  adapt(dr);
   state.Lrate += ((state.L - state.Lp) / Math.max(dr, 0.004) - state.Lrate) * (1 - Math.exp(-dr / 0.07));
   state.Lp = state.L;
   state.TS += (state.tsT - state.TS) * (1 - Math.exp(-dr * 5));
@@ -63,6 +89,7 @@ export function frame(t) {
   }
   recLab();
   ui();
+  state.jsT = performance.now() - j0;
   fpsDone();
   if (!MAN) requestAnimationFrame(frame);
 }
