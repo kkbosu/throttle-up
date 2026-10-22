@@ -63,6 +63,10 @@ function checker(page, rec) {
   };
 }
 
+// START on a page whose render loop runs in real time. A DOM click, not page.click(): Playwright waits for the
+// button to hold still over animation frames, and on a busy CI runner real-time 3D frames can take seconds.
+const startLive = page => page.$eval('#ov span', e => e.click());
+
 // Start, cycle views / cutaway / lenses / scenes, INFO, then SEQUENCE to the end.
 async function machineRun(page, rec, m, r2d) {
   const c = checker(page, rec);
@@ -226,7 +230,7 @@ const scenarios = [
   {
     id: 'live-m0', m: 0, manual: false, ctx: SMALL,
     async run(page, rec) {
-      await page.click('#ov span');
+      await startLive(page);
       await page.waitForTimeout(2500);
       const c = checker(page, rec);
       c.expect(await page.evaluate(() => ph >= 1 && simT > 0 && !!G3), 'real-time loop runs with 3D');
@@ -235,14 +239,15 @@ const scenarios = [
   },
   {
     // ?fps: the readout fills in (frame rate, quality, 3D size, GPU) and the gauges sit below it
-    // phone-sized but not isMobile: emulation's late resize, which load() waits for, can take over 10 s on CI here
-    id: 'fps-m8', m: 8, manual: false, fps: true, ctx: { viewport: PHONE.viewport, deviceScaleFactor: 2 },
+    // F-TYPE, not the heavy Starship: on CI two real-time 3D pages at once slow every frame to seconds.
+    // Phone-sized but not isMobile: emulation's late resize, which load() waits for, can take over 10 s on CI.
+    id: 'fps-m0', m: 0, manual: false, fps: true, ctx: { viewport: PHONE.viewport, deviceScaleFactor: 2 },
     async run(page, rec) {
       const c = checker(page, rec);
-      await page.click('#ov span');
+      await startLive(page);
       await page.waitForFunction(() => /^\d+ fps/.test(document.querySelector('#fps div').textContent), null, { timeout: 60_000 });
       const r = await c.ev(() => ({ t: [...document.querySelectorAll('#fps div')].map(d => d.textContent), b: document.getElementById('fps').getBoundingClientRect().bottom, gy }));
-      c.expect(/^Q[0-2] auto · 3D \d+×\d+ · STARSHIP$/.test(r.t[1]), `readout shows quality and 3D size (got "${r.t[1]}")`);
+      c.expect(/^Q[0-2] auto · 3D \d+×\d+ · F-TYPE$/.test(r.t[1]), `readout shows quality and 3D size (got "${r.t[1]}")`);
       c.expect(r.t[2].length > 0, 'readout shows the GPU');
       c.expect(r.gy > r.b, `gauges below the readout (gauges at ${r.gy}, readout ends at ${r.b})`);
     },
