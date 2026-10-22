@@ -293,6 +293,8 @@ const scenarios = [
       const c = checker(page, rec);
       await startLive(page);
       await page.waitForFunction(() => /^\d+ fps/.test(document.querySelector('#fps div').textContent), null, { timeout: 60_000 });
+      const no3D = await c.ev('no3D');
+      if (!c.expect(!no3D, `3D running (stopped: ${no3D})`)) return;
       const r = await c.ev(() => ({ t: [...document.querySelectorAll('#fps div')].map(d => d.textContent), b: document.getElementById('fps').getBoundingClientRect().bottom, gy }));
       c.expect(/^JS \d+\.\d ms · [1-9]\d*k? tris · [1-9]\d* calls$/.test(r.t[1]), `readout shows JS time and GPU work (got "${r.t[1]}")`);
       c.expect(/^Q[0-2] auto · 3D \d+×\d+ · F-TYPE$/.test(r.t[2]), `readout shows quality and 3D size (got "${r.t[2]}")`);

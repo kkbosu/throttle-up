@@ -46,6 +46,7 @@ export const state = {
   mach: 0,
   G3: null,
   R3done: false,
+  no3D: '' /* why 3D isn't running, if it isn't */,
   lens: 0,
   raw2: 0.914,
   drag2: false,

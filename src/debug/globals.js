@@ -507,6 +507,13 @@ d(
   },
 );
 d(
+  'no3D',
+  () => state.no3D,
+  (v) => {
+    state.no3D = v;
+  },
+);
+d(
   'lowRes',
   () => state.lowRes,
   (v) => {

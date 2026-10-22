@@ -70,7 +70,7 @@ export function fpsTick(t, dt) {
     [a, b, c, d] = el.children;
   a.textContent = `${Math.round(1000 / avg)} fps · ${avg.toFixed(1)} ms · p95 ${p95.toFixed(1)}`;
   b.textContent = `JS ${jsa.toFixed(1)} ms` + (info ? ` · ${k(last.triangles)} tris · ${last.calls} calls` : '');
-  c.textContent = `Q${state.Q}${QP === null ? ' auto' : ''} · ${state.G3 ? `3D ${gl.width}×${gl.height}` : '2D'} · ${state.M.btn}`;
+  c.textContent = `Q${state.Q}${QP === null ? ' auto' : ''} · ${state.G3 ? `3D ${gl.width}×${gl.height}` : `2D${state.no3D ? ` (${state.no3D})` : ''}`} · ${state.M.btn}`;
   d.textContent = state.G3 ? gpuName() : '';
 }
 
