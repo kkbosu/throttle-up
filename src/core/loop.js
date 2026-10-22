@@ -4,7 +4,7 @@ import { update } from './engine.js';
 import { MAN, QP } from './params.js';
 import { state } from './state.js';
 import { $, cv } from './util.js';
-import { fpsTick } from '../hud/fps.js';
+import { fpsDone, fpsTick } from '../hud/fps.js';
 import { gauges } from '../hud/gauges.js';
 import { keys } from '../input/lever.js';
 import { RC, rc, recLab, recOverlay, stopRec } from '../recorder/recorder.js';
@@ -63,6 +63,7 @@ export function frame(t) {
   }
   recLab();
   ui();
+  fpsDone();
   if (!MAN) requestAnimationFrame(frame);
 }
 export function step(n = 1, ms = 16) {

@@ -238,7 +238,8 @@ const scenarios = [
     },
   },
   {
-    // ?fps: the readout fills in (frame rate, quality, 3D size, GPU) and the gauges sit below it
+    // ?fps: the readout fills in (frame rate, JS time, triangles and draw calls, quality, 3D size, GPU) and the
+    // gauges sit below it
     // F-TYPE, not the heavy Starship: on CI two real-time 3D pages at once slow every frame to seconds.
     // Phone-sized but not isMobile: emulation's late resize, which load() waits for, can take over 10 s on CI.
     id: 'fps-m0', m: 0, manual: false, fps: true, ctx: { viewport: PHONE.viewport, deviceScaleFactor: 2 },
@@ -247,8 +248,9 @@ const scenarios = [
       await startLive(page);
       await page.waitForFunction(() => /^\d+ fps/.test(document.querySelector('#fps div').textContent), null, { timeout: 60_000 });
       const r = await c.ev(() => ({ t: [...document.querySelectorAll('#fps div')].map(d => d.textContent), b: document.getElementById('fps').getBoundingClientRect().bottom, gy }));
-      c.expect(/^Q[0-2] auto · 3D \d+×\d+ · F-TYPE$/.test(r.t[1]), `readout shows quality and 3D size (got "${r.t[1]}")`);
-      c.expect(r.t[2].length > 0, 'readout shows the GPU');
+      c.expect(/^JS \d+\.\d ms · [1-9]\d*k? tris · [1-9]\d* calls$/.test(r.t[1]), `readout shows JS time and GPU work (got "${r.t[1]}")`);
+      c.expect(/^Q[0-2] auto · 3D \d+×\d+ · F-TYPE$/.test(r.t[2]), `readout shows quality and 3D size (got "${r.t[2]}")`);
+      c.expect(r.t[3].length > 0, 'readout shows the GPU');
       c.expect(r.gy > r.b, `gauges below the readout (gauges at ${r.gy}, readout ends at ${r.b})`);
     },
   },
