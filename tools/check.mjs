@@ -292,7 +292,9 @@ const scenarios = [
     async run(page, rec) {
       const c = checker(page, rec);
       await startLive(page);
-      await page.waitForFunction(() => /^\d+ fps/.test(document.querySelector('#fps div').textContent), null, { timeout: 60_000 });
+      // the first readout can predate 3D (it says 2D while three loads), and on a slow runner the first 3D frames
+      // take seconds: wait until it shows the 3D renderer, or a reason why 3D stopped
+      await page.waitForFunction(() => no3D || /^Q.* 3D /.test(document.querySelectorAll('#fps div')[2].textContent), null, { timeout: 90_000 });
       const no3D = await c.ev('no3D');
       if (!c.expect(!no3D, `3D running (stopped: ${no3D})`)) return;
       const r = await c.ev(() => ({ t: [...document.querySelectorAll('#fps div')].map(d => d.textContent), b: document.getElementById('fps').getBoundingClientRect().bottom, gy }));
