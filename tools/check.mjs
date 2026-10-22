@@ -235,11 +235,12 @@ const scenarios = [
   },
   {
     // ?fps: the readout fills in (frame rate, quality, 3D size, GPU) and the gauges sit below it
-    id: 'fps-m8', m: 8, manual: false, fps: true, ctx: PHONE,
+    // phone-sized but not isMobile: emulation's late resize, which load() waits for, can take over 10 s on CI here
+    id: 'fps-m8', m: 8, manual: false, fps: true, ctx: { viewport: PHONE.viewport, deviceScaleFactor: 2 },
     async run(page, rec) {
       const c = checker(page, rec);
       await page.click('#ov span');
-      await page.waitForFunction(() => /^\d+ fps/.test(document.querySelector('#fps div').textContent), null, { timeout: 30_000 });
+      await page.waitForFunction(() => /^\d+ fps/.test(document.querySelector('#fps div').textContent), null, { timeout: 60_000 });
       const r = await c.ev(() => ({ t: [...document.querySelectorAll('#fps div')].map(d => d.textContent), b: document.getElementById('fps').getBoundingClientRect().bottom, gy }));
       c.expect(/^Q[0-2] auto · 3D \d+×\d+ · STARSHIP$/.test(r.t[1]), `readout shows quality and 3D size (got "${r.t[1]}")`);
       c.expect(r.t[2].length > 0, 'readout shows the GPU');
