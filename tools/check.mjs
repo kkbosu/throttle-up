@@ -273,6 +273,45 @@ const scenarios = [
       }
     },
   })),
+  // Phones held sideways: the dials, lamps and engine switch, the inset, the buttons, the lever column and the title
+  // must not overlap, and all must stay on screen, on every machine, also when a long hint wraps.
+  ...[[734, 283], [640, 300], [844, 390], [734, 283, true]].map(([w, h, fps]) => ({
+    id: `landscape-${w}x${h}${fps ? '-fps' : ''}`, q: 0, m: 0, fps, ctx: { viewport: { width: w, height: h }, deviceScaleFactor: 3 }, notV11: true,
+    async run(page, rec) {
+      const c = checker(page, rec);
+      await c.start();
+      const count = await c.ev('MC.length');
+      for (let m = 0; m < count; m++) {
+        const r = await c.ev(m => {
+          setMachine(m); step(2);
+          const rect = (n, l, t, r, b) => ({ n, l, t, r, b }),
+            box = (n, el) => { const b = el.getBoundingClientRect(); return rect(n, b.left, b.top, b.right, b.bottom); },
+            hit = (a, b) => a.r > b.l + 0.5 && a.l < b.r - 0.5 && a.b > b.t + 0.5 && a.t < b.b - 0.5,
+            hint = document.getElementById('hint'), out = [];
+          for (const text of [M.hint, 'The descent stage flew off to crash a safe distance away. ENGINE to fly it again.']) {
+            hint.textContent = text; step(2);
+            const dials = rect('dials, lamps and switch', gx, gy - 14, gx + 3 * dsz + 16, SWR.y + SWR.h),
+              parts = [dials, box('title and hint', document.getElementById('hint').parentElement)],
+              fr = document.getElementById('fps');
+            /* with ?fps: the readout, filled with a long line as on a phone */
+            if (fr) { fr.children[1].textContent = 'JS 33.0 ms · 207k tris · 171 calls'; parts.push(box('fps readout', fr)); }
+            const I = window.INR;
+            if (I) parts.push(rect('inset', I[0], I[1], I[0] + I[2], I[1] + I[3]));
+            for (const el of document.querySelectorAll('#ctl button, #trk, #trk2, #lbs > *, #lbs2 > *'))
+              if (el.offsetParent && el.getBoundingClientRect().width > 0 && (!el.closest('#lbs, #lbs2') || el.textContent !== ''))
+                parts.push(box(el.closest('#ctl') ? 'button ' + el.textContent : 'lever ' + (el.id || el.textContent), el));
+            for (let i = 0; i < parts.length; i++)
+              for (let j = i + 1; j < parts.length; j++)
+                if (hit(parts[i], parts[j]) && !(parts[i].n.startsWith('lever') && parts[j].n.startsWith('lever')))
+                  out.push(`${parts[i].n} overlaps ${parts[j].n}`);
+            for (const p of parts) if (p.l < 0 || p.t < 0 || p.r > innerWidth + 0.5 || p.b > innerHeight + 0.5) out.push(`${p.n} runs off screen`);
+          }
+          return { btn: M.btn, out: [...new Set(out)], dsz };
+        }, m);
+        for (const o of r.out.slice(0, 3)) c.expect(false, `${r.btn} (dials ${r.dsz} px): ${o}`);
+      }
+    },
+  })),
   {
     id: 'live-m0', m: 0, manual: false, ctx: SMALL,
     async run(page, rec) {

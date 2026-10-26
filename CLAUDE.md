@@ -113,7 +113,7 @@ Live at https://kkbosu.github.io/throttle-up/ (GitHub Pages, repo `kkbosu/thrott
 - **Credibility first.** Every user-facing fact in INFO must come from a source listed in that machine's `info.s` (see `docs/SOURCES.md`). Anything modelled, assumed or simplified goes in `info.a` ("WHAT IS APPROXIMATED"), stated plainly. Don't state numbers you can't source (e.g. NK-12 propeller rpm, sky-crane descent stage mass are deliberately not claimed as fact).
 - Physics should be right in direction and order of magnitude even when simplified (e.g. Hall: thrust pushes the craft opposite to the beam; Earth slides away beneath in the beam's direction).
 - Keep the 2D fallback working for machines 0–2 (`?r=2d`), and degrade gracefully when WebGL2 or the CDN fails.
-- Mobile matters: portrait phones, two-lever layouts, insets must not overlap gauges. Test at 390×780.
+- Mobile matters: portrait phones, phones held sideways, two-lever layouts, insets must not overlap gauges. Test at 390×780 and 734×283 (a phone sideways in Chrome). Screens under 480 px tall get a compact title, hint and buttons (`style.css`), and the dials shrink to the room left above the buttons (`fitDials()` in `hud/gauges.js`, down to 40 px).
 - Captions/lamps are short (lamps fit ~9 characters).
 - Sound is synthesized (Web Audio) — no recordings yet.
 
@@ -134,6 +134,7 @@ Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim up
 - the compressor stall, deterministic in `?manual` mode. A slow ramp doesn't stall; a slam stalls with bangs and beeps and recovers; pulling back clears it early; FAULTS off prevents it;
 - previous/next machine: the joined ◀ | MACHINE ▶ control and N / Shift+N, in 3D and 2D;
 - the static-parts guard: in every 3D machine run, no merged or frozen part moves, hides or changes material;
+- phones held sideways (734×283, 640×300, 844×390, and 734×283 with `?fps`): on every machine, also with a long hint, the dials/lamps/switch, inset, buttons, lever column, title and readout don't overlap and stay on screen;
 - the hint text never runs under the lever column (tracks or labels) for any machine, even with the longest messages, on a 390×780 phone, an 800×600 window and 1280×720;
 - a short real-time run, and the `?fps` readout (fills in at phone size, gauges below it; absent without the parameter).
 

@@ -80,6 +80,7 @@ export const state = {
   GC: [],
   FC: [],
   SWR: { x: 0, y: 0, w: 0, h: 0 },
+  INR: null /* the inset's [x, y, w, h], when one is drawn */,
   drag: false,
   AC: undefined,
   rec: null,

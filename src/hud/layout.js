@@ -1,7 +1,7 @@
 // Layout: sizes the canvases and buffers to the window, places the HUD and lever.
 import { state } from '../core/state.js';
 import { $, cv, g } from '../core/util.js';
-import { buildFaces } from './gauges.js';
+import { buildFaces, fitDials } from './gauges.js';
 import { trk } from '../input/lever.js';
 import { B0, B1, B2 } from '../render2d/index.js';
 
@@ -18,7 +18,7 @@ export function resize() {
   const hr = $('hud').getBoundingClientRect();
   state.gx = hr.left;
   state.gy = hr.bottom + 18;
-  state.dsz = Math.round(Math.max(54, Math.min(88, (state.W - state.gx - 170) / 3.15)));
+  state.dsz = fitDials();
   state.TR = trk.getBoundingClientRect();
   B0.width = Math.max(8, state.W >> 1);
   B0.height = Math.max(8, state.H >> 1);

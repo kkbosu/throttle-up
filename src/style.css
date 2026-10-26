@@ -399,3 +399,65 @@ body:has(#tq.two) #hint {
   font-size: 11px;
   letter-spacing: 0.14em;
 }
+/* Short screens (phones held sideways, about 730x280): a tighter title, hint and buttons, so the dials, lamps and
+   engine switch fit above the buttons (hud/gauges.js fitDials shrinks the dials to whatever room is left). */
+@media (max-height: 480px) {
+  #hud {
+    top: calc(10px + env(safe-area-inset-top));
+    line-height: 1.6;
+  }
+  #hint {
+    margin-top: 0;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+  #tq {
+    top: calc(20px + env(safe-area-inset-top));
+    bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+  #ctl {
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    gap: 5px;
+  }
+  #ctl button {
+    padding: 6px 9px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  #ctl button[data-k='machp'] {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  #ov {
+    gap: 8px;
+  }
+  #ov h1 {
+    font-size: 26px;
+  }
+  #mch {
+    margin: 0;
+  }
+  /* the ?fps readout goes top right, beside the lever column, and the hint wraps short of it: as four more lines
+     under the title it would leave the dials no room */
+  #fps {
+    position: fixed;
+    top: calc(10px + env(safe-area-inset-top));
+    right: calc(160px + env(safe-area-inset-right));
+    width: 235px;
+    max-width: none;
+    height: auto;
+    text-align: right;
+  }
+  /* with two levers, one size smaller, so the hint keeps room for a long message */
+  body:has(#tq.two) #fps {
+    right: calc(256px + env(safe-area-inset-right));
+    width: 195px;
+    font-size: 9px;
+  }
+  body:has(#fps) #hint {
+    max-width: calc(100vw - 440px);
+  }
+  body:has(#fps):has(#tq.two) #hint {
+    max-width: calc(100vw - 474px);
+  }
+}

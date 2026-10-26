@@ -570,6 +570,13 @@ d(
   },
 );
 d(
+  'INR',
+  () => state.INR,
+  (v) => {
+    state.INR = v;
+  },
+);
+d(
   'SWR',
   () => state.SWR,
   (v) => {

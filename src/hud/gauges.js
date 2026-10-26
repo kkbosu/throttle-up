@@ -53,12 +53,27 @@ export function buildFaces() {
   });
 }
 
+/* Dial size: as big as the space beside the lever column allows, and on short screens (phones held sideways) small
+   enough that dials, lamps and engine switch (dsz + 56 px below gy) end above the buttons. */
+export function fitDials() {
+  const w = Math.max(54, Math.min(88, (state.W - state.gx - 170) / 3.15)),
+    c = $('ctl').getBoundingClientRect(),
+    h = (c.height ? c.top : state.H) - 8 - 56 - state.gy;
+  return Math.round(Math.max(40, Math.min(w, h)));
+}
+
 /* ---------- cockpit gauges: N1, EGT, fuel flow, plus annunciator lamps (drawn on the canvas so clips include them) ---------- */
 export function gauges(dr) {
   if (!state.FC.length) return;
   {
     const hb = $('hud').getBoundingClientRect().bottom + 18;
     if (Math.abs(hb - state.gy) > 1) state.gy = hb;
+    /* a hint that wraps onto another line, or a longer button label, can change the room the dials have */
+    const d = fitDials();
+    if (d !== state.dsz) {
+      state.dsz = d;
+      buildFaces();
+    }
   }
   g.globalCompositeOperation = 'source-over';
   g.globalAlpha = 1;
@@ -165,15 +180,17 @@ export function gauges(dr) {
   g.fillText(msg, state.gx + sw - 10, sy + sh / 2 + 0.5);
   g.textAlign = 'left';
   /* SR-71 inlet spike schematic: beside the dials if there is room, else under the switch */
+  state.INR = null;
   if (state.M.inset) {
     const rx = state.gx + sw + 14,
       av = state.W - 150 - (state.M.nozzle ? 100 : 0) - rx,
       fn = state.M.insetF;
-    if (av >= 140) fn(rx, state.gy, Math.min(230, av), state.dsz + 34);
+    /* INR: where the inset went (for the layout checks) */
+    if (av >= 140) fn(...(state.INR = [rx, state.gy, Math.min(230, av), state.dsz + 34]));
     else {
       const y2 = sy + sh + 8,
         w2 = Math.min(230, state.W - 170 - state.gx);
-      if (w2 >= 150 && y2 + 58 < state.ny - 80 * state.u) fn(state.gx, y2, w2, 58);
+      if (w2 >= 150 && y2 + 58 < state.ny - 80 * state.u) fn(...(state.INR = [state.gx, y2, w2, 58]));
     }
   }
 }
