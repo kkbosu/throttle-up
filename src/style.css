@@ -260,6 +260,15 @@ body:has(#tq.two) #hint {
   color: #c4cad6;
   text-align: center;
 }
+#misd {
+  margin: 0 0 6px;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--dim);
+}
+#misd:empty {
+  display: none;
+}
 #mish {
   margin: 0 0 4px;
   font-size: 15px;
@@ -298,6 +307,7 @@ body:has(#tq.two) #hint {
 }
 #mis .row {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   justify-content: center;
 }
@@ -314,6 +324,33 @@ body:has(#tq.two) #hint {
 }
 #mis button:hover {
   border-color: #6a7282;
+}
+#mis #misy {
+  border-color: #2e7a4e;
+  color: #7ee0a4;
+}
+/* a phone held sideways: the whole card fits without scrolling */
+@media (max-height: 480px) {
+  #mis {
+    padding: 8px;
+  }
+  #misb {
+    padding: 10px 18px;
+    line-height: 1.4;
+  }
+  #misr {
+    margin-bottom: 6px;
+  }
+  #mist div {
+    padding: 2px 0;
+  }
+  #miss {
+    margin: 6px 0 8px;
+    font-size: 17px;
+  }
+  #mis button {
+    padding: 7px 14px;
+  }
 }
 #ib {
   display: inline-block;

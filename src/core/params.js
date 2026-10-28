@@ -1,4 +1,4 @@
-// URL parameters read at load: ?q (quality) and ?manual (tests step frames themselves).
+// URL parameters read at load: ?q (quality), ?manual (tests step frames themselves), ?fps, ?nomerge, ?daily.
 
 /* 3D renderer handle (null = 2D fallback) */
 
@@ -10,3 +10,5 @@ export const MAN = new URLSearchParams(location.search).has('manual');
 export const FPS = new URLSearchParams(location.search).has('fps');
 /* ?nomerge: skip the static-parts pass (render3d/merge.js: merging, freezing, instanced materials), to compare */
 export const NOMERGE = new URLSearchParams(location.search).has('nomerge');
+/* ?daily: start the machine's daily MISSION as soon as START is pressed (the link a shared result points to) */
+export const DAILY = new URLSearchParams(location.search).has('daily');

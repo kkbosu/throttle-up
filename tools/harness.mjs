@@ -108,6 +108,7 @@ export async function load(page, base, sc) {
   qs.set('m', sc.m);
   if (sc.r2d) qs.set('r', '2d');
   if (sc.fps) qs.set('fps', '');
+  if (sc.daily) qs.set('daily', '');
   let url = `${base}?${qs}`;
   if (sc.manual !== false) url += '&manual';
   await page.goto(url);

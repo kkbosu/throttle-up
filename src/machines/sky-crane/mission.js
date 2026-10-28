@@ -10,6 +10,9 @@ const VT = 0.75,
 
 export default {
   name: 'SOFT LANDING',
+  /* for the share line */
+  tag: 'Mars sky crane landing',
+  share: (r) => 'Touchdown ' + sc.tdv.toFixed(2) + ' m/s, ' + r.rows[2][1] + ' hydrazine left',
   /* no longer than the longest hint the layout checks try, so it fits a phone held sideways */
   brief: 'MISSION: all 6.4 m of bridle out, land at 0.75 m/s or less, save hydrazine.',
   start(r) {

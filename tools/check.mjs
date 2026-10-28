@@ -324,9 +324,13 @@ const scenarios = [
       await page.click('#ctl [data-k=mis]');
       c.expect((await c.ev('MS.on')) === 1 && (await btn()) === '■ END MISSION', 'MISSION starts and the button reads ■ END MISSION');
       c.expect(/^MISSION:/.test(await c.ev(() => document.getElementById('hint').textContent)), 'the hint gives the brief');
+      const today = await c.ev('dayNo()');
+      const d = await c.ev(() => ({ day: MS.day, tries: MS.tries, seed: MS.seed, want: daySeed(skyMission.name, dayNo()) }));
+      c.expect(today >= 1 && d.day === today && d.tries === 1 && d.seed === d.want, `MISSION starts today's daily challenge (${JSON.stringify(d)}, today #${today})`);
+      c.expect(await c.ev(() => dayNo(new Date(2026, 9, 28, 0, 1)) === 1 && dayNo(new Date(2026, 9, 28, 23, 59)) === 1 && dayNo(new Date(2026, 9, 29)) === 2 && dayNo(new Date(2027, 2, 29, 12)) === 153 && daySeed('A', 1) !== daySeed('A', 2)), 'daily numbers follow the calendar date, each day its own seed');
       // fly with a fixed seed; pilot(kind) flies until the result card is up (ff includes misTick, as frame() does)
       const fly = (seed, kind) => c.ev(([seed, kind]) => {
-        if (seed != null) misStart(seed);
+        if (seed === 'daily') misStart(); else if (seed != null) misStart(seed);
         const ff = (s, f) => { for (let t = 0; t < s; t += .05) { keys(.05); update(.05); misTick(.05); if (f && f()) return; } };
         ff(4, () => ph == 2);
         const c0 = { alt: alt, vz: vz, prop: sc.prop };
@@ -340,19 +344,35 @@ const scenarios = [
         });
         step(2);
         const card = document.getElementById('mis');
-        return { c0, shown: getComputedStyle(card).display !== 'none', title: document.getElementById('mish').textContent, why: document.getElementById('misr').textContent, score: document.getElementById('miss').textContent, res: MS.res };
+        return { c0, shown: getComputedStyle(card).display !== 'none', title: document.getElementById('mish').textContent, why: document.getElementById('misr').textContent, score: document.getElementById('miss').textContent, res: MS.res,
+          daily: document.getElementById('misd').textContent, share: getComputedStyle(document.getElementById('misy')).display !== 'none', text: MS.day ? shareText().split('\n') : [] };
       }, [seed, kind]);
       let r = await fly(7, 'good');
       c.expect(r.c0.alt >= 26 && r.c0.alt <= 38 && r.c0.vz <= -1.5 && r.c0.vz >= -3.5 && r.c0.prop > 70, `start conditions in range (${JSON.stringify(r.c0)})`);
       c.expect(r.shown && r.title === 'ROVER DOWN SAFELY' && /^\d+ POINTS$/.test(r.score) && r.res.score > 600, `a gentle landing scores (${r.title}, ${r.score})`);
       const same = await fly(7, 'good');
       c.expect(same.res.score === r.res.score && same.c0.alt === r.c0.alt, 'the same seed gives the same conditions and score');
-      // FLY AGAIN relights after the flyaway and starts fresh
+      c.expect(same.daily === '' && !same.share, 'an attempt with a given seed is not a daily try (no daily line, no SHARE)');
+      // FLY AGAIN relights after the flyaway and starts fresh, on the same conditions
       await page.click('#misa');
-      const again = await c.ev(() => { for (let t = 0; t < 4 && ph != 2; t += .05) update(.05); return { ph, used: sc.used, hidden: getComputedStyle(document.getElementById('mis')).display === 'none', on: MS.on, res: MS.res }; });
-      c.expect(again.ph === 2 && again.hidden && again.on === 1 && !again.res, `FLY AGAIN restarts the mission (ph ${again.ph})`);
-      r = await fly(null, 'drop');
+      const again = await c.ev(() => { for (let t = 0; t < 4 && ph != 2; t += .05) update(.05); return { ph, used: sc.used, hidden: getComputedStyle(document.getElementById('mis')).display === 'none', on: MS.on, res: MS.res, seed: MS.seed, day: MS.day }; });
+      c.expect(again.ph === 2 && again.hidden && again.on === 1 && !again.res && again.seed === 7 && again.day === 0, `FLY AGAIN restarts the mission on the same seed (ph ${again.ph}, seed ${again.seed})`);
+      // the daily challenge: tries counted, the share line
+      r = await fly('daily', 'drop');
       c.expect(r.title === 'HARD LANDING' && r.score === 'NO SCORE', `falling fails as a hard landing (${r.title})`);
+      c.expect(r.daily === `DAILY #${today} · TRY 2` && r.share, `the card shows the daily number and try (${r.daily})`);
+      c.expect(r.text.length === 4 && r.text[0] === `Throttle Up daily #${today} · Mars sky crane landing` && r.text[1] === '🟥 HARD LANDING (try 2)' && /^Touchdown \d+\.\d\d m\/s, \d+ of \d+ kg hydrazine left$/.test(r.text[2]) && /\?m=7&daily$/.test(r.text[3]), `a failed try's share line (${JSON.stringify(r.text)})`);
+      r = await fly('daily', 'good');
+      const bar = r.res && r.res.ok ? '🟩'.repeat(Math.round(r.res.score / 100)) + '⬜'.repeat(10 - Math.round(r.res.score / 100)) : '';
+      c.expect(r.title === 'ROVER DOWN SAFELY' && r.daily === `DAILY #${today} · TRY 3 · BEST ${r.res.score}`, `a good daily landing sets today's best (${r.title}, ${r.daily})`);
+      c.expect(r.text[1] === `${bar} ${r.res.score} points (try 3)` && /^Touchdown \d\.\d\d m\/s, \d+ of \d+ kg hydrazine left$/.test(r.text[2]), `a scored try's share line (${JSON.stringify(r.text)})`);
+      const kept = await c.ev(() => JSON.parse(localStorage.getItem('tu-daily-' + skyMission.name)));
+      c.expect(kept.d === today && kept.tries === 3 && kept.best === r.res.score, `today's tries and best are kept in the browser (${JSON.stringify(kept)})`);
+      await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+      await page.click('#misy');
+      await page.waitForFunction(() => document.getElementById('misy').textContent !== 'SHARE', null, { timeout: 5000 }).catch(() => {});
+      const clip = await c.ev(async () => ({ b: document.getElementById('misy').textContent, t: await navigator.clipboard.readText() }));
+      c.expect(clip.b === 'COPIED' && clip.t.replace(/\r\n/g, '\n') === r.text.join('\n'), `SHARE copies the share line (${clip.b}: ${JSON.stringify(clip.t)})`);
       r = await fly(11, 'nobridle');
       c.expect(r.title === 'STAGE TOO LOW', `touching down with the bridles in fails (${r.title})`);
       r = await fly(11, 'hover');
@@ -365,6 +385,17 @@ const scenarios = [
       c.expect((await btn()) === '◆ MISSION', 'the button reads ◎ MISSION again');
       await c.ev(() => setMachine(0));
       c.expect((await btn()) === null, 'machines without a mission hide the button');
+    },
+  },
+  {
+    // the link a shared result points to: START goes straight into today's challenge
+    id: 'daily-link-m7', q: 0, m: 7, daily: true, ctx: SMALL, notV11: true,
+    async run(page, rec) {
+      const c = checker(page, rec);
+      await c.start();
+      await c.frames(2); // the mission starts from the frame loop (misTick) once the engine runs
+      const r = await c.ev(() => ({ on: MS.on, day: MS.day, today: dayNo(), tries: MS.tries, alt: SKY0.alt, hint: document.getElementById('hint').textContent }));
+      c.expect(r.on === 1 && r.day === r.today && r.tries === 1 && r.alt !== 32 && /^MISSION:/.test(r.hint), `?daily starts today's challenge at START (${JSON.stringify(r)})`);
     },
   },
   {

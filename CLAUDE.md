@@ -33,7 +33,8 @@ src/
   main.js                 boot: wires listeners in v11's order (wireX()), picks ?m, resize, loop, 3D loader
   core/state.js           `state`: every shared mutable variable (N, A, E, F, ph, raw, raw2, view, exposed, scene,
                           lens, mi, M, simT, alt, vz, ...) with its initial value. Code reads/writes state.N etc.
-  core/params.js          ?q (QP), ?manual (MAN) and ?fps (FPS); ?m is read in main.js, ?r=2d in core/loader3d.js
+  core/params.js          ?q (QP), ?manual (MAN), ?fps (FPS), ?nomerge, ?daily (DAILY); ?m is read in main.js, ?r=2d in
+                          core/loader3d.js
   core/util.js            $, cv/g (HUD canvas), mk, sm (smoothstep), label tables, MONO font
   core/engine.js          update(dt): generic engine model, stall/surge, master switch; M.clu(dt) per-machine step
   core/machine-switch.js  setMachine (resets, then every machine's reset() and the selected one's onSelect()), chips
@@ -46,7 +47,9 @@ src/
   audio/audio.js          Web Audio graph and one-shot sounds (per-machine voices live in the machine folders)
   sequence/sequence.js    SEQUENCE player (SQ, seqStart/Next/Stop/Tick/Cap)
   mission/mission.js      MISSION runner (MS, misStart(seed)/misStop/misTick, rng(seed), the result card #mis); the
-                          machine's `mission` sets the conditions and judges; progress shows in the machine's inset
+                          machine's `mission` sets the conditions and judges; progress shows in the machine's inset.
+                          Daily challenge: dayNo() (#1 = 2026-10-28, local date), daySeed(name, n), tries/best per day in
+                          localStorage (`tu-daily-<name>`), shareText() (the SHARE line)
   info/                   info.js (INFO panel), cut-text.js (the SCHLIEREN/THERMAL paragraphs)
   recorder/recorder.js    REC: WebGL + HUD composite into a MediaRecorder clip
   render2d/               index.js (2D renderer: sky, haze, bloom, draw), jet.js (2D jet parts), sprites.js
@@ -86,7 +89,7 @@ Hooks: `clu(dt)` per-frame machine step (Hall orbit, Saturn V, Harrier hover, NK
 Engine model: `idle, up, dn, coast, cN, cT, tk, ign, lk, e0f, lt, ab, stall, e:[EGT curve], f:[fuel curve]`.
 UI: `g` (3 gauges: `{t,cap,min,max,maj,mn,red,d,f}`), `gv()` values, `lv`/`lv2` lever labels `[text,pos,'t'|'b']`, `lp()` lamps, status words `off/st/cl/cut/wait`.
 Feel: `shk()` camera shake strength (currently switched off for every machine: `SHAKE = 0` in `core/util.js`; it was a stylistic cue, not a measured effect), `au(s,V,pm)` audio voice.
-Game: `mission:{name, brief, start(rng), end(), judge(), over(t)}` (sky crane): `start` sets the attempt's conditions from a seeded generator (never `Math.random`), `end` restores free play, `judge()` returns null until there is a verdict `{ok, title, why, rows:[[label,value]], score}`, `over(t)` says when to show the card (t = seconds since the verdict). A machine with a mission shows ◆ MISSION in place of its FAULTS button (it has no stall); slow-mo is locked during a mission; SEQUENCE, machine switch and END MISSION stop it.
+Game: `mission:{name, brief, tag, share(r), start(rng), end(), judge(), over(t)}` (sky crane): `start` sets the attempt's conditions from a seeded generator (never `Math.random`), `end` restores free play, `judge()` returns null until there is a verdict `{ok, title, why, rows:[[label,value]], score}`, `over(t)` says when to show the card (t = seconds since the verdict), `tag` names it in the share line and `share(r)` gives the line's detail. ◆ MISSION (and FLY AGAIN) starts today's daily challenge: the same conditions for everyone on the same date, tries counted; `misStart(seed)` with a seed (tests) is not a daily try. `?m=7&daily`, the link in the share line, starts it as soon as the engine runs. A machine with a mission shows ◆ MISSION in place of its FAULTS button (it has no stall); slow-mo is locked during a mission; SEQUENCE, machine switch and END MISSION stop it.
 Story: `sqc` + `sq[]` SEQUENCE steps (`{cap, lever|()=>, dur, wait, until(), max, view, do()}`), `info:{f:[facts], a:[approximations], cut:string|array, s:[[title,url]]}` (a string `cut` gets the shared SCHLIEREN/THERMAL paragraphs appended).
 2D-only: `nxf, r, gl, skyG, hzk, hzg, hza, blk, mc, dk, bl, bd, pl, draw, rear`.
 
@@ -123,7 +126,7 @@ Live at https://kkbosu.github.io/throttle-up/ (GitHub Pages, repo `kkbosu/thrott
 
 ## Testing
 
-URL params: `?m=N` machine, `?q=0|1|2` quality, `?r=2d` force 2D, `?manual` stop the render loop so tests drive frames, `?fps` frame-time readout under the title (fps, average and 95th-percentile frame time over 2 s; JavaScript time per frame, triangles and draw calls; quality level, render size, GPU name; `hud/fps.js`), for real-device reports; `?nomerge` skips the static-parts pass (`render3d/merge.js`) to compare.
+URL params: `?m=N` machine, `?q=0|1|2` quality, `?r=2d` force 2D, `?manual` stop the render loop so tests drive frames, `?fps` frame-time readout under the title (fps, average and 95th-percentile frame time over 2 s; JavaScript time per frame, triangles and draw calls; quality level, render size, GPU name; `hud/fps.js`), for real-device reports; `?nomerge` skips the static-parts pass (`render3d/merge.js`) to compare; `?daily` starts the machine's daily MISSION once the engine runs.
 
 Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim update); fast-forward without rendering:
 ```js
@@ -133,7 +136,7 @@ Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim up
 
 **Behaviour checks (`npm run check`, about 2 min):** builds the app, serves it, and asserts that the game works, failing on any console or page error. Covers:
 - every machine in 3D: engine reaches RUN; views cycle, with the button label checked; cutaway; lenses (Hall skips schlieren); scenes; INFO opens and closes;
-- the sky-crane MISSION (`mission-m7`): button, seeded conditions in range and repeatable, a gentle landing scores, FLY AGAIN relights after the flyaway, the three failures (too fast, bridles not out, out of hydrazine), slow-mo locked, CLOSE restores free play, other machines hide the button;
+- the sky-crane MISSION (`mission-m7`): button, seeded conditions in range and repeatable, a gentle landing scores, FLY AGAIN relights after the flyaway, the three failures (too fast, bridles not out, out of hydrazine), slow-mo locked, CLOSE restores free play, other machines hide the button; the daily challenge (day numbers, seed, tries and best kept, the card's daily line, the share line, SHARE copies it), and `?daily` (`daily-link-m7`);
 - SEQUENCE runs to "Sequence complete." with a per-machine outcome: F-TYPE full afterburner, SR-71 Mach 2.8+, shuttle and NK-12 full power, Hall raises its orbit, Saturn V all five F-1s lit, Harrier lifts off, sky crane touches down, Starship lights all 33 at full throttle;
 - machines 0–2 in 2D (`?r=2d`) and the fallback from `?m=3&r=2d` to F-TYPE;
 - the compressor stall, deterministic in `?manual` mode. A slow ramp doesn't stall; a slam stalls with bangs and beeps and recovers; pulling back clears it early; FAULTS off prevents it;
@@ -183,7 +186,7 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 
 2. **Game layer**
    - Missions with scores: ~~sky-crane soft landing~~ (first version done 2026-10-28: random start height and sink rate, limited hydrazine, score = softness + hydrazine saved; no wind, because Mars's air at ~0.016 kg/m³ makes gusts negligible against the stage's weight, stated in INFO; terrain not yet), Harrier ship-deck landing, Hall reach-an-orbit on least xenon, F-type stall-free run-up.
-   - Daily challenge (same seed for everyone) with a Wordle-style share line.
+   - ~~Daily challenge (same seed for everyone) with a Wordle-style share line.~~ Done 2026-10-28 for the sky crane: ◆ MISSION plays today's conditions, the card counts tries and today's best, SHARE copies (or, on phones, shares) a score bar plus a `?m=7&daily` link. Not yet: a leaderboard (would need a server).
    - One-tap vertical (9:16) clip export with score overlay for TikTok/Reels/Shorts.
 3. **Realism**
    - Sound overhaul: blend CC0 recordings, pitch-shifted by RPM.
