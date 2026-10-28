@@ -166,14 +166,17 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 - In the Hall EARTH view under the TERMINATOR scene the craft is a dark silhouette.
 - Propellers are drawn slower than real (anti-strobe), stated in INFO.
 - Starship's mount, tower and tank farm are blocky up close; its site is placed by eye (stated in INFO). Its scene is the heaviest (about 2x the software-rendered frame time of the others).
-- Real phones: first numbers from a Mali-G52 Android (2026-10-22, `?fps`): Starship at 25 fps SIDE / 19 fps DRONE with auto quality already at Q0 (blurry, 0.7 px per CSS px), at 450k triangles a frame; its ground and scrub were then cut to about 194k. JavaScript was most of the frame (33 of 43 ms; F-TYPE 18 of 20), so it is CPU-bound: the static-parts pass and CPU-aware auto quality followed (2026-10-22; about 30-40% less JavaScript per frame at 6x CPU throttling, full resolution kept). Not yet re-measured on the phone.
+- Real phones (Mali-G52 Android, `?fps`): Starship was CPU-bound (JavaScript 33 of 43 ms a frame). After the triangle cut, the static-parts pass and CPU-aware auto quality (2026-10-22), JavaScript is about 10.5 ms, but the GPU now limits it to about 28 fps with auto quality at Q0 0.7 resolution (549×212 in landscape, blurry). Next step when this is picked up again: time the frame's GPU passes on this PC's real GPU (timer queries) and cut the costliest per-pixel work at low quality; suspects are the big blended steam sprites and Starship's site lights. The F-TYPE runs at about 50 fps on the same phone.
+- Phones held sideways: the machine insets sit beside the dials, in the middle of the screen, so on a small phone they cover part of the machine (as on desktop).
 
 ## Roadmap (agreed)
 
 1. **Make it shippable**
    - ~~Split into a Vite project, one module per machine (sim + builder + config + info together), shared renderer/HUD/audio modules. Behaviour identical to v11 — compare screenshots before/after.~~ Done (branch `refactor/vite-split`): identical to v11 on the full golden suite.
-   - Git, then host on GitHub Pages or Cloudflare Pages; social preview image (Open Graph), favicon, privacy-friendly analytics.
-   - Real-device test pass and fixes (performance budget for mid-range Android).
+   - ~~Git, then host on GitHub Pages; social preview image (Open Graph), favicon.~~ Done (live, see Hosting). Still open: privacy-friendly analytics (not chosen yet; needs Kingsley's choice and account, e.g. GoatCounter, Plausible, Cloudflare Web Analytics).
+   - Real-device test pass and fixes (performance budget for mid-range Android). Partly done (2026-10-22 to 10-28): the `?fps` readout, the CPU work above, and the landscape layout. Deferred until later (Kingsley's call, 2026-10-28): Starship's GPU cost on the Mali-G52 (see Known issues), iPhone Safari, listening on real speakers.
+
+   **Next up (2026-10-28): roadmap item 2, the game layer, starting with the sky-crane soft-landing mission.**
 2. **Game layer**
    - Missions with scores: sky-crane soft landing (wind gusts, terrain), Harrier ship-deck landing, Hall reach-an-orbit on least xenon, F-type stall-free run-up.
    - Daily challenge (same seed for everyone) with a Wordle-style share line.
