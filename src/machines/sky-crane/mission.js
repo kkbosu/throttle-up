@@ -2,7 +2,7 @@
 // hydrazine load; land the rover gently, with the bridles fully out, and save as much hydrazine as you can.
 import { state } from '../../core/state.js';
 import { applyRaw } from '../../input/lever.js';
-import { BL, SKY0, sc, skyHov, skyLeft, skyReset } from './machine.js';
+import { BL, SKY0, sc, skyHov, skyLeft, skyReset, skyRy } from './machine.js';
 
 /* the real target touchdown speed (sourced in INFO) and the hard-landing limit (a game rule) */
 const VT = 0.75,
@@ -12,6 +12,12 @@ export default {
   name: 'SOFT LANDING',
   /* for the share line */
   tag: 'Mars sky crane landing',
+  /* the clip's readouts */
+  clip: () => [
+    ['ROVER', Math.max(0, skyRy()).toFixed(1) + ' m'],
+    ['DESCENT', (sc.td ? 0 : -state.vz).toFixed(2) + ' m/s'],
+    ['HYDRAZINE', Math.ceil(skyLeft()) + ' kg'],
+  ],
   share: (r) => 'Touchdown ' + sc.tdv.toFixed(2) + ' m/s, ' + r.rows[2][1] + ' hydrazine left',
   /* no longer than the longest hint the layout checks try, so it fits a phone held sideways */
   brief: 'MISSION: all 6.4 m of bridle out, land at 0.75 m/s or less, save hydrazine.',

@@ -7,6 +7,7 @@ import { $, cv } from './util.js';
 import { fpsDone, fpsTick } from '../hud/fps.js';
 import { gauges } from '../hud/gauges.js';
 import { keys } from '../input/lever.js';
+import { clipFrame } from '../mission/clip.js';
 import { misTick } from '../mission/mission.js';
 import { RC, rc, recLab, recOverlay, stopRec } from '../recorder/recorder.js';
 import { draw } from '../render2d/index.js';
@@ -89,6 +90,7 @@ export function frame(t) {
       recOverlay(rc);
     }
   }
+  clipFrame(dr);
   recLab();
   ui();
   state.jsT = performance.now() - j0;

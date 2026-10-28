@@ -7,6 +7,7 @@ import { state } from '../core/state.js';
 import { $ } from '../core/util.js';
 import { lab, say } from '../hud/controls.js';
 import { SQ, seqStop } from '../sequence/sequence.js';
+import { clipDrop, clipLab, clipOpen, clipStart } from './clip.js';
 
 /* on: running; res: the machine's verdict once it has one; tr: seconds since then; seed: this attempt's conditions;
    day: the daily challenge's number (0 for an attempt with a given seed); tries/best: today's attempts and best score;
@@ -79,12 +80,14 @@ export function misStart(seed) {
   }
   say(m.brief);
   lab();
+  clipStart();
 }
 export function misStop() {
   if (!MS.on) return;
   MS.on = 0;
   MS.res = null;
   state.M.mission.end();
+  clipDrop();
   hideCard();
   lab();
 }
@@ -156,6 +159,7 @@ function showCard(r) {
   });
   $('miss').textContent = r.ok ? r.score + ' POINTS' : 'NO SCORE';
   $('misy').style.display = MS.day ? '' : 'none';
+  clipLab();
   $('mis').style.display = 'flex';
 }
 function hideCard() {
@@ -164,6 +168,7 @@ function hideCard() {
 /* load-time setup, called from main.js */
 export function wireMission() {
   $('misy').onclick = share;
+  $('misv').onclick = clipOpen;
   /* the same conditions again: today's (a new try) or the given seed's */
   $('misa').onclick = () => misStart(MS.day ? null : MS.seed);
   $('misx').onclick = () => misStop();

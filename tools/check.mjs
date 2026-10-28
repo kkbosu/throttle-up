@@ -373,6 +373,20 @@ const scenarios = [
       await page.waitForFunction(() => document.getElementById('misy').textContent !== 'SHARE', null, { timeout: 5000 }).catch(() => {});
       const clip = await c.ev(async () => ({ b: document.getElementById('misy').textContent, t: await navigator.clipboard.readText() }));
       c.expect(clip.b === 'COPIED' && clip.t.replace(/\r\n/g, '\n') === r.text.join('\n'), `SHARE copies the share line (${clip.b}: ${JSON.stringify(clip.t)})`);
+      // the 9:16 clip: recording since the try began, it ends 3.5 s after the verdict (frames count, not the sim)
+      const vc = await c.ev(async () => {
+        const b = document.getElementById('misv'), b0 = { t: b.textContent, dis: b.disabled, shown: b.style.display !== 'none' };
+        for (let i = 0; i < 100 && CL.rec; i++) step(1, 50);
+        for (let i = 0; i < 50 && !CL.blob; i++) await new Promise(res => setTimeout(res, 100));
+        return { b0, size: CL.blob ? CL.blob.size : 0, t: b.textContent, dis: b.disabled, w: CL.cv.width, h: CL.cv.height };
+      });
+      c.expect(vc.b0.shown && vc.b0.t === 'CLIP...' && vc.b0.dis, `CLIP waits while the clip finishes (${JSON.stringify(vc.b0)})`);
+      c.expect(vc.size > 0 && vc.t === '▶ CLIP' && !vc.dis && vc.w === 720 && vc.h === 1280, `the mission records a 720×1280 clip (${JSON.stringify(vc)})`);
+      await page.click('#misv');
+      // (the frame size is checked on the canvas above: Playwright's Chromium records MP4 but can't play H.264 back)
+      const pl = await c.ev(() => ({ shown: getComputedStyle(document.getElementById('clip')).display !== 'none', src: !!document.getElementById('clipv').src, size: clipFile && clipFile.size, name: clipFile && clipFile.name }));
+      c.expect(pl.shown && pl.src && pl.size === vc.size && [`throttle-up-daily-${today}.mp4`, `throttle-up-daily-${today}.webm`].includes(pl.name), `▶ CLIP opens the vertical clip to save or share (${JSON.stringify(pl)})`);
+      await page.click('#cls');
       r = await fly(11, 'nobridle');
       c.expect(r.title === 'STAGE TOO LOW', `touching down with the bridles in fails (${r.title})`);
       r = await fly(11, 'hover');
@@ -382,6 +396,7 @@ const scenarios = [
       await page.click('#misx');
       const off = await c.ev(() => ({ on: MS.on, prop: SKY0.prop, alt0: SKY0.alt, hidden: getComputedStyle(document.getElementById('mis')).display === 'none' }));
       c.expect(off.on === 0 && off.hidden && off.prop === Infinity && off.alt0 === 32, 'CLOSE ends the mission and restores free play');
+      c.expect(await c.ev(() => !CL.rec && !CL.blob), 'CLOSE drops the clip');
       c.expect((await btn()) === '◆ MISSION', 'the button reads ◎ MISSION again');
       await c.ev(() => setMachine(0));
       c.expect((await btn()) === null, 'machines without a mission hide the button');

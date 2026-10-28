@@ -37,6 +37,7 @@ import * as m32 from '../render2d/sprites.js';
 import * as m33 from '../sequence/sequence.js';
 import * as m34 from '../mission/mission.js';
 import * as m35 from '../machines/sky-crane/mission.js';
+import * as m36 from '../mission/clip.js';
 
 const d = (k, g, s) => {
   const o = Object.getOwnPropertyDescriptor(window, k);
@@ -779,6 +780,7 @@ d('canRec', () => m29.canRec);
 d('startRec', () => m29.startRec);
 d('stopRec', () => m29.stopRec);
 d('showClip', () => m29.showClip);
+d('openClip', () => m29.openClip);
 d('recLab', () => m29.recLab);
 d('recOverlay', () => m29.recOverlay);
 d('wireRecorder', () => m29.wireRecorder);
@@ -831,5 +833,11 @@ d('misStop', () => m34.misStop);
 d('misTick', () => m34.misTick);
 d('wireMission', () => m34.wireMission);
 d('skyMission', () => m35.default);
+d('CL', () => m36.CL);
+d('clipStart', () => m36.clipStart);
+d('clipDrop', () => m36.clipDrop);
+d('clipLab', () => m36.clipLab);
+d('clipOpen', () => m36.clipOpen);
+d('clipFrame', () => m36.clipFrame);
 d('SKY0', () => m26.SKY0);
 d('ISP', () => m26.ISP);

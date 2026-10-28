@@ -50,8 +50,12 @@ src/
                           machine's `mission` sets the conditions and judges; progress shows in the machine's inset.
                           Daily challenge: dayNo() (#1 = 2026-10-28, local date), daySeed(name, n), tries/best per day in
                           localStorage (`tu-daily-<name>`), shareText() (the SHARE line)
+  mission/clip.js         the mission's 9:16 clip (CL, clipStart/clipFrame/clipDrop/clipOpen): records each try on its
+                          own 720×1280 canvas (3D view cropped 3:4 round the middle, title, readouts, verdict), ends
+                          3.5 s after the verdict; the card's ▶ CLIP opens it in REC's CLIP READY panel (openClip)
   info/                   info.js (INFO panel), cut-text.js (the SCHLIEREN/THERMAL paragraphs)
-  recorder/recorder.js    REC: WebGL + HUD composite into a MediaRecorder clip
+  recorder/recorder.js    REC: WebGL + HUD composite into a MediaRecorder clip; recMime() and openClip() serve the
+                          mission clip too
   render2d/               index.js (2D renderer: sky, haze, bloom, draw), jet.js (2D jet parts), sprites.js
   render3d/               lazy chunk, the only code that imports three:
     index.js              init3D(): loadM3(), then every createX() in v11's order; returns G3
@@ -80,7 +84,7 @@ src/
   debug/globals.js        test bridge: every main-chunk export and state key on window
 ```
 
-Frame: `frame(t)` → `seqTick` → `keys` → `update` → `misTick` → `audio` → 2D `draw` or `G3.render` → `gauges` → `G3.overlay` → `seqCap` → REC.
+Frame: `frame(t)` → `seqTick` → `keys` → `update` → `misTick` → `audio` → 2D `draw` or `G3.render` → `gauges` → `G3.overlay` → `seqCap` → REC → `clipFrame`.
 
 ### Machine table entry (`MC[i]`, `machines/<name>/machine.js`) — key fields
 
@@ -89,7 +93,7 @@ Hooks: `clu(dt)` per-frame machine step (Hall orbit, Saturn V, Harrier hover, NK
 Engine model: `idle, up, dn, coast, cN, cT, tk, ign, lk, e0f, lt, ab, stall, e:[EGT curve], f:[fuel curve]`.
 UI: `g` (3 gauges: `{t,cap,min,max,maj,mn,red,d,f}`), `gv()` values, `lv`/`lv2` lever labels `[text,pos,'t'|'b']`, `lp()` lamps, status words `off/st/cl/cut/wait`.
 Feel: `shk()` camera shake strength (currently switched off for every machine: `SHAKE = 0` in `core/util.js`; it was a stylistic cue, not a measured effect), `au(s,V,pm)` audio voice.
-Game: `mission:{name, brief, tag, share(r), start(rng), end(), judge(), over(t)}` (sky crane): `start` sets the attempt's conditions from a seeded generator (never `Math.random`), `end` restores free play, `judge()` returns null until there is a verdict `{ok, title, why, rows:[[label,value]], score}`, `over(t)` says when to show the card (t = seconds since the verdict), `tag` names it in the share line and `share(r)` gives the line's detail. ◆ MISSION (and FLY AGAIN) starts today's daily challenge: the same conditions for everyone on the same date, tries counted; `misStart(seed)` with a seed (tests) is not a daily try. `?m=7&daily`, the link in the share line, starts it as soon as the engine runs. A machine with a mission shows ◆ MISSION in place of its FAULTS button (it has no stall); slow-mo is locked during a mission; SEQUENCE, machine switch and END MISSION stop it.
+Game: `mission:{name, brief, tag, share(r), start(rng), end(), judge(), over(t)}` (sky crane): `start` sets the attempt's conditions from a seeded generator (never `Math.random`), `end` restores free play, `judge()` returns null until there is a verdict `{ok, title, why, rows:[[label,value]], score}`, `over(t)` says when to show the card (t = seconds since the verdict), `tag` names it in the share line and the clip, `share(r)` gives the line's detail, and `clip()` the clip's live readouts `[[label, value]]`. ◆ MISSION (and FLY AGAIN) starts today's daily challenge: the same conditions for everyone on the same date, tries counted; `misStart(seed)` with a seed (tests) is not a daily try. `?m=7&daily`, the link in the share line, starts it as soon as the engine runs. A machine with a mission shows ◆ MISSION in place of its FAULTS button (it has no stall); slow-mo is locked during a mission; SEQUENCE, machine switch and END MISSION stop it.
 Story: `sqc` + `sq[]` SEQUENCE steps (`{cap, lever|()=>, dur, wait, until(), max, view, do()}`), `info:{f:[facts], a:[approximations], cut:string|array, s:[[title,url]]}` (a string `cut` gets the shared SCHLIEREN/THERMAL paragraphs appended).
 2D-only: `nxf, r, gl, skyG, hzk, hzg, hza, blk, mc, dk, bl, bd, pl, draw, rear`.
 
@@ -136,7 +140,7 @@ Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim up
 
 **Behaviour checks (`npm run check`, about 2 min):** builds the app, serves it, and asserts that the game works, failing on any console or page error. Covers:
 - every machine in 3D: engine reaches RUN; views cycle, with the button label checked; cutaway; lenses (Hall skips schlieren); scenes; INFO opens and closes;
-- the sky-crane MISSION (`mission-m7`): button, seeded conditions in range and repeatable, a gentle landing scores, FLY AGAIN relights after the flyaway, the three failures (too fast, bridles not out, out of hydrazine), slow-mo locked, CLOSE restores free play, other machines hide the button; the daily challenge (day numbers, seed, tries and best kept, the card's daily line, the share line, SHARE copies it), and `?daily` (`daily-link-m7`);
+- the sky-crane MISSION (`mission-m7`): button, seeded conditions in range and repeatable, a gentle landing scores, FLY AGAIN relights after the flyaway, the three failures (too fast, bridles not out, out of hydrazine), slow-mo locked, CLOSE restores free play, other machines hide the button; the daily challenge (day numbers, seed, tries and best kept, the card's daily line, the share line, SHARE copies it), the 9:16 clip (CLIP waits, then a 720×1280 clip opens in the CLIP READY panel; CLOSE drops it), and `?daily` (`daily-link-m7`);
 - SEQUENCE runs to "Sequence complete." with a per-machine outcome: F-TYPE full afterburner, SR-71 Mach 2.8+, shuttle and NK-12 full power, Hall raises its orbit, Saturn V all five F-1s lit, Harrier lifts off, sky crane touches down, Starship lights all 33 at full throttle;
 - machines 0–2 in 2D (`?r=2d`) and the fallback from `?m=3&r=2d` to F-TYPE;
 - the compressor stall, deterministic in `?manual` mode. A slow ramp doesn't stall; a slam stalls with bangs and beeps and recovers; pulling back clears it early; FAULTS off prevents it;
@@ -165,7 +169,7 @@ Workflow: record the reference from a known-good commit (`npm run snapshots`), m
 
 `legacy/tests/` holds the Playwright (Python) scripts used during development in a cloud sandbox with a software GPU, superseded by `npm run check` and the golden suite but kept for reference: `t10.py M OUT` screenshots a machine through views/lenses/scenes, `t10s.py OUT` runs SEQUENCE for machines 6 and 7, `t11s.py` runs Hall + sky crane sequences and checks the 2D chip list, `t10f.py` cycles all machines/scenes/quality and REC, `r10_stall.py 0` is the compressor-stall regression in 2D. They test the running Vite app (`npm run dev`, or set `PAGE_URL`). Needs `pip install playwright` and `playwright install chromium` (the repo's `.venv` has both). On a real GPU you can drop the SwiftShader flags in `h3.py`.
 
-Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari, and listening on real speakers.
+Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari, and listening on real speakers; the mission clip's cost on a phone, and that its MP4 plays in TikTok/Reels/Shorts. Playwright's Chromium records MP4 but can't play H.264 back; play a saved clip in Edge (`channel: 'msedge'`) to check it.
 
 ## Known issues
 
@@ -187,7 +191,7 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 2. **Game layer**
    - Missions with scores: ~~sky-crane soft landing~~ (first version done 2026-10-28: random start height and sink rate, limited hydrazine, score = softness + hydrazine saved; no wind, because Mars's air at ~0.016 kg/m³ makes gusts negligible against the stage's weight, stated in INFO; terrain not yet), Harrier ship-deck landing, Hall reach-an-orbit on least xenon, F-type stall-free run-up.
    - ~~Daily challenge (same seed for everyone) with a Wordle-style share line.~~ Done 2026-10-28 for the sky crane: ◆ MISSION plays today's conditions, the card counts tries and today's best, SHARE copies (or, on phones, shares) a score bar plus a `?m=7&daily` link. Not yet: a leaderboard (would need a server).
-   - One-tap vertical (9:16) clip export with score overlay for TikTok/Reels/Shorts.
+   - ~~One-tap vertical (9:16) clip export with score overlay for TikTok/Reels/Shorts.~~ Done 2026-10-28 for missions: every try records itself (title, daily number and try, live readouts, verdict and score); ▶ CLIP on the result card saves or shares it. Not yet checked on a real phone (recording costs a 720×1280 draw and a video encode each frame).
 3. **Realism**
    - Sound overhaul: blend CC0 recordings, pitch-shifted by RPM.
    - Better models (check NASA 3D Resources for Perseverance; check usage terms).

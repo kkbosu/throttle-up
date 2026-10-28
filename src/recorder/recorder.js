@@ -8,6 +8,18 @@ import { $, MONO, cv, mk } from '../core/util.js';
 export const RC = mk(8, 8),
   rc = RC.getContext('2d'); /* clips are captured from this composite: canvas + mirrored lever + watermark */
 export const canRec = !!(window.MediaRecorder && RC.captureStream);
+/* the first clip format this browser can record (MP4 where it can, for sharing), or '' for its default */
+export function recMime() {
+  return (
+    [
+      'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+      'video/mp4',
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm',
+    ].find((t) => MediaRecorder.isTypeSupported(t)) || ''
+  );
+}
 export function startRec() {
   if (!canRec || state.rec || !state.ph) return;
   try {
@@ -15,14 +27,7 @@ export function startRec() {
     RC.height = cv.height;
     const vs = RC.captureStream(60);
     if (S.dst) S.dst.stream.getAudioTracks().forEach((t) => vs.addTrack(t));
-    state.recMime =
-      [
-        'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
-        'video/mp4',
-        'video/webm;codecs=vp9,opus',
-        'video/webm;codecs=vp8,opus',
-        'video/webm',
-      ].find((t) => MediaRecorder.isTypeSupported(t)) || '';
+    state.recMime = recMime();
     const o = { videoBitsPerSecond: 7e6 };
     if (state.recMime) o.mimeType = state.recMime;
     const m = new MediaRecorder(vs, o);
@@ -43,14 +48,19 @@ export function stopRec() {
 }
 export function showClip() {
   const type = (state.recMime || 'video/webm').split(';')[0],
-    ext = type.includes('mp4') ? 'mp4' : 'webm',
     blob = new Blob(state.recCh, { type });
   state.rec = null;
   state.recCh = [];
   state.recLast = -2;
+  openClip(blob, 'throttle-up');
+}
+/* the CLIP READY panel: play the clip, with SAVE and (where the browser can share files) SHARE */
+export function openClip(blob, name) {
+  const type = blob.type,
+    ext = type.includes('mp4') ? 'mp4' : 'webm';
   if (state.clipURL) URL.revokeObjectURL(state.clipURL);
   state.clipURL = URL.createObjectURL(blob);
-  state.clipFile = new File([blob], 'throttle-up.' + ext, { type });
+  state.clipFile = new File([blob], name + '.' + ext, { type });
   const v = $('clipv');
   v.src = state.clipURL;
   $('clip').style.display = 'flex';

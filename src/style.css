@@ -329,6 +329,17 @@ body:has(#tq.two) #hint {
   border-color: #2e7a4e;
   color: #7ee0a4;
 }
+#mis button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+/* a portrait phone: the four buttons in one row */
+@media (max-width: 440px) {
+  #mis button {
+    padding: 9px 8px;
+    letter-spacing: 0.06em;
+  }
+}
 /* a phone held sideways: the whole card fits without scrolling */
 @media (max-height: 480px) {
   #mis {
