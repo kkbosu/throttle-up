@@ -6,6 +6,7 @@ import { GV, buildFaces } from '../hud/gauges.js';
 import { applyRaw } from '../input/lever.js';
 import { MC } from '../machines/index.js';
 import { EM, P, SM, VP } from '../render2d/index.js';
+import { misStop } from '../mission/mission.js';
 import { seqStop } from '../sequence/sequence.js';
 
 /* next machine in the cycle; the Hall thruster needs the 3D renderer */
@@ -34,6 +35,7 @@ export function chips() {
 /* switching machine resets the sim to cold and starts the new engine straight away (lever back to idle) */
 export function setMachine(i) {
   seqStop(false);
+  misStop();
   state.mi = i;
   state.M = MC[i];
   state.GC = state.M.g;

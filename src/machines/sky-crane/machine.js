@@ -6,6 +6,7 @@ import { say } from '../../hud/controls.js';
 import { applyRaw } from '../../input/lever.js';
 import { SQ } from '../../sequence/sequence.js';
 import { craneInset } from './inset.js';
+import skyMission from './mission.js';
 
 /* Mars 2020 sky crane. Mars gravity 3.71 m/s2, rover 1,025 kg. Assumed: descent stage 1,100 kg at this point, engines canted 20 deg, fuel use ignored.
    The lever sets total thrust (fraction of 8 x 3,060 N); each lit engine runs between 400 N and 3,060 N, backups at about 1% */
@@ -16,7 +17,10 @@ export const GM = 3.71,
   MLN = 400,
   CANT = Math.cos((20 * Math.PI) / 180),
   RH = 1.75,
-  BL = 6.4;
+  BL = 6.4,
+  ISP = 215;
+/* start of the run: height, sink rate and hydrazine on board (MISSION sets its own; free play has no limit) */
+export const SKY0 = { alt: 32, vz: -2.5, prop: Infinity };
 export const sc = {
   bl: 0,
   cut: 0,
@@ -34,6 +38,8 @@ export const sc = {
   T: 0,
   lp: 0,
   hard: 0,
+  used: 0,
+  prop: Infinity,
 };
 export function skyReset() {
   Object.assign(sc, {
@@ -51,12 +57,15 @@ export function skyReset() {
     vzT: null,
     T: 0,
     hard: 0,
+    used: 0,
+    prop: SKY0.prop,
   });
   sc.thr.fill(0);
-  state.alt = 32;
-  state.vz = -2.5;
+  state.alt = SKY0.alt;
+  state.vz = SKY0.vz;
 }
 export const skyRy = () => (sc.td ? 0 : state.alt - RH - sc.bl),
+  skyLeft = () => Math.max(0, sc.prop - sc.used),
   skyHov = () => Math.min(1, (((sc.td || sc.cut ? MS : MS + MR) * GM) / CANT - (8 - sc.act) * MLE * 0.01) / (8 * MLE));
 export function skyCam(v) {
   const ry = sc.td ? 0 : Math.max(0, state.alt - RH - sc.bl);
@@ -84,16 +93,19 @@ export function skyStep(dt) {
   if (state.raw2 > 0.02 && sc.act == 8 && run) sc.act = 4;
   /* bridles pay out (up to 1 m/s here) to the length set by the second lever; they cannot be reeled back in */
   if (!sc.cut && !sc.td) sc.bl = Math.max(sc.bl, Math.min(state.raw2 * BL, sc.bl + dt));
-  const tot = sc.fly ? 8 * MLE : state.L * 8 * MLE;
+  const tot = sc.fly ? 8 * MLE : state.L * 8 * MLE,
+    dry = sc.used >= sc.prop && !sc.cut;
   let sum = 0;
   for (let k = 0; k < 8; k++) {
     const on = sc.act == 8 || k % 2 == 0,
-      t = !run ? 0 : on ? Math.min(MLE, Math.max(MLN, tot / sc.act)) : MLE * 0.01;
+      t = !run || dry ? 0 : on ? Math.min(MLE, Math.max(MLN, tot / sc.act)) : MLE * 0.01;
     sc.thr[k] += (t - sc.thr[k]) * (1 - Math.exp(-dt / 0.12));
     sum += sc.thr[k];
   }
   sc.T = sum * CANT;
   state.N = sum / (8 * MLE);
+  /* hydrazine burned: mass flow = thrust / (specific impulse x g0); counted until the bridles are cut */
+  if (run && !sc.cut) sc.used += (sum / (ISP * 9.80665)) * dt;
   if (sc.done || state.ph == 0 || state.ph == 1) return;
   const m = sc.td || sc.cut ? MS : MS + MR;
   if (sc.fly) {
@@ -182,6 +194,7 @@ export default {
   nozzle: 1,
   inset: 1,
   insetF: craneInset,
+  mission: skyMission,
   clu: (dt) => skyStep(dt),
   camA: (v) => skyCam(v),
   sub: 'Mars 2020 descent stage lowering the Perseverance rover on bridles, Jezero Crater.',
@@ -284,6 +297,7 @@ export default {
     f: [
       'Perseverance landed in Jezero Crater on Mars on 18 February 2021. For its last seconds of flight it hung beneath a rocket-powered descent stage: the sky crane.',
       "The descent stage uses the design that landed Curiosity in 2012: eight throttleable Mars Landing Engines burning hydrazine, each adjustable from 400 N to 3,060 N. Early in powered descent all eight fire; later four drop to a near-shutdown level of about 1% flow and serve as backups. Curiosity's stage carried 390 kg of hydrazine in four tanks.",
+      "The engine, Aerojet's MR-80B, is derived from the Viking landers' descent engine. In qualification tests it throttled from 31 N to 3,603 N with a specific impulse of 204 to 223 seconds: every 1,000 N of thrust held for a second burns about half a kilogram of hydrazine.",
       'About 12 seconds before touchdown, roughly 20 m up, the stage had slowed to its final descent speed of about 0.75 m/s (1.7 mph) and began lowering the rover on cables about 6.4 m (21 ft) long.',
       'When the rover sensed its wheels on the ground it cut the cables, and the descent stage flew off to crash a safe distance away.',
       "Mars gravity is about 38% of Earth's, so the 1,025 kg rover weighs on Mars what about 390 kg would on Earth. Hover thrust is correspondingly small, and cutting the rover loose suddenly leaves the stage with far more thrust than weight.",
@@ -291,7 +305,9 @@ export default {
     ],
     a: [
       'Only the final sky-crane phase is simulated, starting about 32 m up. Entry, parachute and most of powered descent are not.',
-      'The descent stage mass here (1,100 kg) and the 20\u00b0 engine cant are assumptions; no source was found for either. Fuel use is ignored.',
+      'The descent stage mass here (1,100 kg) and the 20\u00b0 engine cant are assumptions; no source was found for either. The stage does not get lighter as it burns hydrazine.',
+      'MISSION is a game, not a re-enactment: the start height and sink rate, the hydrazine on board, the 1.6 m/s crash limit, the rule that the bridles must be fully out, and the score are game rules. Hydrazine use is worked out from thrust with a specific impulse of 215 s.',
+      "There is no wind. Mars's air is so thin (about 0.016 kg/m³ at the surface) that even a strong gust would push on the stage and rover with only tens of newtons, against a weight of about 7,900 N.",
       'The lever sets total thrust; the real stage is flown entirely by its guidance computer. A little artificial damping makes hand-flying manageable, and SEQUENCE flies it with a simple speed-hold loop.',
       'Here the switch to four engines happens when you start lowering the rover and the bridles pay out at up to 1 m/s; the real timings differ, so this descent takes a few seconds longer than the real 12.',
       'The flyaway is simplified. The stage, rover, terrain and crater rim are hand-built approximations, and the dust is simple particles.',
@@ -314,6 +330,11 @@ export default {
       ['MSL descent stage (Spaceflight101)', 'https://spaceflight101.com/msl/?p=311'],
       ['The Sun Sets on Mars (NASA)', 'https://science.nasa.gov/?p=926395'],
       ['Sky crane (Wikipedia)', 'https://en.wikipedia.org/wiki/Sky_crane_(landing_system)'],
+      [
+        'Dawson et al., Monopropellant Hydrazine 700 lbf Throttling Terminal Descent Engine for Mars Science Laboratory (AIAA 2007-5481)',
+        'https://arc.aiaa.org/doi/10.2514/6.2007-5481',
+      ],
+      ['Mars Fact Sheet (NASA NSSDC)', 'https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html'],
     ],
   },
 };

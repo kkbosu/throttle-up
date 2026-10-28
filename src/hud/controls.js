@@ -6,6 +6,7 @@ import { state } from '../core/state.js';
 import { $, SL, SLN, SN, SNM, VN } from '../core/util.js';
 import { showInfo } from '../info/info.js';
 import { tq, trk } from '../input/lever.js';
+import { MS, misStart, misStop } from '../mission/mission.js';
 import { startRec, stopRec } from '../recorder/recorder.js';
 import { SQ, seqStart, seqStop } from '../sequence/sequence.js';
 
@@ -14,6 +15,10 @@ export function lab() {
   const sb = q('seq');
   sb.textContent = SQ.on ? '■ STOP SEQUENCE' : '▶ SEQUENCE';
   sb.classList.toggle('run', !!SQ.on);
+  const mb = q('mis');
+  mb.style.display = state.M.mission ? '' : 'none';
+  mb.textContent = MS.on ? '■ END MISSION' : '◆ MISSION';
+  mb.classList.toggle('run', !!MS.on);
   q('mach').textContent = 'MACHINE: ' + state.M.btn + ' ▶';
   q('view').textContent = 'VIEW: ' + VN[state.view];
   q('exp').textContent = state.G3
@@ -33,6 +38,8 @@ export function lab() {
   const f = q('flt');
   f.textContent = 'FAULTS: ' + (state.M.stall ? (state.faults ? 'ON' : 'OFF') : 'N/A');
   f.style.opacity = state.M.stall ? 1 : 0.4;
+  /* a machine with a mission has no stall: MISSION takes the place of the idle FAULTS button */
+  f.style.display = state.M.mission ? 'none' : '';
 }
 /* engine master: ON cranks and lights off; OFF cuts fuel (flame dies, rotor coasts, nozzle cools). Restart once the rotor is nearly stopped */
 export function say(t) {
@@ -47,6 +54,7 @@ export function act(k) {
   } else if (k == 'exp') state.exposed ^= 1;
   else if (k == 'scn') state.scene = (state.scene + 1) % 3;
   else if (k == 'slow') {
+    if (MS.on) return say('Slow-mo is off during a mission.');
     state.sl = (state.sl + 1) % 3;
     state.tsT = state.M.warp ? 1 : SL[state.sl];
   } else if (k == 'rec') {
@@ -59,7 +67,10 @@ export function act(k) {
   } else if (k == 'mach') setMachine(nextM(state.mi));
   else if (k == 'machp') setMachine(prevM(state.mi));
   else if (k == 'seq') {
+    misStop();
     SQ.on ? seqStop(false) : seqStart();
+  } else if (k == 'mis') {
+    MS.on ? misStop() : misStart();
   } else if (k == 'inf') showInfo();
   else if (k == 'lens') {
     if (state.G3) {

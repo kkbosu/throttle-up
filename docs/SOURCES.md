@@ -39,6 +39,8 @@ Extracted from the INFO panels (now in `src/machines/<name>/machine.js`; origina
 - [MSL descent stage (Spaceflight101)](https://spaceflight101.com/msl/?p=311)
 - [The Sun Sets on Mars (NASA)](https://science.nasa.gov/?p=926395)
 - [Sky crane (Wikipedia)](https://en.wikipedia.org/wiki/Sky_crane_(landing_system))
+- [Dawson et al., Monopropellant Hydrazine 700 lbf Throttling Terminal Descent Engine for Mars Science Laboratory (AIAA 2007-5481)](https://arc.aiaa.org/doi/10.2514/6.2007-5481): the MR-80B's thrust range (31 to 3,603 N) and specific impulse (204 to 223 s) in qualification tests; used for MISSION's hydrazine use
+- [Mars Fact Sheet (NASA NSSDC)](https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html): surface air density, about 0.016 kg/m³ (why MISSION has no wind)
 
 
 ## STARSHIP SUPER HEAVY

@@ -225,6 +225,96 @@ body:has(#tq.two) #hint {
   border-color: #c0392b;
   color: #ff8a7a;
 }
+#ctl button[data-k='mis'] {
+  border-color: #2e5a80;
+  color: #8fc8ff;
+}
+#ctl button[data-k='mis'].run {
+  border-color: #c0392b;
+  color: #ff8a7a;
+}
+/* MISSION result card */
+#mis {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 6, 10, 0.72);
+  z-index: 6;
+  touch-action: auto;
+  padding: 16px;
+  box-sizing: border-box;
+}
+#misb {
+  width: 100%;
+  max-width: 360px;
+  max-height: 92vh;
+  overflow: auto;
+  border: 1px solid #2a3040;
+  border-radius: 6px;
+  background: #0b0d12;
+  padding: 18px 22px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #c4cad6;
+  text-align: center;
+}
+#mish {
+  margin: 0 0 4px;
+  font-size: 15px;
+  letter-spacing: 0.22em;
+  font-weight: 600;
+}
+#mish.ok {
+  color: #3fcf7a;
+}
+#mish.bad {
+  color: #ff8a5a;
+}
+#misr {
+  margin: 0 0 10px;
+  color: var(--dim);
+}
+#mist div {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #1c2130;
+  padding: 4px 0;
+  letter-spacing: 0.08em;
+}
+#mist span {
+  color: var(--dim);
+}
+#mist b {
+  font-weight: 600;
+  color: var(--fg);
+}
+#miss {
+  margin: 10px 0 12px;
+  font-size: 20px;
+  letter-spacing: 0.18em;
+  color: var(--fg);
+}
+#mis .row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+#mis button {
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--fg);
+  background: rgba(20, 24, 32, 0.8);
+  border: 1px solid #2a3040;
+  border-radius: 4px;
+  padding: 9px 14px;
+  cursor: pointer;
+}
+#mis button:hover {
+  border-color: #6a7282;
+}
 #ib {
   display: inline-block;
   margin-left: 10px;

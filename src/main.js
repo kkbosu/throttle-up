@@ -11,6 +11,7 @@ import { resize, wireLayout } from './hud/layout.js';
 import { wireInfo } from './info/info.js';
 import { wireInput } from './input/lever.js';
 import { MC } from './machines/index.js';
+import { wireMission } from './mission/mission.js';
 import { wireRecorder } from './recorder/recorder.js';
 import './debug/globals.js';
 
@@ -22,6 +23,7 @@ wireControls();
 wireGauges();
 wireRecorder();
 wireMachineSwitch();
+wireMission();
 wireFps();
 setMachine(Math.min(MC.length - 1, Math.max(0, +new URLSearchParams(location.search).get('m') || 0)));
 resize();

@@ -1,7 +1,7 @@
 // SKY CRANE: the inset panel drawn beside the gauges.
 import { state } from '../../core/state.js';
 import { MONO, g } from '../../core/util.js';
-import { GM, MR, MS, RH, sc, skyRy } from './machine.js';
+import { GM, MR, MS, RH, sc, skyLeft, skyRy } from './machine.js';
 
 /* sky crane panel: side view of descent stage, bridles and rover over the ground (to scale, 40 m tall) */
 export function craneInset(x, y, w, h) {
@@ -72,16 +72,27 @@ export function craneInset(x, y, w, h) {
     lh = Math.min(13, (h - 22) / 4),
     ty = y + 24,
     m = sc.td || sc.cut ? MS : MS + MR,
-    tw = sc.T / (m * GM);
+    tw = sc.T / (m * GM),
+    /* MISSION: hydrazine left takes the ENGINES row (the lamp still says 8 or 4 lit), with a bar along the bottom */
+    fu = sc.prop < Infinity ? skyLeft() / sc.prop : -1,
+    low = fu >= 0 && fu < 0.2;
   [
     ['ROVER', ry.toFixed(1) + ' m'],
     ['V/S', (sc.td ? 0 : state.vz).toFixed(2) + ' m/s'],
     ['T/W', tw.toFixed(2)],
-    ['ENGINES', sc.act == 8 ? '8 LIT' : '4 + 4 AT 1%'],
+    fu >= 0
+      ? ['HYDRAZINE', fu > 0 ? Math.ceil(skyLeft()) + ' kg' : 'EMPTY']
+      : ['ENGINES', sc.act == 8 ? '8 LIT' : '4 + 4 AT 1%'],
   ].forEach((l, i) => {
     g.fillStyle = '#6c7482';
     g.fillText(l[0], tx, ty + i * lh);
-    g.fillStyle = l[0] == 'T/W' && tw > 1 ? '#3fcf7a' : '#d8dde6';
-    g.fillText(l[1], tx + 50, ty + i * lh);
+    g.fillStyle = l[0] == 'T/W' && tw > 1 ? '#3fcf7a' : l[0] == 'HYDRAZINE' && low ? '#ff6a4a' : '#d8dde6';
+    g.fillText(l[1], tx + (fu >= 0 ? 58 : 50), ty + i * lh);
   });
+  if (fu >= 0) {
+    g.fillStyle = 'rgba(255,255,255,.12)';
+    g.fillRect(x + 1, y + h - 4, w - 2, 3);
+    g.fillStyle = low ? '#ff6a4a' : '#5fb0ff';
+    g.fillRect(x + 1, y + h - 4, (w - 2) * fu, 3);
+  }
 }

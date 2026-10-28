@@ -35,6 +35,8 @@ import * as m30 from '../render2d/index.js';
 import * as m31 from '../render2d/jet.js';
 import * as m32 from '../render2d/sprites.js';
 import * as m33 from '../sequence/sequence.js';
+import * as m34 from '../mission/mission.js';
+import * as m35 from '../machines/sky-crane/mission.js';
 
 const d = (k, g, s) => {
   const o = Object.getOwnPropertyDescriptor(window, k);
@@ -818,3 +820,12 @@ d('seqNext', () => m33.seqNext);
 d('seqStop', () => m33.seqStop);
 d('seqTick', () => m33.seqTick);
 d('seqCap', () => m33.seqCap);
+d('MS', () => m34.MS);
+d('rng', () => m34.rng);
+d('misStart', () => m34.misStart);
+d('misStop', () => m34.misStop);
+d('misTick', () => m34.misTick);
+d('wireMission', () => m34.wireMission);
+d('skyMission', () => m35.default);
+d('SKY0', () => m26.SKY0);
+d('ISP', () => m26.ISP);

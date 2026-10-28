@@ -262,7 +262,7 @@ const scenarios = [
             .filter(el => el.offsetParent && el.getBoundingClientRect().width > 0 && (el.id.startsWith('trk') || el.textContent !== ''))
             .map(el => ({ name: el.id || el.textContent, ...box(el) }));
           const hint = document.getElementById('hint'), out = [];
-          for (const text of [M.hint, 'The descent stage flew off to crash a safe distance away. ENGINE to fly it again.', 'COMPRESSOR STALL! Ease the throttle back.']) {
+          for (const text of [M.hint, ...(M.mission ? [M.mission.brief] : []), 'The descent stage flew off to crash a safe distance away. ENGINE to fly it again.', 'COMPRESSOR STALL! Ease the throttle back.']) {
             hint.textContent = text;
             const h = box(hint);
             for (const l of levers) if (h.r > l.l && h.l < l.r && h.b > l.t && h.t < l.b) out.push(`"${text.slice(0, 24)}..." overlaps ${l.name} (hint right ${Math.round(h.r)}, lever left ${Math.round(l.l)})`);
@@ -288,7 +288,7 @@ const scenarios = [
             box = (n, el) => { const b = el.getBoundingClientRect(); return rect(n, b.left, b.top, b.right, b.bottom); },
             hit = (a, b) => a.r > b.l + 0.5 && a.l < b.r - 0.5 && a.b > b.t + 0.5 && a.t < b.b - 0.5,
             hint = document.getElementById('hint'), out = [];
-          for (const text of [M.hint, 'The descent stage flew off to crash a safe distance away. ENGINE to fly it again.']) {
+          for (const text of [M.hint, ...(M.mission ? [M.mission.brief] : []), 'The descent stage flew off to crash a safe distance away. ENGINE to fly it again.']) {
             hint.textContent = text; step(2);
             const dials = rect('dials, lamps and switch', gx, gy - 14, gx + 3 * dsz + 16, SWR.y + SWR.h),
               parts = [dials, box('title and hint', document.getElementById('hint').parentElement)],
@@ -312,6 +312,61 @@ const scenarios = [
       }
     },
   })),
+  // Sky-crane MISSION (not in v11): the button, a good landing scored, FLY AGAIN after the flyaway, the three ways to
+  // fail (too fast, bridles not out, out of hydrazine), slow-mo locked, CLOSE back to free play.
+  {
+    id: 'mission-m7', q: 0, m: 7, ctx: SMALL, notV11: true,
+    async run(page, rec) {
+      const c = checker(page, rec);
+      await c.start();
+      const btn = () => c.ev(() => { const b = document.querySelector('#ctl [data-k=mis]'); return b.offsetParent ? b.textContent : null; });
+      c.expect((await btn()) === '◆ MISSION', 'sky crane shows the ◆ MISSION button');
+      await page.click('#ctl [data-k=mis]');
+      c.expect((await c.ev('MS.on')) === 1 && (await btn()) === '■ END MISSION', 'MISSION starts and the button reads ■ END MISSION');
+      c.expect(/^MISSION:/.test(await c.ev(() => document.getElementById('hint').textContent)), 'the hint gives the brief');
+      // fly with a fixed seed; pilot(kind) flies until the result card is up (ff includes misTick, as frame() does)
+      const fly = (seed, kind) => c.ev(([seed, kind]) => {
+        if (seed != null) misStart(seed);
+        const ff = (s, f) => { for (let t = 0; t < s; t += .05) { keys(.05); update(.05); misTick(.05); if (f && f()) return; } };
+        ff(4, () => ph == 2);
+        const c0 = { alt: alt, vz: vz, prop: sc.prop };
+        if (kind !== 'nobridle') raw2 = 1;
+        ff(200, () => {
+          if (kind === 'drop') raw = 0;
+          else if (kind === 'hover') raw = Math.min(1, Math.max(0, skyHov() + 0.4 * (0 - vz)));
+          else { const ry = alt - RH - sc.bl; raw = Math.min(1, Math.max(0, skyHov() + 0.4 * ((ry > 4 ? -2.2 : -0.7) - vz))); }
+          applyRaw();
+          return MS.tr < 0;
+        });
+        step(2);
+        const card = document.getElementById('mis');
+        return { c0, shown: getComputedStyle(card).display !== 'none', title: document.getElementById('mish').textContent, why: document.getElementById('misr').textContent, score: document.getElementById('miss').textContent, res: MS.res };
+      }, [seed, kind]);
+      let r = await fly(7, 'good');
+      c.expect(r.c0.alt >= 26 && r.c0.alt <= 38 && r.c0.vz <= -1.5 && r.c0.vz >= -3.5 && r.c0.prop > 70, `start conditions in range (${JSON.stringify(r.c0)})`);
+      c.expect(r.shown && r.title === 'ROVER DOWN SAFELY' && /^\d+ POINTS$/.test(r.score) && r.res.score > 600, `a gentle landing scores (${r.title}, ${r.score})`);
+      const same = await fly(7, 'good');
+      c.expect(same.res.score === r.res.score && same.c0.alt === r.c0.alt, 'the same seed gives the same conditions and score');
+      // FLY AGAIN relights after the flyaway and starts fresh
+      await page.click('#misa');
+      const again = await c.ev(() => { for (let t = 0; t < 4 && ph != 2; t += .05) update(.05); return { ph, used: sc.used, hidden: getComputedStyle(document.getElementById('mis')).display === 'none', on: MS.on, res: MS.res }; });
+      c.expect(again.ph === 2 && again.hidden && again.on === 1 && !again.res, `FLY AGAIN restarts the mission (ph ${again.ph})`);
+      r = await fly(null, 'drop');
+      c.expect(r.title === 'HARD LANDING' && r.score === 'NO SCORE', `falling fails as a hard landing (${r.title})`);
+      r = await fly(11, 'nobridle');
+      c.expect(r.title === 'STAGE TOO LOW', `touching down with the bridles in fails (${r.title})`);
+      r = await fly(11, 'hover');
+      c.expect(r.title === 'HARD LANDING' && /ran out/.test(r.why), `hovering until the hydrazine runs out fails (${r.title}: ${r.why})`);
+      await c.act('slow');
+      c.expect((await c.ev('sl')) === 0, 'slow-mo stays off during a mission');
+      await page.click('#misx');
+      const off = await c.ev(() => ({ on: MS.on, prop: SKY0.prop, alt0: SKY0.alt, hidden: getComputedStyle(document.getElementById('mis')).display === 'none' }));
+      c.expect(off.on === 0 && off.hidden && off.prop === Infinity && off.alt0 === 32, 'CLOSE ends the mission and restores free play');
+      c.expect((await btn()) === '◆ MISSION', 'the button reads ◎ MISSION again');
+      await c.ev(() => setMachine(0));
+      c.expect((await btn()) === null, 'machines without a mission hide the button');
+    },
+  },
   {
     id: 'live-m0', m: 0, manual: false, ctx: SMALL,
     async run(page, rec) {

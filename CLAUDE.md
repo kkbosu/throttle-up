@@ -17,7 +17,7 @@ Throttle Up is a browser toy (heading toward a game) where you throttle up real 
 | 4 | SATURN V | Five F-1s on an S-IC stage on a static stand | yes | lever lights engines in the real 1-2-2 order (F-1 can't throttle) |
 | 5 | HARRIER | Pegasus jump jet on a hover pad | yes | second lever = nozzle angle; vertical hover physics |
 | 6 | NK-12 | Kuznetsov NK-12 turboprop, contra-rotating props, test stand | yes | constant-speed propeller (RPM holds, blade pitch coarsens), feathering |
-| 7 | SKY CRANE | Mars 2020 descent stage lowering Perseverance, Jezero Crater | yes | Mars gravity, 8 MLEs (4 drop to ~1%), second lever = bridle payout, auto cut + flyaway |
+| 7 | SKY CRANE | Mars 2020 descent stage lowering Perseverance, Jezero Crater | yes | Mars gravity, 8 MLEs (4 drop to ~1%), second lever = bridle payout, auto cut + flyaway; MISSION (soft landing, scored) |
 | 8 | STARSHIP | Super Heavy booster (33 Raptor 3) static fire on Pad 2's launch mount at Starbase, on the Gulf coast | yes | lever lights the centre 3, middle ring and outer ring, then throttles all 33 from 40 to 100%; dual flame trench (fire and steam both ways); its own coastal site (beach, sea, lagoons, tank farm, Pad 1) |
 
 Machines 0–2 also have a hand-drawn 2D canvas renderer (fallback). Machines with `need3d:1` are hidden when 3D is unavailable.
@@ -45,6 +45,8 @@ src/
   input/lever.js          lever(s) with the MIL detent, keyboard
   audio/audio.js          Web Audio graph and one-shot sounds (per-machine voices live in the machine folders)
   sequence/sequence.js    SEQUENCE player (SQ, seqStart/Next/Stop/Tick/Cap)
+  mission/mission.js      MISSION runner (MS, misStart(seed)/misStop/misTick, rng(seed), the result card #mis); the
+                          machine's `mission` sets the conditions and judges; progress shows in the machine's inset
   info/                   info.js (INFO panel), cut-text.js (the SCHLIEREN/THERMAL paragraphs)
   recorder/recorder.js    REC: WebGL + HUD composite into a MediaRecorder clip
   render2d/               index.js (2D renderer: sky, haze, bloom, draw), jet.js (2D jet parts), sprites.js
@@ -67,6 +69,7 @@ src/
     <name>/machine.js     default export = the MC entry, plus the machine's own sim, voice (au*) and constants
     <name>/three.js       default export = { cfg, build, hooks }: the 3D model, camera/plume config, renderer hooks
     <name>/inset.js       inset panel (hall, harrier, nk-12, sky-crane, sr-71)
+    sky-crane/mission.js  the soft-landing MISSION (start conditions, hydrazine budget, verdict and score)
     shuttle/draw2d.js     the RS-25's 2D renderer
     shared/jet3d.js       3D hooks F-TYPE and SR-71 share;  shared/gimbal.js: RS-25/F-1 gimbal wobble
     starship/             three.js (cfg, hooks) builds booster.js (skin, frost, fins, bells), jets.js (33 jet shader), flame.js (trench flame volume)
@@ -74,7 +77,7 @@ src/
   debug/globals.js        test bridge: every main-chunk export and state key on window
 ```
 
-Frame: `frame(t)` → `seqTick` → `keys` → `update` → `audio` → 2D `draw` or `G3.render` → `gauges` → `G3.overlay` → `seqCap` → REC.
+Frame: `frame(t)` → `seqTick` → `keys` → `update` → `misTick` → `audio` → 2D `draw` or `G3.render` → `gauges` → `G3.overlay` → `seqCap` → REC.
 
 ### Machine table entry (`MC[i]`, `machines/<name>/machine.js`) — key fields
 
@@ -83,6 +86,7 @@ Hooks: `clu(dt)` per-frame machine step (Hall orbit, Saturn V, Harrier hover, NK
 Engine model: `idle, up, dn, coast, cN, cT, tk, ign, lk, e0f, lt, ab, stall, e:[EGT curve], f:[fuel curve]`.
 UI: `g` (3 gauges: `{t,cap,min,max,maj,mn,red,d,f}`), `gv()` values, `lv`/`lv2` lever labels `[text,pos,'t'|'b']`, `lp()` lamps, status words `off/st/cl/cut/wait`.
 Feel: `shk()` camera shake strength (currently switched off for every machine: `SHAKE = 0` in `core/util.js`; it was a stylistic cue, not a measured effect), `au(s,V,pm)` audio voice.
+Game: `mission:{name, brief, start(rng), end(), judge(), over(t)}` (sky crane): `start` sets the attempt's conditions from a seeded generator (never `Math.random`), `end` restores free play, `judge()` returns null until there is a verdict `{ok, title, why, rows:[[label,value]], score}`, `over(t)` says when to show the card (t = seconds since the verdict). A machine with a mission shows ◆ MISSION in place of its FAULTS button (it has no stall); slow-mo is locked during a mission; SEQUENCE, machine switch and END MISSION stop it.
 Story: `sqc` + `sq[]` SEQUENCE steps (`{cap, lever|()=>, dur, wait, until(), max, view, do()}`), `info:{f:[facts], a:[approximations], cut:string|array, s:[[title,url]]}` (a string `cut` gets the shared SCHLIEREN/THERMAL paragraphs appended).
 2D-only: `nxf, r, gl, skyG, hzk, hzg, hza, blk, mc, dk, bl, bd, pl, draw, rear`.
 
@@ -129,6 +133,7 @@ Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim up
 
 **Behaviour checks (`npm run check`, about 2 min):** builds the app, serves it, and asserts that the game works, failing on any console or page error. Covers:
 - every machine in 3D: engine reaches RUN; views cycle, with the button label checked; cutaway; lenses (Hall skips schlieren); scenes; INFO opens and closes;
+- the sky-crane MISSION (`mission-m7`): button, seeded conditions in range and repeatable, a gentle landing scores, FLY AGAIN relights after the flyaway, the three failures (too fast, bridles not out, out of hydrazine), slow-mo locked, CLOSE restores free play, other machines hide the button;
 - SEQUENCE runs to "Sequence complete." with a per-machine outcome: F-TYPE full afterburner, SR-71 Mach 2.8+, shuttle and NK-12 full power, Hall raises its orbit, Saturn V all five F-1s lit, Harrier lifts off, sky crane touches down, Starship lights all 33 at full throttle;
 - machines 0–2 in 2D (`?r=2d`) and the fallback from `?m=3&r=2d` to F-TYPE;
 - the compressor stall, deterministic in `?manual` mode. A slow ramp doesn't stall; a slam stalls with bangs and beeps and recovers; pulling back clears it early; FAULTS off prevents it;
@@ -176,9 +181,8 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
    - ~~Git, then host on GitHub Pages; social preview image (Open Graph), favicon.~~ Done (live, see Hosting). Still open: privacy-friendly analytics (not chosen yet; needs Kingsley's choice and account, e.g. GoatCounter, Plausible, Cloudflare Web Analytics).
    - Real-device test pass and fixes (performance budget for mid-range Android). Partly done (2026-10-22 to 10-28): the `?fps` readout, the CPU work above, and the landscape layout. Deferred until later (Kingsley's call, 2026-10-28): Starship's GPU cost on the Mali-G52 (see Known issues), iPhone Safari, listening on real speakers.
 
-   **Next up (2026-10-28): roadmap item 2, the game layer, starting with the sky-crane soft-landing mission.**
 2. **Game layer**
-   - Missions with scores: sky-crane soft landing (wind gusts, terrain), Harrier ship-deck landing, Hall reach-an-orbit on least xenon, F-type stall-free run-up.
+   - Missions with scores: ~~sky-crane soft landing~~ (first version done 2026-10-28: random start height and sink rate, limited hydrazine, score = softness + hydrazine saved; no wind, because Mars's air at ~0.016 kg/m³ makes gusts negligible against the stage's weight, stated in INFO; terrain not yet), Harrier ship-deck landing, Hall reach-an-orbit on least xenon, F-type stall-free run-up.
    - Daily challenge (same seed for everyone) with a Wordle-style share line.
    - One-tap vertical (9:16) clip export with score overlay for TikTok/Reels/Shorts.
 3. **Realism**

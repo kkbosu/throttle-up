@@ -7,6 +7,7 @@ import { $, cv } from './util.js';
 import { fpsDone, fpsTick } from '../hud/fps.js';
 import { gauges } from '../hud/gauges.js';
 import { keys } from '../input/lever.js';
+import { misTick } from '../mission/mission.js';
 import { RC, rc, recLab, recOverlay, stopRec } from '../recorder/recorder.js';
 import { draw } from '../render2d/index.js';
 import { seqCap, seqTick } from '../sequence/sequence.js';
@@ -70,6 +71,7 @@ export function frame(t) {
   seqTick(dr);
   keys(dr);
   update(dt);
+  misTick(dr);
   audio();
   draw(dt, dr);
   gauges(dr);
