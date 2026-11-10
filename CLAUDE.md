@@ -68,8 +68,11 @@ src/
   render3d/               lazy chunk, the only code that imports three:
     index.js              init3D(): loadM3(), then every createX() in v11's order; returns G3
     kit.js                renderer, materials MT, thermal categories CAT, textures, geometry helpers
-                          (lathe along local +X, ring, box, cyl, pipe, beam, bladeRing, canvasTex ...)
-    sky, lights, scenes (SCN/SCNS/SCNM, applyScene), ground, earth, props
+                          (lathe along local +X, ring, box, cyl, pipe, beam, bladeRing, canvasTex ...; loft: a body
+                          through cross-sections, for fuselages, hulls and pods; foil: a wing or fin with an aerofoil
+                          section)
+    sky, lights, scenes (SCN/SCNS/SCNM, applyScene; it also draws the environment map the metals reflect: sky,
+                          lit ground, horizon band, and the Earth in orbit, once per scene change), ground, earth, props
     water.js              waveWater(): the sea's tiling wave normal map and material (Starship's Gulf, the Harrier's sea)
     plume.js              ray-marched volumetric plume shader; plumeParams() -> M3[mi].plume
     particles.js          pools (SPK, SMK, FIR, FLW), emitters() -> M3[mi].emit, burst()
@@ -162,6 +165,10 @@ touch stay solid (the lever knob and its gate, keys that move when pressed).
 - **Display state stays out of the sim.** Lamp warm-up, the bulb check and the trace read the sim and write nothing to
   it, and draw no `Math.random()`; the golden manifest's sim state did not change with this work.
 
+## Visual overhaul (branch `visual/overhaul`, started 2026-11-10)
+
+A pass on the machines, their scenes and the experience, one machine or area per commit, measured before and after with `tools/measure.mjs`. Rules it works under: at Q0 and Q1 no machine may cost more GPU time or draw calls than before (extra detail goes into textures or Q2), the sim does not change (golden manifest identical), no outside models without Kingsley's yes. Done so far: environment light, geometry diet, bell moire and worn-metal roughness, the Harrier and its ship (the pilot). A new model that replaces an old one keeps the random-number count the old one drew (build it in `isolated()` and draw the difference, as `HR_PAD` in `machines/harrier/three.js` does), so nothing built after it shifts; count with a `Math.random` wrapper up to `R3done`.
+
 ## Non-negotiable conventions
 
 - **Credibility first.** Every user-facing fact in INFO must come from a source listed in that machine's `info.s` (see `docs/SOURCES.md`). Anything modelled, assumed or simplified goes in `info.a` ("WHAT IS APPROXIMATED"), stated plainly. Don't state numbers you can't source (e.g. NK-12 propeller rpm, sky-crane descent stage mass are deliberately not claimed as fact).
@@ -198,6 +205,8 @@ CI runs on Linux, where fonts can measure differently (a text element with `line
 
 `--only <regex>` picks scenarios; `--v11` runs the checks that apply to `legacy/throttle-up-v11.html` there (all pass; the navigation checks are skipped); `PAGE_URL` points at a running server. Unlike the golden suite it doesn't compare with v11, so it stays meaningful after intentional changes. Extend `OUTCOME` in `tools/check.mjs` when adding a machine. Shared Playwright setup (seeded random, CDN routing, build + preview) lives in `tools/harness.mjs`.
 
+**Real-GPU measurements (`node tools/measure.mjs`):** frame cost per machine, quality level, view and viewport (GPU time from timer queries, triangles, draw calls) into `snapshots/perf/<label>.md`; `--passes` times each render pass; `--shots <dir>` screenshots every view and scene at Q2 and Q0 with contact sheets. It runs on this PC's GPU (Direct3D), where a frame costs about 1 ms, and GPU time varies by up to 40% between runs: trust triangles and draw calls exactly, GPU time only for large changes. `PAGE_URL` points it at a running server (`npx vite --port 5199` serves the source without touching `dist/`).
+
 **Golden suite (Node Playwright, guards refactors):** `npm run snapshots` builds the app, serves it, and drives it through 41 scenarios, writing 333 screenshots plus `manifest.json` to `snapshots/golden` (it was the parity check for the Vite split against v11; `--v11` still records the legacy file). The scenarios cover:
 - every machine in every view, with cutaway, lenses and scenes, at power, and with INFO open;
 - every SEQUENCE;
@@ -232,8 +241,9 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 - The START overlay shows one loading state (LOADING 3D...), not a list of steps: fetching the 3D code is the only step
   that takes time; building the models happens in the same instant it arrives.
 
-- Harrier and rover models are crude up close; Mars sunset blue glow is broad.
-- The Harrier MISSION's ship is blocky (box island, straight-sided hull), its downwash spray is the pad's tan dust even over the sea, and from the default camera the jet can look over the deck while still off its edge (the inset's map shows the truth).
+- The rover model is crude up close; Mars sunset blue glow is broad.
+- The Harrier (rebuilt 2026-11-10: lofted fuselage, half-round intakes, elbow nozzles, aerofoil wings) has AV-8B proportions but is still drawn by eye: no pylons, no wing fences, a plain canopy, straight undercarriage legs.
+- The Harrier MISSION's ship has a shaped hull and a fuller island but is still made of boxes, the sea's wave texture shows its tiling towards the horizon, and from the default camera the jet can look over the deck while still off its edge (the inset's map shows the truth).
 - Saturn V schlieren is busy where the plume meets the deflector.
 - In the Hall EARTH view under the TERMINATOR scene the craft is a dark silhouette.
 - Propellers are drawn slower than real (anti-strobe), stated in INFO.
