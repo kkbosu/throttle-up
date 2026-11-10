@@ -1,6 +1,7 @@
 // SKY CRANE: the machine's table entry (engine model numbers, gauges, lamps, lever labels, SEQUENCE, INFO with sources)
 // plus its own simulation and synthesized voice.
 import { S, thump } from '../../audio/audio.js';
+import { DAILY } from '../../core/params.js';
 import { state } from '../../core/state.js';
 import { say } from '../../hud/controls.js';
 import { applyRaw } from '../../input/lever.js';
@@ -81,6 +82,14 @@ export function skyCam(v) {
 export function skyStep(dt) {
   if (state.ph != sc.lp) {
     if (state.ph == 1) skyReset();
+    /* Free play begins in a hover: the lever goes to the hover setting as the engines reach RUN, so a visitor who
+       does nothing sees the stage hold still, not fall and crash six seconds in. A ?daily link starts its mission
+       at this moment and SEQUENCE flies the stage itself, so both are left alone. */
+    if (state.ph == 2 && !SQ.on && !DAILY) {
+      state.vz = 0;
+      state.raw = skyHov();
+      applyRaw();
+    }
     sc.lp = state.ph;
   }
   const run = state.ph == 2 && !sc.done;
@@ -198,7 +207,7 @@ export default {
   clu: (dt) => skyStep(dt),
   camA: (v) => skyCam(v),
   sub: 'Mars 2020 descent stage lowering the Perseverance rover on bridles, Jezero Crater.',
-  hint: 'HOVER to stop falling, BRIDLES to lower the rover.',
+  hint: 'Hovering. BRIDLES lowers the rover; ease THROTTLE down to descend.',
   nxf: 0.4,
   ab: 0,
   stall: 0,
