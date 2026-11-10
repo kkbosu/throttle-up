@@ -130,6 +130,7 @@ canvas {
 body:has(#tq.two) #hint {
   max-width: calc(100vw - 258px);
 }
+/* The lever column. Nothing sits behind it: the labels carry their own halo, so the machine shows through. */
 #tq {
   position: fixed;
   right: max(14px, env(safe-area-inset-right));
@@ -138,69 +139,107 @@ body:has(#tq.two) #hint {
   width: 130px;
   touch-action: none;
   cursor: grab;
-  background: linear-gradient(90deg, transparent, rgba(5, 6, 10, 0.55) 40%);
 }
-#trk {
+#tq.drag {
+  cursor: grabbing;
+}
+/* a track: a dark well with a tick every 10% of travel */
+#trk,
+#trk2 {
   position: absolute;
   right: 30px;
   top: 0;
   bottom: 0;
   width: 12px;
-  border-radius: 6px;
-  background: var(--well);
-  border: 1px solid var(--rule);
-  box-shadow: inset 0 0 8px #000;
+  border-radius: var(--r);
+  background:
+    repeating-linear-gradient(0deg, var(--rule-hi) 0 1px, transparent 1px 10%) 0 0 / 5px 100% no-repeat,
+    var(--well);
+  border: 1px solid var(--rule-hi);
 }
+/* the afterburner range, lit by how hard the afterburner is burning (core/loop.js ui) */
 #abz {
   position: absolute;
-  left: 0;
   right: 0;
+  width: 4px;
   top: 0;
   height: 30%;
-  border-radius: 6px 6px 0 0;
-  background: linear-gradient(#ff8a2a, #5a2208);
+  background: var(--live);
   opacity: 0.25;
 }
-#hd {
+/* the gate at MIL: the lever stops here until it is pushed through; it lights while the lever sits in it */
+#gate {
   position: absolute;
-  left: -26px;
-  width: 64px;
-  height: 34px;
-  margin-bottom: -17px;
-  border-radius: 7px;
-  border: 1px solid var(--rule-hi);
-  background: repeating-linear-gradient(0deg, #3a404c 0 3px, #2a2f3a 3px 6px), #2a2f3a;
-  box-shadow: 0 2px 6px #000;
+  left: -5px;
+  right: -5px;
+  bottom: 70%;
+  height: 2px;
+  margin-bottom: -1px;
+  background: var(--hi);
+  box-shadow: 0 0 2px 1px var(--halo-c);
+  transition:
+    transform var(--d-press) var(--ease),
+    background-color var(--d-press);
 }
-#trk2 {
-  position: absolute;
-  right: 112px;
-  top: 0;
-  bottom: 0;
-  width: 12px;
-  border-radius: 6px;
-  background: var(--well);
-  border: 1px solid #2a3a44;
-  box-shadow: inset 0 0 8px #000;
-  display: none;
+#tq.latch #gate {
+  transform: scaleX(1.7);
+  background: var(--live);
 }
+/* a knob: a solid tab with an index line, hung on the side of its track away from the labels. It is moved with a
+   transform (no layout); its face is a pseudo-element so that it can also give a little when held. */
+#hd,
 #hd2 {
   position: absolute;
-  left: -20px;
-  width: 52px;
-  height: 30px;
-  margin-bottom: -15px;
-  border-radius: 7px;
-  border: 1px solid #6a8a9a;
-  background: repeating-linear-gradient(90deg, #3a4a52 0 3px, #2a343a 3px 6px), #2a343a;
-  box-shadow: 0 2px 6px #000;
+  left: -6px;
+  bottom: 0;
+  width: 44px;
+  height: 24px;
+  margin-bottom: -12px;
+  will-change: transform;
+}
+#hd::before,
+#hd2::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r);
+  background:
+    linear-gradient(var(--well), var(--well)) 0 50% / 100% 2px no-repeat,
+    var(--fg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+  transition: transform var(--d-press) var(--ease);
+}
+#tq.drag:not(.drag2) #hd::before,
+#tq.drag2 #hd2::before {
+  transform: scale(1.1);
+}
+/* the knob's afterburner glow, drawn once; only its opacity changes */
+#hdg {
+  position: absolute;
+  inset: -2px;
+  border-radius: 4px;
+  box-shadow: 0 0 18px 4px rgba(255, 150, 50, 0.9);
+  opacity: 0;
+  pointer-events: none;
+}
+#trk2 {
+  right: 112px;
+  display: none;
+}
+/* the second lever stands between the first one's labels and its own: a narrower knob, centred on its track */
+#hd2 {
+  left: -8px;
+  width: 28px;
+  height: 20px;
+  margin-bottom: -10px;
 }
 .lb2 {
   position: absolute;
   right: 132px;
   font-size: var(--t-label);
   letter-spacing: 0.1em;
-  color: #7f98a6;
+  color: var(--over);
+  text-shadow: var(--halo);
   transform: translateY(50%);
   white-space: nowrap;
 }
@@ -719,5 +758,15 @@ button:disabled,
   }
   body:has(#fps):has(#tq.two) #hint {
     max-width: calc(100vw - 474px);
+  }
+}
+/* Reduced motion: state changes become instant */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
   }
 }

@@ -13,6 +13,9 @@ export function applyRaw() {
   if (s !== state.stuck) {
     state.stuck = s;
     tick();
+    /* the gate lights while the lever sits in the detent, and a phone gives a short buzz as a dragged lever goes in or out */
+    tq.classList.toggle('latch', !!s);
+    if (state.drag && navigator.vibrate) navigator.vibrate(10);
   }
 }
 export const tq = $('tq'),
@@ -51,12 +54,13 @@ export function keys(dt) {
 export function wireInput() {
   tq.addEventListener('pointerdown', (e) => {
     tq.setPointerCapture(e.pointerId);
-    tq.style.cursor = 'grabbing';
+    tq.classList.add('drag');
     if (state.M.nozzle) {
       const a = trk.getBoundingClientRect(),
         c = $('trk2').getBoundingClientRect();
       if (Math.abs(e.clientX - c.left - 6) < Math.abs(e.clientX - a.left - 6)) {
         state.drag2 = true;
+        tq.classList.add('drag2');
         fromY2(e.clientY);
         return;
       }
@@ -71,7 +75,7 @@ export function wireInput() {
   ['pointerup', 'pointercancel'].forEach((n) =>
     tq.addEventListener(n, () => {
       state.drag = state.drag2 = false;
-      tq.style.cursor = 'grab';
+      tq.classList.remove('drag', 'drag2');
     }),
   );
   /* sliding: drag sideways anywhere on the view; the input springs back to centre on release */

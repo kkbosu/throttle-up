@@ -14,11 +14,22 @@ import { draw } from '../render2d/index.js';
 import { seqCap, seqTick } from '../sequence/sequence.js';
 
 /* ---------- main loop: sim time is scaled by the slow-mo factor, input and UI run in real time ---------- */
+/* The lever knobs: moved with a transform (travel = the track's height, measured on resize), and written only when
+   something changed. The afterburner lights the range on the track and the knob's glow. */
+const UI = { y: NaN, a: NaN, y2: NaN };
 export function ui() {
-  $('hd').style.bottom = state.L * 100 + '%';
-  $('hd').style.boxShadow = `0 2px 6px #000,0 0 ${state.A * 34}px rgba(255,140,40,${state.A})`;
-  $('abz').style.opacity = 0.25 + state.A * 0.75;
-  if (state.M.nozzle) $('hd2').style.bottom = state.raw2 * 100 + '%';
+  const h = state.TR.height,
+    y = Math.round(state.L * h * 2) / 2;
+  if (y !== UI.y) $('hd').style.transform = `translateY(${-(UI.y = y)}px)`;
+  if (state.A !== UI.a) {
+    UI.a = state.A;
+    $('hdg').style.opacity = state.A;
+    $('abz').style.opacity = 0.25 + state.A * 0.75;
+  }
+  if (state.M.nozzle) {
+    const y2 = Math.round(state.raw2 * h * 2) / 2;
+    if (y2 !== UI.y2) $('hd2').style.transform = `translateY(${-(UI.y2 = y2)}px)`;
+  }
 }
 /* Quality levels, best first: 3 = Q2, 2 = Q1, 1 = Q0 at full resolution, 0 = Q0 at 0.7 resolution. Slow frames
    (under ~38 fps for 1.5 s) step down; when the frame is mostly JavaScript (CPU-bound, as on many phones), a lower

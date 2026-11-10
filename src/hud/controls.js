@@ -113,7 +113,7 @@ export function buildLabels() {
     } else d.style.bottom = l[1] * 100 + '%';
     h.appendChild(d);
   });
-  $('abz').style.display = state.M.ab ? '' : 'none';
+  $('abz').style.display = $('gate').style.display = state.M.ab ? '' : 'none';
   const h2 = $('lbs2');
   h2.innerHTML = '';
   $('trk2').style.display = state.M.nozzle ? 'block' : 'none';

@@ -1,7 +1,8 @@
 // REC: composites the WebGL frame and the HUD canvas into a clip with MediaRecorder; save/share.
 import { S } from '../audio/audio.js';
 import { state } from '../core/state.js';
-import { $, MONO, cv, mk } from '../core/util.js';
+import { T, lbl } from '../core/tokens.js';
+import { $, cv, mk } from '../core/util.js';
 
 /* ---------- slow-mo + clip recording ---------- */
 
@@ -87,55 +88,50 @@ export function recLab() {
 }
 /* the DOM lever isn't part of the canvas, so mirror it into the frame while recording */
 export function recOverlay(x) {
-  const b = state.TR;
   x.globalCompositeOperation = 'source-over';
   x.globalAlpha = 1;
-  x.fillStyle = '#0e1118';
-  x.strokeStyle = '#2a3040';
-  x.lineWidth = 1;
-  x.fillRect(b.left, b.top, b.width, b.height);
-  x.strokeRect(b.left + 0.5, b.top + 0.5, b.width - 1, b.height - 1);
-  if (state.M.ab) {
-    const zh = b.height * 0.3,
-      gd = x.createLinearGradient(0, b.top, 0, b.top + zh);
-    gd.addColorStop(0, '#ff8a2a');
-    gd.addColorStop(1, '#5a2208');
-    x.globalAlpha = 0.25 + state.A * 0.75;
-    x.fillStyle = gd;
-    x.fillRect(b.left + 1, b.top + 1, b.width - 2, zh);
-    x.globalAlpha = 1;
-  }
-  const hy = b.bottom - state.L * b.height;
-  x.fillStyle = '#2f3541';
-  x.strokeStyle = '#6a7282';
-  x.fillRect(b.left - 26, hy - 17, 64, 34);
-  x.strokeRect(b.left - 25.5, hy - 16.5, 63, 33);
-  x.fillStyle = '#6c7482';
-  x.font = `10px ${MONO}`;
-  x.textAlign = 'right';
   x.textBaseline = 'middle';
-  state.M.lv.forEach((l) =>
-    x.fillText(l[0], b.left - 6, l[2] == 't' ? b.top + 7 : l[2] == 'b' ? b.bottom - 7 : b.bottom - l[1] * b.height),
-  );
-  if (state.M.nozzle) {
-    const c = $('trk2').getBoundingClientRect(),
-      y2 = c.bottom - state.raw2 * c.height;
-    x.fillStyle = '#0e1118';
-    x.strokeStyle = '#2a3a44';
-    x.fillRect(c.left, c.top, c.width, c.height);
-    x.strokeRect(c.left + 0.5, c.top + 0.5, c.width - 1, c.height - 1);
-    x.fillStyle = '#2a343a';
-    x.strokeStyle = '#6a8a9a';
-    x.fillRect(c.left - 20, y2 - 15, 52, 30);
-    x.strokeRect(c.left - 19.5, y2 - 14.5, 51, 29);
-    x.fillStyle = '#7f98a6';
+  x.lineJoin = 'round';
+  /* one lever: track with its 10% ticks, knob at v (0..1), labels with the halo they have on the page */
+  const lever = (b, v, labs, kx, kw, kh, lx) => {
+    x.fillStyle = T.well;
+    x.strokeStyle = T.ruleHi;
+    x.lineWidth = 1;
+    x.fillRect(b.left, b.top, b.width, b.height);
+    x.strokeRect(b.left + 0.5, b.top + 0.5, b.width - 1, b.height - 1);
+    x.fillStyle = T.ruleHi;
+    for (let i = 1; i < 10; i++) x.fillRect(b.left + 1, b.bottom - (i * b.height) / 10, 5, 1);
+    if (lx) {
+      /* the main lever on a machine with an afterburner: its range and the gate at MIL */
+      x.globalAlpha = 0.25 + state.A * 0.75;
+      x.fillStyle = T.live;
+      x.fillRect(b.right - 5, b.top + 1, 4, b.height * 0.3);
+      x.globalAlpha = 1;
+      x.fillStyle = state.stuck ? T.live : T.hi;
+      x.fillRect(b.left - 5, b.bottom - b.height * 0.7 - 1, b.width + 10, 2);
+    }
+    const y = b.bottom - v * b.height;
+    x.fillStyle = T.fg;
+    x.fillRect(b.left + kx, y - kh / 2, kw, kh);
+    x.fillStyle = T.well;
+    x.fillRect(b.left + kx, y - 1, kw, 2);
+    x.font = lbl(11);
     x.textAlign = 'right';
-    state.M.lv2.forEach((l) =>
-      x.fillText(l[0], c.left - 6, l[2] == 't' ? c.top + 7 : l[2] == 'b' ? c.bottom - 7 : c.bottom - l[1] * c.height),
-    );
-  }
-  x.fillStyle = 'rgba(216,221,230,.5)';
+    x.lineWidth = 3;
+    x.strokeStyle = T.halo;
+    x.fillStyle = T.over;
+    labs.forEach((l) => {
+      const ly = l[2] == 't' ? b.top + 7 : l[2] == 'b' ? b.bottom - 7 : b.bottom - l[1] * b.height;
+      x.strokeText(l[0], b.left - 8, ly);
+      x.fillText(l[0], b.left - 8, ly);
+    });
+  };
+  lever(state.TR, state.L, state.M.lv, -6, 44, 24, state.M.ab);
+  if (state.M.nozzle) lever($('trk2').getBoundingClientRect(), state.raw2, state.M.lv2, -8, 28, 20, 0);
+  x.font = lbl(11, 600);
   x.textAlign = 'right';
+  x.strokeText('THROTTLE UP', state.W - 18, state.H - 12);
+  x.fillStyle = T.over;
   x.fillText('THROTTLE UP', state.W - 18, state.H - 12);
   x.textAlign = 'left';
 }
