@@ -122,8 +122,8 @@ export default {
     ['0.9 kW', 0, 'b'],
   ],
   lp: () => [
-    ['DISCHARGE', state.ph == 2 && state.fu > 0.5, '#5aa0ff'],
-    ['MAX PWR', state.N > 0.98, '#e0392b'],
+    ['DISCHARGE', state.ph == 2 && state.fu > 0.5, 'info'],
+    ['MAX PWR', state.N > 0.98, 'warn'],
   ],
   mc: [
     [0, '#000'],

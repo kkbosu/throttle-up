@@ -1,13 +1,18 @@
 // Cockpit gauges, annunciator lamps, engine switch and inset placement, drawn on the canvas so clips include them.
+import { click } from '../audio/audio.js';
 import { master } from '../core/engine.js';
 import { state } from '../core/state.js';
-import { $, MONO, cv, g, mk } from '../core/util.js';
+import { T, lbl, num } from '../core/tokens.js';
+import { $, cv, g, mk } from '../core/util.js';
 import { seqStop } from '../sequence/sequence.js';
 
-/* ---------- gauges: static faces are cached, needles drawn per frame ---------- */
+/* ---------- gauges: static faces are cached, the value arc and numeral drawn per frame ---------- */
 export const A0 = 2.356,
   SW = 4.712;
 export const GV = [0, 0, 0]; /* GC comes from the active machine (M.g) */
+/* A dial is read as a number first: the value sits in the middle in the number face, and the arc round it is its bar,
+   from the scale's start to the value, with the red range marked on the track. The face (panel, track, red range,
+   ticks, the scale's end values, the unit) is drawn once per size into state.FC. */
 export function buildFaces() {
   const s = Math.round(state.dsz * state.D),
     R = s / 2;
@@ -15,40 +20,44 @@ export function buildFaces() {
     const k = mk(s, s),
       x = k.getContext('2d'),
       a = (v) => A0 + ((v - c.min) / (c.max - c.min)) * SW;
-    x.fillStyle = 'rgba(8,10,15,.84)';
-    x.strokeStyle = '#2a3040';
-    x.lineWidth = s * 0.02;
+    x.fillStyle = T.panel;
+    x.strokeStyle = T.rule;
+    x.lineWidth = s * 0.012;
     x.beginPath();
     x.arc(R, R, R - s * 0.012, 0, 6.283);
     x.fill();
     x.stroke();
-    x.strokeStyle = '#c0392b';
-    x.lineWidth = s * 0.035;
+    x.lineWidth = s * 0.055;
+    x.strokeStyle = T.rule;
     x.beginPath();
-    x.arc(R, R, R * 0.84, a(c.red), a(c.max));
+    x.arc(R, R, R * 0.8, A0, A0 + SW);
     x.stroke();
-    x.fillStyle = '#d8dde6';
-    x.font = `${s * 0.1}px ${MONO}`;
-    x.textAlign = 'center';
-    x.textBaseline = 'middle';
+    x.strokeStyle = T.warnBg;
+    x.beginPath();
+    x.arc(R, R, R * 0.8, a(c.red), a(c.max));
+    x.stroke();
     for (let v = c.min; v <= c.max + 1e-6; v += c.mn) {
       const q = a(v),
         mj = Math.abs(v / c.maj - Math.round(v / c.maj)) < 1e-6,
         co = Math.cos(q),
         si = Math.sin(q),
-        r0 = R * (mj ? 0.7 : 0.76),
-        r1 = R * 0.9;
-      x.strokeStyle = mj ? '#d8dde6' : '#6c7482';
-      x.lineWidth = s * (mj ? 0.022 : 0.012);
+        r0 = R * (mj ? 0.88 : 0.91),
+        r1 = R * 0.96;
+      x.strokeStyle = mj ? T.fg : T.ruleHi;
+      x.lineWidth = s * (mj ? 0.02 : 0.012);
       x.beginPath();
       x.moveTo(R + co * r0, R + si * r0);
       x.lineTo(R + co * r1, R + si * r1);
       x.stroke();
-      if (mj) x.fillText(String(v / c.d), R + co * R * 0.55, R + si * R * 0.55);
     }
-    x.fillStyle = '#6c7482';
-    x.font = `${s * 0.085}px ${MONO}`;
-    x.fillText(c.t, R, R * 1.42);
+    x.textAlign = 'center';
+    x.textBaseline = 'middle';
+    x.fillStyle = T.dim;
+    x.font = lbl(s * 0.1);
+    x.fillText(c.t, R, R * 1.4);
+    x.font = num(s * 0.08);
+    x.fillText(String(c.min / c.d), R * 0.6, R * 1.7);
+    x.fillText(String(c.max / c.d), R * 1.4, R * 1.7);
     return k;
   });
 }
@@ -62,6 +71,8 @@ export function fitDials() {
   return Math.round(Math.max(40, Math.min(w, h)));
 }
 
+/* lamp display state: lv, how lit each lamp is (0..1); test, seconds of bulb check left; ph, the phase last frame */
+const LP = { lv: [0, 0, 0, 0], test: 0, ph: 0 };
 /* ---------- cockpit gauges: N1, EGT, fuel flow, plus annunciator lamps (drawn on the canvas so clips include them) ---------- */
 export function gauges(dr) {
   if (!state.FC.length || !state.fontOK) return;
@@ -80,6 +91,9 @@ export function gauges(dr) {
   const vals = state.M.gv(),
     R = state.dsz / 2,
     jit = state.N + state.A + state.stl * 3;
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.lineJoin = 'round';
   for (let i = 0; i < 3; i++) {
     const c = state.GC[i],
       x = state.gx + i * (state.dsz + 8),
@@ -87,97 +101,117 @@ export function gauges(dr) {
       cx = x + R,
       cy = y + R;
     /* caption sits over the 3D scene: light text with a dark halo, legible on bright sky and at night */
-    g.font = `9px ${MONO}`;
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    g.lineJoin = 'round';
+    g.font = lbl(10, 600);
     g.lineWidth = 3;
-    g.strokeStyle = 'rgba(6,8,12,.85)';
+    g.strokeStyle = T.halo;
     g.strokeText(c.cap, cx, y - 8);
-    g.fillStyle = '#c3cad6';
+    g.fillStyle = T.over;
     g.fillText(c.cap, cx, y - 8);
     g.drawImage(state.FC[i], x, y, state.dsz, state.dsz);
     const v = Math.max(c.min, Math.min(c.max * 1.03, vals[i] + (Math.random() - 0.5) * c.max * 0.006 * jit));
     GV[i] += (v - GV[i]) * (1 - Math.exp(-dr * 12));
     const q = A0 + ((GV[i] - c.min) / (c.max - c.min)) * SW,
       co = Math.cos(q),
-      si = Math.sin(q);
-    g.strokeStyle = '#ff9a3a';
-    g.lineWidth = Math.max(1.5, state.dsz * 0.026);
-    g.lineCap = 'round';
+      si = Math.sin(q),
+      /* in the red range the arc and the number take the warning colour */
+      hot = GV[i] >= c.red;
+    g.strokeStyle = hot ? T.warn : T.live;
+    g.lineWidth = state.dsz * 0.055;
     g.beginPath();
-    g.moveTo(cx - co * R * 0.12, cy - si * R * 0.12);
-    g.lineTo(cx + co * R * 0.8, cy + si * R * 0.8);
+    g.arc(cx, cy, R * 0.8, A0, Math.max(A0 + 0.001, q));
     g.stroke();
-    g.lineCap = 'butt';
-    g.fillStyle = '#1a1e26';
-    g.strokeStyle = '#6a7282';
-    g.lineWidth = 1;
+    g.strokeStyle = T.hi;
+    g.lineWidth = Math.max(1.5, state.dsz * 0.024);
     g.beginPath();
-    g.arc(cx, cy, R * 0.09, 0, 6.283);
-    g.fill();
+    g.moveTo(cx + co * R * 0.68, cy + si * R * 0.68);
+    g.lineTo(cx + co * R * 0.95, cy + si * R * 0.95);
     g.stroke();
-    g.fillStyle = '#d8dde6';
-    g.font = `600 ${state.dsz * 0.13}px ${MONO}`;
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    g.fillText(c.f(vals[i]), cx, cy + R * 0.68);
+    const t = c.f(vals[i]);
+    g.fillStyle = hot ? T.warn : T.hi;
+    g.font = num(state.dsz * (t.length < 4 ? 0.25 : t.length < 5 ? 0.21 : 0.17));
+    g.fillText(t, cx, cy + R * 0.02);
   }
+  /* Lamps. Lit, a lamp shows its colour as an edge, a tint and its text (a warning fills solid). Like filaments they
+     take a moment to light and longer to cool, and switching the engine on lights them all for half a second, the
+     bulb check a real panel does. Display only: it reads the sim and changes nothing in it. */
+  if (state.ph == 1 && LP.ph != 1) LP.test = 0.5;
+  LP.ph = state.ph;
+  LP.test = Math.max(0, LP.test - dr);
   const ly = state.gy + state.dsz + 6,
     lh = 16,
     lamps = [
       [
         state.sT > 0 ? 'STALL' : state.ph == 3 ? state.M.off : 'START',
         state.sT > 0 ? (state.simT * 8) % 1 < 0.6 : state.ph == 1 || state.ph == 3,
-        state.sT > 0 ? '#e0392b' : state.ph == 3 ? '#d9822b' : '#3fcf7a',
+        state.sT > 0 ? 'warn' : state.ph == 3 ? 'live' : 'go',
       ],
     ].concat(state.M.lp());
-  g.font = `600 9px ${MONO}`;
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
+  g.font = lbl(10, 600);
   lamps.forEach((l, i) => {
-    const x = state.gx + i * (state.dsz + 8);
-    g.fillStyle = l[1] ? l[2] : 'rgba(14,17,24,.85)';
-    g.strokeStyle = '#2a3040';
+    const x = state.gx + i * (state.dsz + 8),
+      on = l[1] || LP.test > 0 ? 1 : 0,
+      k = (LP.lv[i] += (on - LP.lv[i]) * (1 - Math.exp(-dr / (on ? 0.04 : 0.09)))),
+      col = T[l[2]];
+    g.fillStyle = T.panel;
+    g.strokeStyle = T.rule;
     g.lineWidth = 1;
     g.fillRect(x, ly, state.dsz, lh);
     g.strokeRect(x + 0.5, ly + 0.5, state.dsz - 1, lh - 1);
-    g.fillStyle = l[1] ? '#0a0c10' : '#5d6573';
+    g.fillStyle = T.off;
     g.fillText(l[0], x + state.dsz / 2, ly + lh / 2 + 0.5);
+    if (k > 0.02) {
+      g.globalAlpha = k;
+      if (l[2] == 'warn') {
+        g.fillStyle = T.warnBg;
+        g.fillRect(x, ly, state.dsz, lh);
+      } else {
+        g.fillStyle = T.plate;
+        g.fillRect(x + 1, ly + 1, state.dsz - 2, lh - 2);
+        g.globalAlpha = k * 0.2;
+        g.fillStyle = col;
+        g.fillRect(x + 1, ly + 1, state.dsz - 2, lh - 2);
+        g.globalAlpha = k;
+      }
+      g.fillStyle = col;
+      g.fillRect(x, ly, state.dsz, 2);
+      g.fillStyle = l[2] == 'warn' ? T.hi : col;
+      g.fillText(l[0], x + state.dsz / 2, ly + lh / 2 + 0.5);
+      g.globalAlpha = 1;
+    }
   });
-  /* engine master switch */
+  /* engine master switch: a two-position selector, OFF | ON, and what the engine is doing */
   const sy = ly + lh + 8,
     sw = 3 * state.dsz + 16,
     sh = 26,
     on = state.ph == 1 || state.ph == 2,
-    tx = state.gx + 68;
+    tx = state.gx + 68,
+    my = sy + sh / 2 + 0.5;
   state.SWR = { x: state.gx, y: sy, w: sw, h: sh };
-  g.fillStyle = 'rgba(14,17,24,.85)';
-  g.strokeStyle = '#2a3040';
+  g.fillStyle = T.panel;
+  g.strokeStyle = T.rule;
   g.lineWidth = 1;
   g.fillRect(state.gx, sy, sw, sh);
   g.strokeRect(state.gx + 0.5, sy + 0.5, sw - 1, sh - 1);
-  g.font = `600 10px ${MONO}`;
+  g.font = lbl(11);
   g.textAlign = 'left';
-  g.textBaseline = 'middle';
-  g.fillStyle = '#8a93a2';
-  g.fillText('ENGINE', state.gx + 10, sy + sh / 2 + 0.5);
-  g.fillStyle = on ? '#1f5a38' : '#232a36';
-  g.strokeStyle = on ? '#3fcf7a' : '#4a5160';
-  g.beginPath();
-  g.arc(tx + 8, sy + sh / 2, 8, Math.PI / 2, Math.PI * 1.5);
-  g.arc(tx + 30, sy + sh / 2, 8, -Math.PI / 2, Math.PI / 2);
-  g.closePath();
-  g.fill();
-  g.stroke();
-  g.fillStyle = '#d8dde6';
-  g.beginPath();
-  g.arc(on ? tx + 30 : tx + 8, sy + sh / 2, 5.5, 0, 6.283);
-  g.fill();
+  g.fillStyle = T.dim;
+  g.fillText('ENGINE', state.gx + 10, my);
+  /* the two positions, 26 px each: the selected one is filled */
+  g.strokeStyle = T.ruleHi;
+  g.strokeRect(tx - 9.5, sy + 5.5, 53, sh - 11);
+  g.fillStyle = on ? T.go : T.ruleHi;
+  g.fillRect(on ? tx + 17 : tx - 9, sy + 6, 26, sh - 12);
+  g.font = lbl(9, 600);
+  g.textAlign = 'center';
+  g.fillStyle = on ? T.off : T.hi;
+  g.fillText('OFF', tx + 4, my);
+  g.fillStyle = on ? T.goInk : T.off;
+  g.fillText('ON', tx + 30, my);
   g.textAlign = 'right';
+  g.font = num(11);
   const msg = state.ph == 1 ? state.M.st : state.ph == 2 ? 'RUN' : state.N > 0.02 ? state.M.cl : 'OFF';
-  g.fillStyle = on ? '#3fcf7a' : state.N > 0.02 ? '#ff9a3a' : '#8a93a2';
-  g.fillText(msg, state.gx + sw - 10, sy + sh / 2 + 0.5);
+  g.fillStyle = on ? T.go : state.N > 0.02 ? T.live : T.dim;
+  g.fillText(msg, state.gx + sw - 10, my);
   g.textAlign = 'left';
   /* SR-71 inlet spike schematic: beside the dials if there is room, else under the switch */
   state.INR = null;
@@ -199,6 +233,7 @@ export function wireGauges() {
   cv.addEventListener('pointerdown', (e) => {
     const r = state.SWR;
     if (state.ph && e.clientX >= r.x && e.clientX <= r.x + r.w && e.clientY >= r.y && e.clientY <= r.y + r.h) {
+      click(2);
       seqStop(false);
       master();
     }

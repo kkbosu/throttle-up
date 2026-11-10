@@ -1,6 +1,7 @@
 // 2D overlay on the HUD canvas: part labels in cutaway, lens legend.
 import { state } from '../core/state.js';
-import { $, MONO, g } from '../core/util.js';
+import { T, lbl, num } from '../core/tokens.js';
+import { $, g } from '../core/util.js';
 import { ENG } from './builders.js';
 import { V3, cam } from './kit.js';
 
@@ -36,7 +37,7 @@ export function overlay() {
   g.globalCompositeOperation = 'source-over';
   g.globalAlpha = 1;
   if (state.exposed && state.lens != 2 && e.labels) {
-    g.font = `600 9px ${MONO}`;
+    g.font = lbl(10, 600);
     g.textAlign = 'center';
     g.textBaseline = 'middle';
     g.lineWidth = 1;
@@ -70,20 +71,20 @@ export function overlay() {
       }
       if (ly > ctT - 8) continue;
       placed.push(r);
-      g.strokeStyle = 'rgba(232,236,242,.7)';
+      g.strokeStyle = T.fg;
       g.beginPath();
       g.moveTo(x, y);
       g.lineTo(lx, ly);
       g.stroke();
-      g.fillStyle = '#ff9a3a';
+      g.fillStyle = T.live;
       g.beginPath();
       g.arc(x, y, 2.4, 0, 6.283);
       g.fill();
-      g.fillStyle = 'rgba(10,12,18,.82)';
+      g.fillStyle = T.panel;
       g.fillRect(lx - tw / 2, ly - 8, tw, 16);
-      g.strokeStyle = '#2a3040';
+      g.strokeStyle = T.rule;
       g.strokeRect(lx - tw / 2 + 0.5, ly - 7.5, tw - 1, 15);
-      g.fillStyle = '#e8ecf2';
+      g.fillStyle = T.hi;
       g.fillText(t, lx, ly + 0.5);
     }
   }
@@ -93,15 +94,15 @@ export function overlay() {
     const x = state.gx,
       w = state.SWR.w,
       h = state.lens == 2 ? 42 : 22;
-    g.fillStyle = 'rgba(14,17,24,.85)';
+    g.fillStyle = T.panel;
     g.fillRect(x, y, w, h);
-    g.strokeStyle = '#2a3040';
+    g.strokeStyle = T.rule;
     g.lineWidth = 1;
     g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
-    g.font = `600 9px ${MONO}`;
+    g.font = lbl(10, 600);
     g.textBaseline = 'middle';
     g.textAlign = 'left';
-    g.fillStyle = '#d8dde6';
+    g.fillStyle = T.fg;
     if (state.lens == 1) g.fillText('SCHLIEREN · density gradients (simulated)', x + 8, y + 11.5);
     else {
       g.fillText('THERMAL °C (illustrative)', x + 8, y + 10);
@@ -112,7 +113,8 @@ export function overlay() {
       for (let i = 0; i <= 10; i++) gr.addColorStop(i / 10, ironCss(i / 10));
       g.fillStyle = gr;
       g.fillRect(bx, by, bw, 8);
-      g.fillStyle = '#9aa2b0';
+      g.fillStyle = T.dim;
+      g.font = num(9);
       g.textAlign = 'center';
       [0, 100, 500, 1000, 1600].forEach((t, i) => {
         const v = Math.pow((t + 40) / 1640, 0.6);

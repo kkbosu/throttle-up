@@ -103,8 +103,8 @@ export default {
   lp: () => {
     const n = litCount();
     return [
-      ['13 LIT', n > 12.5, '#3fcf7a'],
-      ['33 LIT', n > 32.5, '#e0392b'],
+      ['13 LIT', n > 12.5, 'go'],
+      ['33 LIT', n > 32.5, 'warn'],
     ];
   },
   mc: [

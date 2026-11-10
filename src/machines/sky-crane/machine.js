@@ -246,8 +246,8 @@ export default {
     ['STOWED', 0, 'b'],
   ],
   lp: () => [
-    [sc.act == 4 ? '4 LIT' : '8 LIT', state.ph == 2 && !sc.done, '#3fcf7a'],
-    [sc.cut ? 'CUT' : 'TOUCHDOWN', !!sc.td, sc.cut ? '#ff9a3a' : '#3fcf7a'],
+    [sc.act == 4 ? '4 LIT' : '8 LIT', state.ph == 2 && !sc.done, 'go'],
+    [sc.cut ? 'CUT' : 'TOUCHDOWN', !!sc.td, sc.cut ? 'live' : 'go'],
   ],
   mc: [
     [0, '#000'],

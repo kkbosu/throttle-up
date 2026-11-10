@@ -211,8 +211,8 @@ export default {
     ['AFT 0°', 0, 'b'],
   ],
   lp: () => [
-    ['AIRBORNE', state.alt > 0.05, '#3fcf7a'],
-    ['JPT', state.E > 620 && (state.simT * 6) % 1 < 0.6, '#e0392b'],
+    ['AIRBORNE', state.alt > 0.05, 'go'],
+    ['JPT', state.E > 620 && (state.simT * 6) % 1 < 0.6, 'warn'],
   ],
   mc: [
     [0, '#000'],

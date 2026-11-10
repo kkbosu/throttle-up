@@ -1,6 +1,8 @@
 // SR-71 J58: the inlet-spike inset drawn beside the gauges.
 import { state } from '../../core/state.js';
-import { MONO, g, sm } from '../../core/util.js';
+import { T } from '../../core/tokens.js';
+import { g, sm } from '../../core/util.js';
+import { insetFrame } from '../../hud/panel.js';
 
 /* Schematic cutaway of the inlet (half above the axis, mirrored below), following the AEHS SR-71 propulsion
    article: the spike is full forward at low Mach and retracts progressively above Mach 1.6, up to 26 in;
@@ -14,20 +16,9 @@ const LIP = 0.36, // cowl lip
 const rCowl = (x) => (x < THR ? 1 - (0.38 * (x - LIP)) / (THR - LIP) : 0.62 + (0.08 * (x - THR)) / (END - THR));
 
 export function spikeInset(x, y, w, h) {
-  g.globalCompositeOperation = 'source-over';
-  g.globalAlpha = 1;
-  g.fillStyle = 'rgba(14,17,24,.85)';
-  g.strokeStyle = '#2a3040';
-  g.lineWidth = 1;
-  g.fillRect(x, y, w, h);
-  g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
-  g.font = `600 9px ${MONO}`;
-  g.textBaseline = 'middle';
-  g.textAlign = 'left';
-  g.fillStyle = '#6c7482';
-  g.fillText('INLET SPIKE', x + 8, y + 11);
+  insetFrame(x, y, w, h, 'INLET SPIKE');
   g.textAlign = 'right';
-  g.fillStyle = state.spk > 0.03 ? '#ff9a3a' : '#6c7482';
+  g.fillStyle = state.spk > 0.03 ? T.live : T.dim;
   g.fillText('M' + state.mach.toFixed(1) + '  ' + (state.spk * 26).toFixed(0) + ' IN AFT', x + w - 8, y + 11);
 
   const cy = y + 11 + (h - 11) / 2,
@@ -52,7 +43,7 @@ export function spikeInset(x, y, w, h) {
     g.stroke();
   }
   /* spike: cone, shoulder, centrebody */
-  g.fillStyle = '#b4bccb';
+  g.fillStyle = T.fg;
   g.beginPath();
   g.moveTo(X(xt), cy);
   g.lineTo(X(xs), cy - hh * RS);

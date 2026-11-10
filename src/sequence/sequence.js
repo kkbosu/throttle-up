@@ -1,7 +1,8 @@
 // SEQUENCE: a scripted run (wait / until / lever ramp / view cut / slow-mo) for one-tap clips.
 import { master } from '../core/engine.js';
 import { state } from '../core/state.js';
-import { $, MONO, SL, g } from '../core/util.js';
+import { T, lbl } from '../core/tokens.js';
+import { $, SL, g } from '../core/util.js';
 import { lab, say } from '../hud/controls.js';
 import { K, applyRaw } from '../input/lever.js';
 import { stopRec } from '../recorder/recorder.js';
@@ -108,18 +109,18 @@ export function seqCap() {
   const x = state.gx,
     y = Math.min(state.ny + 112 * state.u, $('ctl').getBoundingClientRect().top - 30),
     t = '▶  ' + SQ.cap;
-  g.font = `600 12px ${MONO}`;
+  g.font = lbl(13, 600);
   g.textAlign = 'left';
   g.textBaseline = 'middle';
   const w = g.measureText(t).width + 28;
-  g.fillStyle = 'rgba(10,12,18,.74)';
+  g.fillStyle = T.panel;
   g.fillRect(x, y - 15, w, 30);
-  g.fillStyle = '#ff9a3a';
+  g.fillStyle = T.live;
   g.fillRect(x, y - 15, 3, 30);
-  g.fillStyle = '#e8ecf2';
+  g.fillStyle = T.hi;
   g.fillText(t, x + 16, y + 0.5);
-  g.fillStyle = 'rgba(255,255,255,.14)';
+  g.fillStyle = T.rule;
   g.fillRect(x, y + 17, w, 2);
-  g.fillStyle = '#ff9a3a';
+  g.fillStyle = T.live;
   g.fillRect(x, y + 17, w * Math.min(1, (SQ.i + 1) / SQ.steps.length), 2);
 }

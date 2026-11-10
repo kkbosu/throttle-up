@@ -94,8 +94,8 @@ export default {
     ['IDLE', 0, 'b'],
   ],
   lp: () => [
-    ['A/B', state.A > 0.05, '#ff8a2a'],
-    ['EGT HI', state.E > 740 && (state.simT * 6) % 1 < 0.6, '#e0392b'],
+    ['A/B', state.A > 0.05, 'live'],
+    ['EGT HI', state.E > 740 && (state.simT * 6) % 1 < 0.6, 'warn'],
   ],
   mc: [
     [0, '#0c0f16'],

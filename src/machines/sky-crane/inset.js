@@ -1,22 +1,13 @@
 // SKY CRANE: the inset panel drawn beside the gauges.
 import { state } from '../../core/state.js';
-import { MONO, g } from '../../core/util.js';
+import { T, lbl, num } from '../../core/tokens.js';
+import { g } from '../../core/util.js';
+import { insetFrame } from '../../hud/panel.js';
 import { GM, MR, MS, RH, sc, skyLeft, skyRy } from './machine.js';
 
 /* sky crane panel: side view of descent stage, bridles and rover over the ground (to scale, 40 m tall) */
 export function craneInset(x, y, w, h) {
-  g.globalCompositeOperation = 'source-over';
-  g.globalAlpha = 1;
-  g.fillStyle = 'rgba(14,17,24,.85)';
-  g.strokeStyle = '#2a3040';
-  g.lineWidth = 1;
-  g.fillRect(x, y, w, h);
-  g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
-  g.font = `600 9px ${MONO}`;
-  g.textBaseline = 'middle';
-  g.textAlign = 'left';
-  g.fillStyle = '#6c7482';
-  g.fillText('SKY CRANE', x + 8, y + 11);
+  insetFrame(x, y, w, h, 'SKY CRANE');
   const stt = sc.done
     ? 'ROVER DOWN'
     : sc.fly
@@ -29,7 +20,7 @@ export function craneInset(x, y, w, h) {
             ? 'LOWERING'
             : 'DESCENT';
   g.textAlign = 'right';
-  g.fillStyle = sc.td ? '#3fcf7a' : '#ff9a3a';
+  g.fillStyle = sc.td ? T.go : T.live;
   g.fillText(stt, x + w - 8, y + 11);
   const s2 = h - 22,
     bx = x + 8,
@@ -45,7 +36,7 @@ export function craneInset(x, y, w, h) {
   g.stroke();
   const rw = Math.max(5, 3 * k),
     rh = Math.max(3, RH * k);
-  g.fillStyle = '#d8dde6';
+  g.fillStyle = T.fg;
   g.fillRect(cx - rw / 2, Y(ry) - rh, rw, rh);
   if (!sc.done) {
     const sx = Math.min(bx + s2 - 4, cx + sc.x * k),
@@ -84,15 +75,17 @@ export function craneInset(x, y, w, h) {
       ? ['HYDRAZINE', fu > 0 ? Math.ceil(skyLeft()) + ' kg' : 'EMPTY']
       : ['ENGINES', sc.act == 8 ? '8 LIT' : '4 + 4 AT 1%'],
   ].forEach((l, i) => {
-    g.fillStyle = '#6c7482';
+    g.fillStyle = T.dim;
+    g.font = lbl(10);
     g.fillText(l[0], tx, ty + i * lh);
-    g.fillStyle = l[0] == 'T/W' && tw > 1 ? '#3fcf7a' : l[0] == 'HYDRAZINE' && low ? '#ff6a4a' : '#d8dde6';
+    g.fillStyle = l[0] == 'T/W' && tw > 1 ? T.go : l[0] == 'HYDRAZINE' && low ? T.warn : T.fg;
+    g.font = num(9);
     g.fillText(l[1], tx + (fu >= 0 ? 58 : 50), ty + i * lh);
   });
   if (fu >= 0) {
-    g.fillStyle = 'rgba(255,255,255,.12)';
+    g.fillStyle = T.rule;
     g.fillRect(x + 1, y + h - 4, w - 2, 3);
-    g.fillStyle = low ? '#ff6a4a' : '#5fb0ff';
+    g.fillStyle = low ? T.warn : T.info;
     g.fillRect(x + 1, y + h - 4, (w - 2) * fu, 3);
   }
 }

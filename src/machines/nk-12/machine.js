@@ -100,8 +100,8 @@ export default {
     ['GROUND IDLE', 0, 'b'],
   ],
   lp: () => [
-    ['FEATHER', state.beta > 80, '#d9822b'],
-    ['CONST RPM', state.ph == 2 && state.prp > 0.97, '#3fcf7a'],
+    ['FEATHER', state.beta > 80, 'live'],
+    ['CONST RPM', state.ph == 2 && state.prp > 0.97, 'go'],
   ],
   mc: [
     [0, '#000'],

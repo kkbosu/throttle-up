@@ -75,8 +75,8 @@ export default {
     ['67% MIN', 0, 'b'],
   ],
   lp: () => [
-    ['RATED', state.N >= 0.915 && state.fu > 0.9, '#3fcf7a'],
-    ['FPL', state.N > 0.995, '#e0392b'],
+    ['RATED', state.N >= 0.915 && state.fu > 0.9, 'go'],
+    ['FPL', state.N > 0.995, 'warn'],
   ],
   mc: [
     [0, '#1a1e26'],

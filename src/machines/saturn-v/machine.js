@@ -87,8 +87,8 @@ export default {
   lp: () => {
     const n = sicE.reduce((a, b) => a + b, 0);
     return [
-      ['3 LIT', n > 2.5, '#3fcf7a'],
-      ['5 LIT', n > 4.5, '#e0392b'],
+      ['3 LIT', n > 2.5, 'go'],
+      ['5 LIT', n > 4.5, 'warn'],
     ];
   },
   mc: [
