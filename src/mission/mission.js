@@ -7,7 +7,7 @@ import { state } from '../core/state.js';
 import { $ } from '../core/util.js';
 import { lab, say } from '../hud/controls.js';
 import { SQ, seqStop } from '../sequence/sequence.js';
-import { clipDrop, clipLab, clipOpen, clipStart } from './clip.js';
+import { CL, clipDrop, clipLab, clipOpen, clipStart } from './clip.js';
 import { traceDraw, traceReset, traceSample } from './trace.js';
 
 /* on: running; t: seconds since the try began; tv: t when the verdict came; res: the machine's verdict once it has one; tr: seconds since then; seed: this attempt's conditions;
@@ -138,8 +138,17 @@ function share() {
       setTimeout(() => (b.textContent = 'SHARE'), 2000);
     };
   /* a phone's share sheet where there is one, the clipboard elsewhere */
-  if (navigator.share && matchMedia('(pointer: coarse)').matches) navigator.share({ text: t }).catch(() => {});
-  else if (navigator.clipboard)
+  if (navigator.share && matchMedia('(pointer: coarse)').matches) {
+    /* with the try's clip when it is ready and the phone can share a file: the video and the line in one tap */
+    const f =
+      CL.blob &&
+      new File([CL.blob], 'throttle-up-daily-' + MS.day + (/mp4/.test(CL.blob.type) ? '.mp4' : '.webm'), {
+        type: CL.blob.type,
+      });
+    navigator
+      .share(f && navigator.canShare && navigator.canShare({ files: [f] }) ? { files: [f], text: t } : { text: t })
+      .catch(() => {});
+  } else if (navigator.clipboard)
     navigator.clipboard.writeText(t).then(
       () => done('COPIED'),
       () => done('COPY FAILED'),

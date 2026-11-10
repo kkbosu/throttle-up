@@ -147,7 +147,15 @@ export function clipFrame(dr) {
     txt(k, cw * (i + 0.5), TOP + VID + 50, lbl(20), T.dim, 'center', 3);
     txt(v, cw * (i + 0.5), TOP + VID + 96, num(34), T.hi, 'center');
   });
-  txt(location.host + location.pathname.replace(/\/$/, ''), VW / 2, VH - 26, num(19), T.live, 'center');
+  /* where to play it: for a daily try, the link that opens today's challenge */
+  txt(
+    location.host + location.pathname.replace(/\/$/, '') + (MS.day ? '/?m=' + state.mi + '&daily' : ''),
+    VW / 2,
+    VH - 26,
+    num(19),
+    T.live,
+    'center',
+  );
   /* the verdict, over the top of the view (the sky), clear of the machine: a panel that fades in with the title, the
      score as the biggest thing in the frame, and the try's trace */
   if (r) {
