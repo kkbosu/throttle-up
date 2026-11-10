@@ -348,6 +348,9 @@ button:disabled,
   font-family: var(--f-num);
   font-weight: 600;
   letter-spacing: 0.02em;
+  /* a fixed line height: with "normal", the mono face's line metrics (taller on Linux than on Windows) set the
+     key's height, and the button rows grew enough on a phone held sideways to push the dials into them */
+  line-height: 1;
 }
 #ctl button.on em {
   color: var(--live);
