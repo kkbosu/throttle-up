@@ -904,6 +904,7 @@ button:disabled,
     line-height: 16px;
   }
 }
+/* CLIP READY: the clip, and what to do with it. SAVE (and SHARE where the phone can share files) are the point. */
 #clip {
   position: fixed;
   inset: 0;
@@ -911,17 +912,19 @@ button:disabled,
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 12px;
   background: var(--scrim-hi);
   z-index: 7;
   touch-action: auto;
 }
 #clip video {
   max-width: 92vw;
-  max-height: 68vh;
+  max-height: 70vh;
   border: 1px solid var(--rule);
+  border-top: 2px solid var(--live);
   border-radius: var(--r);
   background: var(--bg);
+  animation: rise var(--d-panel) var(--ease);
 }
 #clip .row {
   display: flex;
@@ -929,9 +932,19 @@ button:disabled,
 }
 #clip p {
   margin: 0;
-  color: var(--dim);
-  font-size: 11px;
-  letter-spacing: 0.14em;
+  color: var(--live);
+  font-size: var(--t-label);
+  font-weight: 600;
+  letter-spacing: 0.3em;
+}
+#clip #sv,
+#clip #shr {
+  background: var(--go);
+  border-color: var(--go);
+  color: var(--go-ink);
+  font-weight: 600;
+  padding-left: 22px;
+  padding-right: 22px;
 }
 /* Short screens (phones held sideways, about 730x280): a tighter title, hint and buttons, so the dials, lamps and
    engine switch fit above the buttons (hud/gauges.js fitDials shrinks the dials to whatever room is left). */

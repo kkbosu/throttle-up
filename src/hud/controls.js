@@ -70,7 +70,7 @@ const CK = { t: 0, on: 0, s: -1 };
 export function clock(dr) {
   const on = SQ.on || MS.on ? 1 : 0;
   if (MS.on) {
-    if (!MS.res) CK.t = MS.t;
+    CK.t = MS.res ? MS.tv : MS.t;
   } else if (on) CK.t = CK.on ? CK.t + dr : 0;
   CK.on = on;
   const s = on ? Math.floor(CK.t) : -1;

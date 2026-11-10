@@ -3,15 +3,18 @@
 // verdict at the end. The result card's CLIP button opens it in the CLIP READY panel to save or share.
 import { S } from '../audio/audio.js';
 import { state } from '../core/state.js';
-import { $, MONO, mk } from '../core/util.js';
+import { T, lbl, num } from '../core/tokens.js';
+import { $, mk } from '../core/util.js';
 import { canRec, openClip, recMime } from '../recorder/recorder.js';
 import { MS } from './mission.js';
+import { traceDraw } from './trace.js';
 
 /* the frame: a title band, the 3D view at 3:4, and a band for the readouts */
 const VW = 720,
   VH = 1280,
   TOP = 150,
-  VID = 960;
+  VID = 960,
+  PAD = 36;
 /* rec: the recorder; blob: the finished clip; after: seconds since the verdict (the clip runs on 3.5 s);
    cv: the canvas it records */
 export const CL = { rec: null, blob: null, after: 0, t: 0, cv: null };
@@ -74,8 +77,8 @@ export function clipLab() {
 export function clipOpen() {
   if (CL.blob) openClip(CL.blob, 'throttle-up' + (MS.day ? '-daily-' + MS.day : ''));
 }
-function txt(s, x, y, px, col, al = 'center', sp = 0) {
-  vc.font = `${px}px ${MONO}`;
+function txt(s, x, y, font, col, al = 'center', sp = 0) {
+  vc.font = font;
   vc.fillStyle = col;
   vc.textAlign = al;
   if ('letterSpacing' in vc) vc.letterSpacing = sp + 'px';
@@ -84,11 +87,12 @@ function txt(s, x, y, px, col, al = 'center', sp = 0) {
 /* one video frame, after the 3D view has rendered (frame() in core/loop.js) */
 export function clipFrame(dr) {
   if (!CL.rec) return;
-  const m = state.M.mission;
+  const m = state.M.mission,
+    r = MS.res;
   CL.t += dr;
-  if (MS.res) CL.after += dr;
+  if (r) CL.after += dr;
   vc.globalAlpha = 1;
-  vc.fillStyle = '#05060a';
+  vc.fillStyle = T.bg;
   vc.fillRect(0, 0, VW, VH);
   /* the camera aims at the middle of the view, so the largest 3:4 box there holds the machine */
   const g = state.G3.canvas,
@@ -102,31 +106,61 @@ export function clipFrame(dr) {
   }
   if (gw && gh) vc.drawImage(g, (gw - sw) / 2, (gh - sh) / 2, sw, sh, 0, TOP, VW, VID);
   vc.textBaseline = 'alphabetic';
-  txt('THROTTLE UP', VW / 2, 70, 40, '#d8dde6', 'center', 10);
+  /* the title band: the name and the try on the left, the run clock on the right; its lower edge is amber while the
+     try is flown, then green or red with the verdict */
+  const edge = r ? (r.ok ? T.go : T.warn) : T.live,
+    s = Math.floor(r ? MS.tv : MS.t);
+  vc.fillStyle = T.well;
+  vc.fillRect(0, 0, VW, TOP);
+  vc.fillRect(0, TOP + VID, VW, VH - TOP - VID);
+  vc.fillStyle = edge;
+  vc.fillRect(0, TOP - 4, VW, 4);
+  txt('THROTTLE UP', PAD, 74, lbl(42, 600), T.hi, 'left', 6);
   txt(
     (MS.day ? 'DAILY #' + MS.day + ' · TRY ' + MS.tries : 'MISSION') + ' · ' + m.tag.toUpperCase(),
-    VW / 2,
+    PAD,
     116,
-    20,
-    '#8a93a3',
-    'center',
-    3,
+    lbl(22),
+    T.dim,
+    'left',
+    2,
+  );
+  txt(
+    'T+' + String((s / 60) | 0).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'),
+    VW - PAD,
+    72,
+    num(28),
+    edge,
+    'right',
   );
   /* the readouts, in columns */
   const rows = m.clip(),
     cw = VW / rows.length;
   rows.forEach(([k, v], i) => {
-    txt(k, cw * (i + 0.5), TOP + VID + 50, 18, '#6c7482', 'center', 3);
-    txt(v, cw * (i + 0.5), TOP + VID + 94, 34, '#d8dde6', 'center', 1);
+    txt(k, cw * (i + 0.5), TOP + VID + 50, lbl(20), T.dim, 'center', 3);
+    txt(v, cw * (i + 0.5), TOP + VID + 96, num(34), T.hi, 'center');
   });
-  txt(location.host + location.pathname.replace(/\/$/, ''), VW / 2, VH - 28, 20, '#6c7482', 'center', 2);
-  /* the verdict, over the top of the view (the sky), clear of the machine */
-  const r = MS.res;
+  txt(location.host + location.pathname.replace(/\/$/, ''), VW / 2, VH - 26, num(19), T.live, 'center');
+  /* the verdict, over the top of the view (the sky), clear of the machine: a panel that fades in with the title, the
+     score as the biggest thing in the frame, and the try's trace */
   if (r) {
-    vc.fillStyle = 'rgba(5,6,10,.72)';
-    vc.fillRect(0, TOP + 40, VW, 200);
-    txt(r.title, VW / 2, TOP + 110, 40, r.ok ? '#3fcf7a' : '#ff8a5a', 'center', 6);
-    txt(r.ok ? r.score + ' POINTS' : 'NO SCORE', VW / 2, TOP + 194, 60, '#d8dde6', 'center', 6);
+    const tr = m.traceLab ? 128 : 0,
+      y = TOP + 30,
+      h = 176 + tr;
+    vc.globalAlpha = Math.min(1, CL.after / 0.25);
+    vc.fillStyle = T.panel;
+    vc.fillRect(PAD, y, VW - 2 * PAD, h);
+    vc.fillStyle = edge;
+    vc.fillRect(PAD, y, 6, h);
+    txt(r.title, PAD + 30, y + 52, lbl(36, 600), edge, 'left', 4);
+    if (r.ok) {
+      txt(String(r.score), PAD + 26, y + 148, num(100), T.hi, 'left', -3);
+      const w = vc.measureText(String(r.score)).width;
+      txt('POINTS', PAD + 44 + w, y + 148, lbl(24), T.dim, 'left', 4);
+    } else txt('NO SCORE', PAD + 30, y + 138, lbl(60, 600), T.dim, 'left', 4);
+    vc.letterSpacing = '0px';
+    if (tr) traceDraw(vc, PAD + 22, y + 166, VW - 2 * PAD - 44, tr, m.traceLab, 2);
+    vc.globalAlpha = 1;
   }
   vc.letterSpacing = '0px';
   /* the clip ends 3.5 s after the verdict (before the camera chases the stage out of frame), and never runs past

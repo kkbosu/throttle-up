@@ -10,10 +10,10 @@ import { SQ, seqStop } from '../sequence/sequence.js';
 import { clipDrop, clipLab, clipOpen, clipStart } from './clip.js';
 import { traceDraw, traceReset, traceSample } from './trace.js';
 
-/* on: running; res: the machine's verdict once it has one; tr: seconds since then; seed: this attempt's conditions;
+/* on: running; t: seconds since the try began; tv: t when the verdict came; res: the machine's verdict once it has one; tr: seconds since then; seed: this attempt's conditions;
    day: the daily challenge's number (0 for an attempt with a given seed); tries/best: today's attempts and best score;
    go: start the daily challenge once the engine runs (?daily) */
-export const MS = { on: 0, t: 0, res: null, tr: 0, seed: 0, day: 0, tries: 0, best: 0, go: 0 };
+export const MS = { on: 0, t: 0, tv: 0, res: null, tr: 0, seed: 0, day: 0, tries: 0, best: 0, go: 0 };
 /* mulberry32: a small seeded generator, so a mission's conditions never draw from Math.random */
 export function rng(seed) {
   let a = seed >>> 0;
@@ -105,6 +105,7 @@ export function misTick(dr) {
   if (!MS.res) {
     MS.res = m.judge();
     traceSample(MS.t, m.trace, !!MS.res);
+    if (MS.res) MS.tv = MS.t;
     if (MS.res && MS.res.ok && MS.day && MS.res.score > MS.best) {
       MS.best = MS.res.score;
       save(m.name);
