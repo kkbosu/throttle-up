@@ -550,6 +550,8 @@ button:disabled,
 #ib:hover {
   border-color: var(--fg);
 }
+/* INFO: where the sourcing lives, so it is set to be read. The text scrolls inside the panel; CLOSE stays in reach
+   below it. */
 #inf {
   position: fixed;
   inset: 0;
@@ -562,53 +564,90 @@ button:disabled,
   padding: 16px;
   box-sizing: border-box;
 }
+/* a panel arriving: it rises a little and fades in (display flips at once, so nothing waits on the animation) */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
 #infb {
-  max-width: 580px;
+  display: flex;
+  flex-direction: column;
+  max-width: 620px;
   width: 100%;
   max-height: 88vh;
-  overflow: auto;
   border: 1px solid var(--rule);
+  border-top: 2px solid var(--live);
   border-radius: var(--r);
   background: var(--plate);
-  padding: 20px 24px;
-  font-size: 12px;
-  line-height: 1.7;
   color: var(--fg);
+  animation: rise var(--d-panel) var(--ease);
+}
+#infc {
+  overflow: auto;
+  padding: 22px 26px 8px;
+  font-size: var(--t-read);
+  line-height: 1.55;
+  letter-spacing: 0.01em;
   touch-action: pan-y;
   user-select: text;
   -webkit-user-select: text;
 }
 #infb h2 {
-  margin: 0 0 4px;
-  font-size: 13px;
-  letter-spacing: 0.22em;
+  margin: 0 0 6px;
+  font-size: 20px;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
   font-weight: 600;
-  color: var(--fg);
+  color: var(--hi);
 }
+/* a section: facts need no heading; cutaway and lenses, what is approximated, and sources each start with a rule */
 #infb h3 {
-  margin: 16px 0 4px;
-  font-size: 10px;
-  letter-spacing: 0.22em;
+  margin: 18px 0 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+  font-size: var(--t-label);
+  letter-spacing: 0.2em;
   font-weight: 600;
-  color: var(--dim);
+  color: var(--live);
 }
 #infb ul {
-  margin: 6px 0;
-  padding-left: 18px;
+  margin: 8px 0;
+  padding-left: 16px;
+  list-style: square;
 }
 #infb li {
-  margin: 5px 0;
+  margin: 7px 0;
+}
+#infb li::marker {
+  color: var(--rule-hi);
 }
 #infb p {
   margin: 0;
+  font-size: 13px;
   color: var(--dim);
 }
 #infb a {
   color: var(--info);
+  text-underline-offset: 2px;
 }
 #infx {
-  margin-top: 14px;
-  padding: 9px 14px 8px;
+  align-self: flex-end;
+  margin: 10px 26px 16px;
+  padding: 9px 18px 8px;
+}
+@media (max-width: 560px) {
+  #infc {
+    padding: 18px 18px 6px;
+    font-size: var(--t-rest);
+  }
+  #infb h2 {
+    font-size: 17px;
+  }
+  #infx {
+    margin: 8px 18px 12px;
+  }
 }
 @media (max-width: 560px) {
   #ctl {

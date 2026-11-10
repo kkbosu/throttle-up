@@ -23,7 +23,7 @@ export function showInfo() {
         '</ul>'
       : '');
   $('inf').style.display = 'flex';
-  $('infb').scrollTop = 0;
+  $('infc').scrollTop = 0;
 }
 export const closeInfo = () => {
   $('inf').style.display = 'none';
