@@ -1,12 +1,12 @@
 // HARRIER: the ship for the deck-landing MISSION. A generic big-deck amphibious assault ship in the style of a Wasp
 // class, sized from USS Kearsarge's published figures (an 818 ft flight deck, 65 ft above the water) and otherwise
-// placed by eye, and the open sea around it.
+// placed by eye (hull width, bow shape, island, elevators), and the open sea around it.
 //
 // Ship frame (metres, y up): the landing spot is the origin, on the deck surface; the ship heads -x (as the Harrier
 // faces), so +z is to port and -z to starboard, where the island stands. The aircraft stays where it is and the ship
 // moves under it (upd), so the camera presets keep working.
 import * as T from 'three';
-import { MT, box, canvasTex, cyl, std } from '../../render3d/kit.js';
+import { MT, box, canvasTex, cyl, loft, std } from '../../render3d/kit.js';
 import { waveWater } from '../../render3d/water.js';
 import { DECK, FB } from './machine.js';
 
@@ -90,18 +90,42 @@ export function buildShip(G) {
   const deck = new T.Mesh(dg, std({ map: deckT, roughness: 0.92, metalness: 0.05 }));
   deck.receiveShadow = true;
   ship.add(deck);
-  /* hull: the deck outline taken straight down to the water (the real sides flare a little; not modelled) */
+  /* Under the flight deck: a slab the shape of the deck (the gallery deck, overhanging), and below it a narrower hull
+     with a pointed bow and a flat stern, its sides rounding in towards the water. Widths by eye. */
   const gray = std({ color: 0x6c747a, roughness: 0.7, metalness: 0.2 }),
-    hg = new T.ExtrudeGeometry(shape(DECK), { depth: FB + 1, bevelEnabled: false });
+    dark = std({ color: 0x2a2e31, roughness: 0.8 }),
+    hg = new T.ExtrudeGeometry(shape(DECK), { depth: 3.4, bevelEnabled: false });
   hg.rotateX(-Math.PI / 2);
-  const hull = new T.Mesh(hg, gray);
-  hull.position.y = -FB - 1.05;
-  hull.receiveShadow = true;
+  const slab = new T.Mesh(hg, gray);
+  slab.position.y = -3.45;
+  slab.receiveShadow = slab.castShadow = true;
+  ship.add(slab);
+  const ZC = (Z0 + Z1) / 2,
+    hb = FB - 2.4,
+    hull = loft(
+      [
+        [X0 + 1, -3.4, 0.3, 0.01, hb, 0.7, ZC],
+        [X0 + 12, -3.4, 4.6, 0.01, hb, 0.6, ZC],
+        [X0 + 34, -3.4, 10.5, 0.01, hb, 0.5, ZC],
+        [X0 + 75, -3.4, 14.6, 0.01, hb, 0.42, ZC],
+        [X1 - 60, -3.4, 15.2, 0.01, hb, 0.4, ZC],
+        [X1 - 12, -3.4, 14.4, 0.01, hb, 0.42, ZC],
+        [X1 - 2, -3.4, 13.6, 0.01, hb, 0.42, ZC],
+        [X1 - 1.9, -3.4, 0.01, 0.01, 0.01, 1, ZC],
+      ],
+      gray,
+      16,
+    );
   ship.add(hull);
-  /* a dark band of hangar openings and sponsons along the sides, below the deck edge */
-  const dark = std({ color: 0x2a2e31, roughness: 0.8 });
-  ship.add(box(150, 3, 0.4, dark, 10, -4.5, Z1 + 0.15), box(150, 3, 0.4, dark, 10, -4.5, Z0 - 0.15));
-  /* the island, on the starboard side */
+  /* hangar openings and boat bays: dark recesses along the hull below the overhang; the two deck-edge elevators */
+  ship.add(
+    box(140, 3.2, 0.4, dark, 20, -6, ZC + 15.05),
+    box(140, 3.2, 0.4, dark, 20, -6, ZC - 15.05),
+    box(16, 0.7, 14, gray, 38, -0.4, Z1 + 6.5),
+    box(16, 0.7, 14, gray, 52, -0.4, Z0 - 6.5),
+    box(16, 0.25, 0.25, MT.yel, 38, 0.1, Z1 + 13.4),
+  );
+  /* the island, on the starboard side: superstructure, bridge windows, two funnels, mast with yards, radars */
   const isl = new T.Group();
   ship.add(isl);
   isl.add(
@@ -109,12 +133,32 @@ export function buildShip(G) {
     box(44, 7, 6, gray, 10, 12.5, -17.6),
     box(28, 4.5, 6.6, gray, 4, 18.2, -17.6),
     box(26, 1.1, 0.2, MT.dark, 4, 18.6, -14.25),
+    box(0.2, 1.1, 6.2, MT.dark, -10.05, 18.6, -17.6),
+    box(40, 0.9, 0.2, MT.dark, 10, 13.6, -14.55),
     box(9, 6, 5, gray, 24, 19, -17.8),
     box(9.4, 0.6, 5.4, MT.dark, 24, 22.3, -17.8),
+    box(7, 5, 4.4, gray, 37, 11.5, -17.8),
+    box(7.4, 0.6, 4.8, MT.dark, 37, 14.3, -17.8),
+    box(58, 0.25, 0.25, gray, 14, 9.6, -13.8),
+    box(11, 0.5, 4, dark, -4, 22.6, -17.6),
+    box(0.5, 3.4, 5.2, dark, -9.5, 22.4, -17.6),
   );
-  const mast = cyl(0.45, 0.6, 15, gray, 10);
-  mast.position.set(2, 27.5, -17.6);
-  isl.add(mast, box(3.6, 0.5, 1.2, gray, 2, 31, -17.6), box(0.4, 2.2, 3.4, MT.dark, 2, 25, -17.6));
+  const mast = cyl(0.45, 0.7, 17, gray, 8);
+  mast.position.set(2, 28.5, -17.6);
+  const mast2 = cyl(0.3, 0.45, 9, gray, 8);
+  mast2.position.set(30, 26, -17.8);
+  isl.add(
+    mast,
+    mast2,
+    box(0.4, 0.4, 9, gray, 2, 31, -17.6),
+    box(0.3, 0.3, 6, gray, 2, 34.5, -17.6),
+    box(4.6, 2.6, 0.5, dark, 2, 27.5, -17.6),
+    box(0.3, 0.3, 5, gray, 30, 28.5, -17.8),
+    box(3, 1.6, 0.4, dark, 30, 30.6, -17.8),
+  );
+  const dome = new T.Mesh(new T.SphereGeometry(1.5, 12, 8), std({ color: 0xd9dcd8, roughness: 0.6 }));
+  dome.position.set(15, 21.6, -17.6);
+  isl.add(dome);
   /* the sea: open ocean, darker than the Gulf, out to the horizon */
   const { waves, wm } = waveWater();
   wm.color.set(0x123642);
@@ -144,10 +188,10 @@ export function buildShip(G) {
       [6, 1],
     ),
     foamM = std({ map: foamT, alphaMap: foamT, transparent: true, depthWrite: false, roughness: 0.7 }),
-    foam = [Z1 + 1.2, Z0 - 1.2].map((z) => {
-      const m = new T.Mesh(new T.PlaneGeometry(260, 3.2), foamM);
+    foam = [ZC + 12.4, ZC - 12.4].map((z) => {
+      const m = new T.Mesh(new T.PlaneGeometry(190, 3.2), foamM);
       m.rotation.x = -Math.PI / 2;
-      m.position.set(-10, -FB + 0.05, z);
+      m.position.set(20, -FB + 0.05, z);
       ship.add(m);
       return m;
     });

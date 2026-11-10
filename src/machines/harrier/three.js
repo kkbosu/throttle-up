@@ -4,7 +4,22 @@ import { state } from '../../core/state.js';
 import { ENG } from '../../render3d/builders.js';
 import { k3 } from '../../render3d/context.js';
 import { ground, mountains } from '../../render3d/ground.js';
-import { CAT, MT, V3, beam, bladeRing, box, canvasTex, cyl, isolated, lathe, rnd, std } from '../../render3d/kit.js';
+import {
+  CAT,
+  MT,
+  V3,
+  beam,
+  bladeRing,
+  box,
+  canvasTex,
+  cyl,
+  foil,
+  isolated,
+  lathe,
+  loft,
+  rnd,
+  std,
+} from '../../render3d/kit.js';
 import { TH, thSet } from '../../render3d/lenses.js';
 import { SMK, axisPt } from '../../render3d/particles.js';
 import { hangar, lightPole } from '../../render3d/props.js';
@@ -12,6 +27,7 @@ import { HRD, deckUnder } from './machine.js';
 import { buildShip } from './ship.js';
 
 /* ======================= HARRIER: Pegasus jump jet on a VTOL pad ======================= */
+const HR_PAD = 332;
 export function buildHR() {
   const G = new T.Group(),
     AC = new T.Group();
@@ -39,129 +55,185 @@ export function buildHR() {
       }
     },
     true,
+    [1, 1],
   );
   const paint = std({ map: camo, roughness: 0.6, metalness: 0.25, side: T.DoubleSide });
   CAT.set(paint, 'case');
-  const prof = [
-    [0, -7.2],
-    [0.25, -6.8],
-    [0.45, -6.2],
-    [0.62, -5.4],
-    [0.78, -4.4],
-    [0.88, -3.4],
-    [0.98, -2.2],
-    [1.02, -0.5],
-    [1.0, 1.5],
-    [0.92, 2.8],
-    [0.75, 4.0],
-    [0.55, 5.0],
-    [0.38, 6.0],
-    [0.28, 6.6],
-    [0.05, 6.8],
+  /* The airframe: AV-8B proportions (length 14.12 m, span 9.25 m, fin top 3.55 m above the ground; the rest by eye
+     from three-view drawings). Nose at -X, tail at +X. It is built with its own random numbers. */
+  const fst = [
+    [-7.2, -0.28, 0.02, 0.02, 0.02],
+    [-6.9, -0.28, 0.14, 0.14, 0.14],
+    [-6.2, -0.24, 0.34, 0.32, 0.34],
+    [-5.3, -0.16, 0.5, 0.42, 0.5, 0.9],
+    [-4.3, -0.08, 0.6, 0.5, 0.62, 0.8],
+    [-3.3, -0.02, 0.66, 0.62, 0.72, 0.7],
+    [-2.4, 0, 0.8, 0.68, 0.78, 0.6],
+    [-1.0, 0, 0.84, 0.7, 0.8, 0.55],
+    [0.6, 0, 0.84, 0.7, 0.78, 0.55],
+    [1.7, 0.02, 0.76, 0.68, 0.7, 0.62],
+    [3.0, 0.08, 0.56, 0.58, 0.52, 0.78],
+    [4.4, 0.14, 0.38, 0.46, 0.36, 0.9],
+    [5.6, 0.18, 0.22, 0.32, 0.22],
+    [6.6, 0.2, 0.1, 0.14, 0.1],
+    [6.92, 0.2, 0.015, 0.015, 0.015],
   ];
-  const fus = lathe(prof, paint, 48),
-    fusH = lathe(prof, paint, 40, true);
-  AC.add(fus, fusH);
-  const glass = std({ color: 0x3a4a58, metalness: 0.6, roughness: 0.08 });
-  const can = new T.Mesh(new T.SphereGeometry(0.55, 32, 16), glass);
-  can.scale.set(2.1, 0.85, 0.95);
-  can.position.set(-4.3, 0.72, 0);
-  AC.add(can);
-  const top = new T.Group();
-  AC.add(top);
-  top.add(box(4.2, 0.4, 0.75, paint, -1.6, 0.98, 0));
-  [-1, 1].forEach((sg) => {
-    const it = box(1.9, 1.15, 0.6, paint, -2.35, 0.05, sg * 1.12);
-    top.add(it);
-    top.add(box(0.06, 0.95, 0.46, new T.MeshBasicMaterial({ color: 0x050608 }), -3.31, 0.05, sg * 1.12));
-  });
-  const wing = (pts, th) => {
-    const sh = new T.Shape();
-    sh.moveTo(pts[0][0], pts[0][1]);
-    pts.slice(1).forEach((p) => sh.lineTo(p[0], p[1]));
-    sh.closePath();
-    const g = new T.ExtrudeGeometry(sh, { depth: th, bevelEnabled: false });
-    g.rotateX(Math.PI / 2);
-    return g;
-  };
-  const wg = wing(
-      [
-        [-1.6, 0],
-        [2.0, 0],
-        [2.4, 3.6],
-        [1.0, 3.6],
-      ],
-      0.14,
-    ),
-    tg = wing(
-      [
-        [4.7, 0],
-        [6.0, 0],
-        [6.35, 1.9],
-        [5.7, 1.9],
-      ],
-      0.08,
+  const { fus, fusH, top, NZ } = isolated(() => {
+    const fus = loft(fst, paint, 24),
+      fusH = loft(fst, paint, 12, Math.PI, Math.PI * 2),
+      top = new T.Group(),
+      NZ = [];
+    AC.add(fus, fusH, top);
+    /* raised bubble canopy */
+    const glass = std({ color: 0x33424f, metalness: 0.7, roughness: 0.06 });
+    top.add(
+      loft(
+        [
+          [-5.75, 0.1, 0.02, 0.02, 0.02],
+          [-5.35, 0.18, 0.3, 0.3, 0.1],
+          [-4.7, 0.3, 0.42, 0.52, 0.1],
+          [-4.0, 0.4, 0.44, 0.54, 0.1],
+          [-3.45, 0.5, 0.32, 0.36, 0.1],
+          [-3.05, 0.56, 0.04, 0.05, 0.04],
+        ],
+        glass,
+        14,
+      ),
     );
-  [-1, 1].forEach((sg) => {
-    const w = new T.Mesh(wg, paint);
-    w.scale.z = sg;
-    w.position.set(0, 0.98, sg * 0.98);
-    w.rotation.x = sg * 0.2;
-    w.castShadow = true;
-    top.add(w);
-    const t = new T.Mesh(tg, paint);
-    t.scale.z = sg;
-    t.position.set(0, 0.48, sg * 0.32);
-    t.rotation.x = sg * 0.26;
-    t.castShadow = true;
-    top.add(t);
-    const tip = V3(1.75, 0.98 - 3.55 * Math.sin(0.2), sg * (0.98 + 3.55 * Math.cos(0.2)));
-    beam(top, [tip.x, tip.y, tip.z], [1.75, -1.55, tip.z], 0.06, MT.steel);
-    const ow = cyl(0.2, 0.2, 0.12, MT.hose, 14);
-    ow.rotation.x = Math.PI / 2;
-    ow.position.set(1.75, -1.7, tip.z);
-    top.add(ow);
-  });
-  const fsh = new T.Shape();
-  fsh.moveTo(4.4, 0);
-  fsh.lineTo(6.5, 0);
-  fsh.lineTo(6.8, 2.3);
-  fsh.lineTo(6.0, 2.3);
-  fsh.closePath();
-  const fg = new T.ExtrudeGeometry(fsh, { depth: 0.12, bevelEnabled: false });
-  fg.translate(0, 0, -0.06);
-  const fin = new T.Mesh(fg, paint);
-  fin.position.y = 0.75;
-  fin.castShadow = true;
-  top.add(fin);
-  [
-    [-3.6, 0.27],
-    [1.9, 0.36],
-  ].forEach(([x, r]) => {
-    beam(top, [x, -0.8, 0], [x, -1.6, 0], 0.1, MT.steel);
-    const wl = cyl(r, r, 0.25, MT.hose, 16);
-    wl.rotation.x = Math.PI / 2;
-    wl.position.set(x, -1.9 + r, 0);
-    top.add(wl);
-  });
-  /* four swivelling nozzles: cool fan air at the front pair, hot core exhaust at the rear pair */
-  const NZ = [];
-  [
-    [-1.0, -0.2, 1.08, 0.31, 0],
-    [1.15, -0.32, 1.02, 0.28, 1],
-  ].forEach(([x, y, z, r, hot]) =>
+    const black = new T.MeshBasicMaterial({ color: 0x050608 });
     [-1, 1].forEach((sg) => {
-      const p = new T.Group();
-      p.position.set(x, y, sg * z);
-      AC.add(p);
-      const c = cyl(r, r * 0.92, 0.62, hot ? MT.hot : MT.steel, 24);
-      c.rotation.z = -Math.PI / 2;
-      c.position.x = 0.3;
-      p.add(c);
-      [-0.4, 0, 0.4].forEach((o) => p.add(box(0.52, 0.02, r * 1.7, MT.dark, 0.36, o * r, 0)));
-      NZ.push(p);
-    }),
-  );
+      /* the big half-round intakes either side of the cockpit, fairing back into the fuselage */
+      top.add(
+        loft(
+          [
+            [-3.5, -0.04, 0.4, 0.66, 0.7, 0.8, sg * 0.86],
+            [-3.2, -0.04, 0.44, 0.7, 0.74, 0.75, sg * 0.86],
+            [-2.3, -0.02, 0.36, 0.66, 0.74, 0.7, sg * 0.74],
+            [-1.3, 0, 0.2, 0.6, 0.7, 0.7, sg * 0.62],
+          ],
+          paint,
+          14,
+        ),
+      );
+      const lip = new T.Mesh(new T.CircleGeometry(1, 16), black);
+      lip.rotation.y = -Math.PI / 2;
+      lip.scale.set(0.34, 0.62, 1);
+      lip.position.set(-3.51, -0.06, sg * 0.86);
+      top.add(lip);
+      /* shoulder wing with the leading-edge root extension, 12 degrees of anhedral; tailplane with 15 */
+      top.add(
+        foil(
+          [
+            [-2.7, sg * 0.5, 0.56, 4.5, 0.045],
+            [-1.6, sg * 1.35, 0.53, 3.4, 0.1],
+            [0.75, sg * 4.62, -0.14, 1.25, 0.08],
+          ],
+          paint,
+        ),
+        foil(
+          [
+            [4.5, sg * 0.2, 0.26, 1.9, 0.06],
+            [5.85, sg * 2.13, -0.24, 0.75, 0.06],
+          ],
+          paint,
+        ),
+      );
+      /* outrigger wheels at mid-span, in their fairings */
+      const oz = sg * 2.6;
+      top.add(
+        loft(
+          [
+            [0.9, 0.2, 0.02, 0.02, 0.02, 1, oz],
+            [1.4, 0.16, 0.13, 0.12, 0.16, 1, oz],
+            [2.1, 0.12, 0.13, 0.1, 0.18, 1, oz],
+            [2.7, 0.1, 0.02, 0.02, 0.02, 1, oz],
+          ],
+          paint,
+          8,
+        ),
+      );
+      beam(top, [1.75, 0.1, oz], [1.75, -1.55, oz], 0.06, MT.steel);
+      const ow = cyl(0.2, 0.2, 0.12, MT.hose, 14);
+      ow.rotation.x = Math.PI / 2;
+      ow.position.set(1.75, -1.7, oz);
+      top.add(ow);
+      /* the two gun-pod-shaped strakes under the belly */
+      top.add(
+        loft(
+          [
+            [-1.9, -0.76, 0.02, 0.02, 0.02, 1, sg * 0.42],
+            [-1.4, -0.84, 0.17, 0.14, 0.17, 0.9, sg * 0.42],
+            [0.5, -0.86, 0.2, 0.14, 0.2, 0.8, sg * 0.42],
+            [1.4, -0.82, 0.14, 0.1, 0.14, 0.9, sg * 0.42],
+            [1.8, -0.76, 0.02, 0.02, 0.02, 1, sg * 0.42],
+          ],
+          paint,
+          8,
+        ),
+      );
+    });
+    /* fin: its tip is 1.65 m above the fuselage centre line, which stands 1.9 m off the ground */
+    top.add(
+      foil(
+        [
+          [3.9, 0.45, 0, 2.8, 0.05],
+          [5.95, 1.65, 0, 0.95, 0.05],
+        ],
+        paint,
+        true,
+      ),
+    );
+    /* bicycle undercarriage: nose wheel and twin main wheels on the centre line */
+    [
+      [-3.6, 0.27],
+      [1.9, 0.36],
+    ].forEach(([x, r]) => {
+      beam(top, [x, -0.7, 0], [x, -1.6, 0], 0.1, MT.steel);
+      const wl = cyl(r, r, 0.25, MT.hose, 16);
+      wl.rotation.x = Math.PI / 2;
+      wl.position.set(x, -1.9 + r, 0);
+      top.add(wl);
+    });
+    /* four swivelling nozzles, each an elbow that comes out of the fuselage side and turns aft: cool fan air at the
+       front pair, hot core exhaust at the rear pair. Each turns about the sideways axis through its root. */
+    [
+      [-1.0, -0.2, 1.08, 0.31, 0],
+      [1.15, -0.32, 1.02, 0.28, 1],
+    ].forEach(([x, y, z, r, hot]) =>
+      [-1, 1].forEach((sg) => {
+        const p = new T.Group();
+        p.position.set(x, y, sg * z);
+        AC.add(p);
+        const cv = new T.CatmullRomCurve3(
+            [
+              [0, -0.45],
+              [0, -0.2],
+              [0.1, -0.04],
+              [0.3, 0.03],
+              [0.62, 0.03],
+            ].map(([cx, cz]) => V3(cx, 0, sg * cz)),
+          ),
+          g = new T.TubeGeometry(cv, 10, r, 12, false);
+        if (hot) {
+          /* the heat-tint map runs up its height: lay that along the elbow, cool root to hot lip */
+          const u = g.attributes.uv;
+          for (let i = 0; i < u.count; i++) u.setXY(i, u.getY(i), 1 - u.getX(i) * 0.9);
+        }
+        const c = new T.Mesh(g, hot ? MT.hot : MT.steel);
+        c.castShadow = true;
+        p.add(c);
+        [-0.45, 0, 0.45].forEach((o) => p.add(box(0.16, 0.02, r * 1.8, MT.dark, 0.56, o * r, sg * 0.03)));
+        NZ.push(p);
+      }),
+    );
+    return { fus, fusH, top, NZ };
+  }, 0xa8b);
+  /* the first airframe drew this many random numbers here; the pad texture and every machine built after this one
+     were made with what followed, so the count is kept. (The sum is stored because the bundler removes a loop that
+     only calls Math.random.) */
+  let drawn = 0;
+  for (let i = 0; i < HR_PAD; i++) drawn += Math.random();
+  AC.userData.drawn = drawn;
   /* Pegasus inside (cutaway only): fan, compressor, combustor, turbines */
   const peg = new T.Group();
   AC.add(peg);
@@ -297,7 +369,7 @@ export function buildHR() {
       ['COMBUSTOR', [-0.25, 0.3, -0.2], [30, -60]],
       ['FRONT NOZZLES: COOL FAN AIR', [-0.75, -0.55, -1.08], [-60, 62]],
       ['REAR NOZZLES: HOT CORE', [1.4, -0.65, -1.02], [70, 58]],
-      ['WING', [1.2, 0.8, -3.0], [40, -48]],
+      ['WING', [0.6, 0.4, -3.0], [40, -48]],
     ],
     flow: () => [
       {
@@ -370,7 +442,7 @@ export default {
     sh: 12,
     cams: [
       [[3.5, 3.4, 19], [0, 2.0, 0], 9.5],
-      [[-0.4, 1.25, 3.7], [0.5, 1.55, 1.0], 1.7],
+      [[-9.5, 2.3, 8.2], [-0.4, 1.7, 0], 5.6],
       [[13, 2.6, 7], [0, 1.7, 0], 5.2],
     ],
     mt: 1,
@@ -459,6 +531,7 @@ export default {
           l: rnd(1.4, 2.8),
           sd: Math.random(),
           k: 7,
+          w: HRD.on,
           s0: 0.6,
           s1: rnd(3, 6),
         });

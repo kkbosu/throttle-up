@@ -421,3 +421,81 @@ export function beam(grp, a, b, s, mat) {
   grp.add(m);
   return m;
 }
+
+/* A body lofted through cross-sections along local X, for shapes a lathe can't make (a humped fuselage, a pod).
+   Station: [x, centre height, half-width, height above the centre, height below it, squareness (1 = ellipse,
+   towards 0 = box), sideways offset]. a0..a1 is the part of the way round to build (0 = top, pi/2 = +Z). */
+export function loft(st, mat, seg = 20, a0 = 0, a1 = Math.PI * 2) {
+  const pos = [],
+    uv = [],
+    idx = [],
+    n = st.length,
+    sp = (v, e) => Math.sign(v) * Math.pow(Math.abs(v), e);
+  for (let i = 0; i < n; i++) {
+    const [x, yc, w, t, b, e = 1, zc = 0] = st[i];
+    for (let j = 0; j <= seg; j++) {
+      const a = a0 + ((a1 - a0) * j) / seg,
+        c = Math.cos(a);
+      pos.push(x, yc + (c > 0 ? t : b) * sp(c, e), zc + w * sp(Math.sin(a), e));
+      uv.push(x / 4, j / seg);
+    }
+  }
+  for (let i = 0; i < n - 1; i++)
+    for (let j = 0; j < seg; j++) {
+      const a = i * (seg + 1) + j,
+        b = a + seg + 1;
+      idx.push(a, a + 1, b, a + 1, b + 1, b);
+    }
+  const g = new T.BufferGeometry();
+  g.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new T.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  const m = new T.Mesh(g, mat);
+  m.castShadow = m.receiveShadow = true;
+  return m;
+}
+/* A wing or fin with an aerofoil section, through stations [leading-edge x, span position, offset, chord,
+   thickness as a part of the chord]. A wing spans along Z with the offset as its height; a fin (fin = true) stands
+   along Y with the offset sideways. Use a double-sided material: the two sides of an aircraft mirror the winding. */
+const FOIL = [
+  [0, 0],
+  [0.04, 0.36],
+  [0.18, 0.58],
+  [0.42, 0.6],
+  [0.72, 0.36],
+  [1, 0],
+  [0.72, -0.2],
+  [0.42, -0.36],
+  [0.18, -0.4],
+  [0.04, -0.26],
+];
+export function foil(secs, mat, fin = false) {
+  const pos = [],
+    uv = [],
+    idx = [],
+    m = FOIL.length;
+  secs.forEach(([x, s, o, c, t]) =>
+    FOIL.forEach(([fx, fy]) => {
+      const th = o + fy * t * c;
+      pos.push(x + fx * c, fin ? s : th, fin ? th : s);
+      uv.push((x + fx * c) / 8, s / 8);
+    }),
+  );
+  for (let k = 0; k < secs.length - 1; k++)
+    for (let j = 0; j < m; j++) {
+      const a = k * m + j,
+        a1 = k * m + ((j + 1) % m);
+      idx.push(a, a + m, a1, a1, a + m, a1 + m);
+    }
+  const e = (secs.length - 1) * m;
+  for (let j = 1; j < m - 1; j++) idx.push(e, e + j, e + j + 1);
+  const g = new T.BufferGeometry();
+  g.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new T.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  const w = new T.Mesh(g, mat);
+  w.castShadow = w.receiveShadow = true;
+  return w;
+}

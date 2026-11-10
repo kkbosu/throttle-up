@@ -169,7 +169,9 @@ export function updParticles(dt, lc, li) {
         : p.k == 6
           ? [sz, 0.32, 0.26, 0.2, fa * 0.5]
           : p.k == 7
-            ? [sz, 0.62, 0.55, 0.44, fa * 0.38]
+            ? p.w
+              ? [sz, 0.9, 0.93, 0.96, fa * 0.3] /* spray off the sea or a wet deck, not dust */
+              : [sz, 0.62, 0.55, 0.44, fa * 0.38]
             : p.k == 1
               ? [sz, 0.06, 0.055, 0.05, fa * 0.7]
               : p.k == 2
