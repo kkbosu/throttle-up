@@ -39,10 +39,12 @@ export function clipStart() {
     m.ondataavailable = (e) => {
       if (e.data && e.data.size) ch.push(e.data);
     };
-    /* only a clip that ran to the verdict is kept; a dropped one just stops */
+    /* only a clip that ran to the verdict is kept; a dropped one just stops; an empty one (no frame reached the
+       encoder) is not offered */
     m.onstop = () => {
       if (m.keep) {
-        CL.blob = new Blob(ch, { type: (mime || 'video/webm').split(';')[0] });
+        const b = new Blob(ch, { type: (mime || 'video/webm').split(';')[0] });
+        CL.blob = b.size ? b : null;
         clipLab();
       }
     };

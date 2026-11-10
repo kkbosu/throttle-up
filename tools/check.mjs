@@ -376,7 +376,9 @@ const scenarios = [
       // the 9:16 clip: recording since the try began, it ends 3.5 s after the verdict (frames count, not the sim)
       const vc = await c.ev(async () => {
         const b = document.getElementById('misv'), b0 = { t: b.textContent, dis: b.disabled, shown: b.style.display !== 'none' };
-        for (let i = 0; i < 100 && CL.rec; i++) step(1, 50);
+        // yield after each frame: captureStream() takes the canvas's frames between tasks, so a synchronous loop
+        // can leave the recorder with nothing (it did on the slower CI runner)
+        for (let i = 0; i < 100 && CL.rec; i++) { step(1, 50); await new Promise(res => setTimeout(res, 20)); }
         for (let i = 0; i < 50 && !CL.blob; i++) await new Promise(res => setTimeout(res, 100));
         return { b0, size: CL.blob ? CL.blob.size : 0, t: b.textContent, dis: b.disabled, w: CL.cv.width, h: CL.cv.height };
       });
