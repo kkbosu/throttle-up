@@ -239,23 +239,102 @@ body:has(#tq.two) #hint {
   flex-wrap: wrap;
   max-width: calc(100% - 200px);
 }
+/* Keys: every button is the same part. A flat panel with a state edge along the bottom: dark when off, lit when the
+   thing it controls is on (.on), red while something is running that it would stop (.run). Pressing moves it. */
 #ctl button,
 #clip button,
-#mch button {
+#mch button,
+#mis button,
+#infx {
   font: inherit;
   font-size: 12px;
   letter-spacing: 0.1em;
   color: var(--fg);
   background: var(--panel);
   border: 1px solid var(--rule);
+  border-bottom: 2px solid var(--rule);
   border-radius: var(--r);
-  padding: 9px 12px;
+  padding: 9px 12px 8px;
   cursor: pointer;
+  transition:
+    transform var(--d-press) var(--ease),
+    border-color var(--d-press) var(--ease);
 }
 #ctl button:hover,
 #clip button:hover,
-#mch button:hover {
+#mch button:hover,
+#mis button:hover,
+#infx:hover {
   border-color: var(--rule-hi);
+}
+#ctl button:active,
+#clip button:active,
+#mch button:active,
+#mis button:active,
+#infx:active {
+  transform: scale(0.96);
+}
+button:focus-visible,
+#ib:focus-visible {
+  outline: 2px solid var(--live);
+  outline-offset: 2px;
+}
+button:disabled,
+#ctl button.na {
+  opacity: 0.45;
+  cursor: default;
+}
+#ctl button.on {
+  border-bottom-color: var(--live);
+}
+/* a key with a setting: its name small, its value in the number face (the colon is there for screen readers and tests) */
+#ctl button .kl {
+  color: var(--dim);
+}
+#ctl button i {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+#ctl button em {
+  font-style: normal;
+  margin-left: 6px;
+  font-family: var(--f-num);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+#ctl button.on em {
+  color: var(--live);
+}
+/* with room to spare, the name sits above the value */
+@media (min-width: 561px) and (min-height: 481px) {
+  #ctl button {
+    padding: 5px 11px 4px;
+    text-align: left;
+  }
+  #ctl button .kl {
+    display: block;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    line-height: 12px;
+  }
+  #ctl button em {
+    display: block;
+    margin-left: 0;
+    line-height: 16px;
+  }
+  #ctl button.solo {
+    line-height: 28px;
+  }
+}
+/* and with a whole row to spare, the keys fall into groups: run, machine, camera and display, time and faults, record */
+@media (min-width: 1180px) and (min-height: 481px) {
+  #ctl .mpair,
+  #ctl button[data-k='view'],
+  #ctl button[data-k='slow'],
+  #ctl button[data-k='rec'] {
+    margin-left: 10px;
+  }
 }
 #mch {
   display: flex;
@@ -265,9 +344,9 @@ body:has(#tq.two) #hint {
   margin: 4px 0;
 }
 #mch button.on {
-  border-color: var(--fg);
+  border-color: var(--rule-hi);
+  border-bottom-color: var(--live);
   color: var(--hi);
-  background: var(--rule);
 }
 /* previous / next machine: one joined control, [◀][MACHINE: X ▶], that wraps as a unit */
 #ctl .mpair {
@@ -288,14 +367,12 @@ body:has(#tq.two) #hint {
   border-color: var(--live-dim);
   color: var(--live);
 }
-#ctl button[data-k='seq'].run {
-  border-color: var(--warn-bg);
-  color: var(--warn);
-}
 #ctl button[data-k='mis'] {
   border-color: var(--info-dim);
   color: var(--info);
 }
+#ctl button.run,
+#ctl button[data-k='seq'].run,
 #ctl button[data-k='mis'].run {
   border-color: var(--warn-bg);
   color: var(--warn);
@@ -382,26 +459,11 @@ body:has(#tq.two) #hint {
   justify-content: center;
 }
 #mis button {
-  font: inherit;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  color: var(--fg);
-  background: var(--panel);
-  border: 1px solid var(--rule);
-  border-radius: var(--r);
-  padding: 9px 14px;
-  cursor: pointer;
-}
-#mis button:hover {
-  border-color: var(--rule-hi);
+  padding: 9px 14px 8px;
 }
 #mis #misy {
   border-color: var(--go-dim);
   color: var(--go);
-}
-#mis button:disabled {
-  opacity: 0.45;
-  cursor: default;
 }
 /* a portrait phone: the four buttons in one row */
 @media (max-width: 440px) {
@@ -447,8 +509,7 @@ body:has(#tq.two) #hint {
   vertical-align: 1px;
 }
 #ib:hover {
-  border-color: var(--rule-hi);
-  color: var(--fg);
+  border-color: var(--fg);
 }
 #inf {
   position: fixed;
@@ -508,15 +569,7 @@ body:has(#tq.two) #hint {
 }
 #infx {
   margin-top: 14px;
-  font: inherit;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  color: var(--fg);
-  background: var(--panel);
-  border: 1px solid var(--rule);
-  border-radius: var(--r);
-  padding: 9px 14px;
-  cursor: pointer;
+  padding: 9px 14px 8px;
 }
 @media (max-width: 560px) {
   #ctl {

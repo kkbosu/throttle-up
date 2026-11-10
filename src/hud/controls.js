@@ -1,5 +1,5 @@
 // Controls: button labels (lab), button actions (act), lever labels, hint text, the START overlay.
-import { initAudio } from '../audio/audio.js';
+import { click, initAudio } from '../audio/audio.js';
 import { master } from '../core/engine.js';
 import { nextM, prevM, setMachine, views } from '../core/machine-switch.js';
 import { state } from '../core/state.js';
@@ -10,36 +10,53 @@ import { MS, misStart, misStop } from '../mission/mission.js';
 import { startRec, stopRec } from '../recorder/recorder.js';
 import { SQ, seqStart, seqStop } from '../sequence/sequence.js';
 
+/* A key with a setting shows its name and its value as two parts (styled in style.css); the text still reads
+   "NAME: VALUE". on: the thing it controls is on, so its edge lights. */
+function setK(b, name, value, on) {
+  if (b.textContent !== name + ': ' + value) {
+    b.innerHTML = '<span class="kl"></span><i>: </i><em></em>';
+    b.firstChild.textContent = name;
+    b.lastChild.textContent = value;
+  }
+  b.classList.toggle('on', !!on);
+}
+/* a key that is one action: just its label */
+function solo(b, text) {
+  if (b.textContent !== text) b.textContent = text;
+  b.classList.add('solo');
+}
 export function lab() {
   const q = (k) => document.querySelector('#ctl [data-k=' + k + ']');
   const sb = q('seq');
-  sb.textContent = SQ.on ? '■ STOP SEQUENCE' : '▶ SEQUENCE';
+  solo(sb, SQ.on ? '■ STOP SEQUENCE' : '▶ SEQUENCE');
   sb.classList.toggle('run', !!SQ.on);
   const mb = q('mis');
   mb.style.display = state.M.mission ? '' : 'none';
-  mb.textContent = MS.on ? '■ END MISSION' : '◆ MISSION';
+  solo(mb, MS.on ? '■ END MISSION' : '◆ MISSION');
   mb.classList.toggle('run', !!MS.on);
-  q('mach').textContent = 'MACHINE: ' + state.M.btn + ' ▶';
-  q('view').textContent = 'VIEW: ' + VN[state.view];
-  q('exp').textContent = state.G3
-    ? 'CUTAWAY: ' + (state.exposed ? 'ON' : 'OFF')
-    : 'CASING: ' + (state.exposed ? 'EXPOSED' : 'COVERED');
+  q('machp').classList.add('solo');
+  setK(q('mach'), 'MACHINE', state.M.btn + ' ▶');
+  setK(q('view'), 'VIEW', VN[state.view]);
+  if (state.G3) setK(q('exp'), 'CUTAWAY', state.exposed ? 'ON' : 'OFF', state.exposed);
+  else setK(q('exp'), 'CASING', state.exposed ? 'EXPOSED' : 'COVERED', state.exposed);
   const lb = q('lens');
-  lb.textContent = 'LENS: ' + ['NORMAL', 'SCHLIEREN', 'THERMAL'][state.lens];
-  lb.style.opacity = state.G3 ? 1 : 0.4;
-  q('scn').textContent =
-    'SCENE: ' +
-    (state.M.space
+  setK(lb, 'LENS', ['NORMAL', 'SCHLIEREN', 'THERMAL'][state.lens], state.lens);
+  lb.classList.toggle('na', !state.G3);
+  setK(
+    q('scn'),
+    'SCENE',
+    state.M.space
       ? ['TERMINATOR', 'SUNLIT', 'ECLIPSE'][state.scene]
       : state.M.sky && state.G3
         ? SNM[state.scene]
-        : SN[state.scene]);
-  q('slow').textContent = state.M.warp ? 'WARP: ' + state.M.warpName(state.sl) : 'SLOW-MO: ' + SLN[state.sl];
+        : SN[state.scene],
+  );
+  if (state.M.warp) setK(q('slow'), 'WARP', state.M.warpName(state.sl), state.sl);
+  else setK(q('slow'), 'SLOW-MO', SLN[state.sl], state.sl);
   const f = q('flt');
-  f.textContent = 'FAULTS: ' + (state.M.stall ? (state.faults ? 'ON' : 'OFF') : 'N/A');
-  f.style.opacity = state.M.stall ? 1 : 0.4;
-  /* a machine with a mission has no stall: MISSION takes the place of the idle FAULTS button */
-  f.style.display = state.M.mission ? 'none' : '';
+  setK(f, 'FAULTS', state.M.stall ? (state.faults ? 'ON' : 'OFF') : 'N/A', state.M.stall && state.faults);
+  /* only a machine that can stall has faults to switch (a machine with a mission shows MISSION in its place) */
+  f.style.display = state.M.stall ? '' : 'none';
 }
 /* engine master: ON cranks and lights off; OFF cuts fuel (flame dies, rotor coasts, nozzle cools). Restart once the rotor is nearly stopped */
 export function say(t) {
@@ -129,7 +146,10 @@ export function wireControls() {
     setTimeout(() => ($('ov').style.display = 'none'), 600);
   });
   $('ctl').addEventListener('click', (e) => {
-    const k = e.target.dataset.k;
-    if (k) act(k);
+    const b = e.target.closest('[data-k]');
+    if (b) {
+      click();
+      act(b.dataset.k);
+    }
   });
 }

@@ -74,7 +74,7 @@ export function recLab() {
     if (state.recLast !== -9) {
       state.recLast = -9;
       b.textContent = 'REC N/A';
-      b.style.opacity = 0.4;
+      b.classList.add('solo', 'na');
     }
     return;
   }
@@ -82,7 +82,8 @@ export function recLab() {
   if (s === state.recLast) return;
   state.recLast = s;
   b.textContent = state.rec ? '● STOP ' + ((s / 60) | 0) + ':' + String(s % 60).padStart(2, '0') : '● REC';
-  b.style.color = state.rec ? '#ff6a5a' : '';
+  b.classList.add('solo');
+  b.classList.toggle('run', !!state.rec);
 }
 /* the DOM lever isn't part of the canvas, so mirror it into the frame while recording */
 export function recOverlay(x) {

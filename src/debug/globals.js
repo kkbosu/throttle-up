@@ -677,6 +677,7 @@ d('initAudio', () => m0.initAudio);
 d('audio', () => m0.audio);
 d('thump', () => m0.thump);
 d('tick', () => m0.tick);
+d('click', () => m0.click);
 d('bang', () => m0.bang);
 d('beep', () => m0.beep);
 d('wireAudio', () => m0.wireAudio);

@@ -154,6 +154,22 @@ export function tick() {
   o.start(t);
   o.stop(t + 0.04);
 }
+/* a key or switch being pressed: a short low click (v: how hard, 1 for a key, 2 for the engine switch) */
+export function click(v = 1) {
+  if (!state.AC) return;
+  const t = state.AC.currentTime,
+    o = state.AC.createOscillator(),
+    n = state.AC.createGain();
+  o.type = 'square';
+  o.frequency.setValueAtTime(v > 1 ? 320 : 620, t);
+  o.frequency.exponentialRampToValueAtTime(v > 1 ? 90 : 240, t + 0.025);
+  n.gain.setValueAtTime(0.05 * v, t);
+  n.gain.exponentialRampToValueAtTime(0.001, t + (v > 1 ? 0.07 : 0.035));
+  o.connect(n);
+  n.connect(S.out);
+  o.start(t);
+  o.stop(t + 0.08);
+}
 /* surge bang: sharp noise crack falling through a lowpass, plus the low thump */
 export function bang(v = 1) {
   if (!state.AC) return;
