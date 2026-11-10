@@ -215,6 +215,10 @@ scenarios.push({
     await t.ev(POWER); await t.ff(3);
     await t.ev(() => startRec());
     await t.frames(20);
+    // give the encoder real time: WebM (what a desktop records) has no bytes until a frame is encoded
+    await t.page.waitForTimeout(700);
+    await t.frames(5);
+    await t.page.waitForTimeout(300);
     await t.ev(() => stopRec());
     await t.page.waitForFunction(() => getComputedStyle(document.getElementById('clip')).display !== 'none', null, { timeout: 30_000 });
     // no full state here: the REC button shows real elapsed time

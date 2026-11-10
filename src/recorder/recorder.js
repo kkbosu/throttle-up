@@ -9,17 +9,15 @@ import { $, cv, mk } from '../core/util.js';
 export const RC = mk(8, 8),
   rc = RC.getContext('2d'); /* clips are captured from this composite: canvas + mirrored lever + watermark */
 export const canRec = !!(window.MediaRecorder && RC.captureStream);
-/* the first clip format this browser can record (MP4 where it can, for sharing), or '' for its default */
+/* The clip format to record: the first of these the browser supports, or '' for its default. Phones get MP4 (H.264
+   and AAC), which is what TikTok, Reels and Shorts take. Desktop browsers get WebM: asking desktop Chrome's
+   MediaRecorder for H.264 can kill the tab outright ("Aw, Snap!", STATUS_BREAKPOINT; seen on Chrome 156, Windows,
+   Intel Arc, in a normal profile and in incognito, on a bare test page too), and a page cannot catch that. */
 export function recMime() {
-  return (
-    [
-      'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
-      'video/mp4',
-      'video/webm;codecs=vp9,opus',
-      'video/webm;codecs=vp8,opus',
-      'video/webm',
-    ].find((t) => MediaRecorder.isTypeSupported(t)) || ''
-  );
+  const mp4 = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4'],
+    webm = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'],
+    phone = matchMedia('(pointer: coarse)').matches;
+  return (phone ? [...mp4, ...webm] : [...webm, ...mp4]).find((t) => MediaRecorder.isTypeSupported(t)) || '';
 }
 export function startRec() {
   if (!canRec || state.rec || !state.ph) return;
@@ -53,7 +51,8 @@ export function showClip() {
   state.rec = null;
   state.recCh = [];
   state.recLast = -2;
-  openClip(blob, 'throttle-up');
+  /* stopped before a single frame was encoded: there is nothing to show */
+  if (blob.size) openClip(blob, 'throttle-up');
 }
 /* the CLIP READY panel: play the clip, with SAVE and (where the browser can share files) SHARE */
 export function openClip(blob, name) {

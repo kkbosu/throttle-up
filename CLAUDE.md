@@ -213,9 +213,15 @@ Workflow: record the reference from a known-good commit (`npm run snapshots`), m
 
 `legacy/tests/` holds the Playwright (Python) scripts used during development in a cloud sandbox with a software GPU, superseded by `npm run check` and the golden suite but kept for reference: `t10.py M OUT` screenshots a machine through views/lenses/scenes, `t10s.py OUT` runs SEQUENCE for machines 6 and 7, `t11s.py` runs Hall + sky crane sequences and checks the 2D chip list, `t10f.py` cycles all machines/scenes/quality and REC, `r10_stall.py 0` is the compressor-stall regression in 2D. They test the running Vite app (`npm run dev`, or set `PAGE_URL`). Needs `pip install playwright` and `playwright install chromium` (the repo's `.venv` has both). On a real GPU you can drop the SwiftShader flags in `h3.py`.
 
-Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari, and listening on real speakers; the mission clip's cost on a phone, and that its MP4 plays in TikTok/Reels/Shorts. Playwright's Chromium records MP4 but can't play H.264 back; play a saved clip in Edge (`channel: 'msedge'`) to check it.
+Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari, and listening on real speakers; the mission clip's cost on a phone, and that its MP4 plays in TikTok/Reels/Shorts. Tests run as a desktop, so they record WebM; MP4 is only asked for on phones (see Known issues).
 
 ## Known issues
+
+- Desktop Chrome can crash the tab ("Aw, Snap!", STATUS_BREAKPOINT) the moment a MediaRecorder starts with an H.264
+  type (`avc1` in MP4, or `video/webm;codecs=h264`). Found 2026-11-10 on Kingsley's Chrome 156 (Windows, Intel Arc): a
+  bare test page does it too, in his normal profile and in incognito, but not in a fresh profile, under Playwright or with
+  DevTools open, so tests never see it. A page cannot catch it, so `recMime()` records WebM on desktop and asks for
+  MP4 only where the pointer is coarse (phones). Whether Android Chrome is affected is not known.
 
 - The mission clip's crop is centred on the view, not on the machine, so after a sky-crane landing the rover sits at the
   bottom edge of the clip.
