@@ -26,7 +26,7 @@ Machines 0–2 also have a hand-drawn 2D canvas renderer (fallback). Machines wi
 
 Top level: `index.html` + `src/` (the game), `tools/` (golden suite, compare, chunk check), `legacy/` (v11 and the Python tests from its development), `docs/SOURCES.md`.
 
-`index.html` (markup) + `src/style.css` + `src/main.js`. The code was moved verbatim from v11 by scripts and then formatted with Prettier (`npm run format`; `.prettierrc.json`, 120 columns), so variable names are still v11's short ones (`N`, `E`, `fu`, `hg` ... see the state list below).
+`index.html` (markup) + `src/style.css` (design tokens at the top, then the DOM HUD) + `src/main.js`. The code was moved verbatim from v11 by scripts and then formatted with Prettier (`npm run format`; `.prettierrc.json`, 120 columns), so variable names are still v11's short ones (`N`, `E`, `fu`, `hg` ... see the state list below).
 
 ```
 src/
@@ -35,15 +35,19 @@ src/
                           lens, mi, M, simT, alt, vz, ...) with its initial value. Code reads/writes state.N etc.
   core/params.js          ?q (QP), ?manual (MAN), ?fps (FPS), ?nomerge, ?daily (DAILY); ?m is read in main.js, ?r=2d in
                           core/loader3d.js
-  core/util.js            $, cv/g (HUD canvas), mk, sm (smoothstep), label tables, MONO font
+  core/util.js            $, cv/g (HUD canvas), mk, sm (smoothstep), label tables, MONO (the system monospace stack,
+                          no longer used by the HUD)
+  core/tokens.js          design tokens for canvas-drawn UI: T (colours by role, copied from style.css :root by
+                          wireTokens() at boot), lbl(px, weight) / num(px, weight) font strings, fontsReady()
   core/engine.js          update(dt): generic engine model, stall/surge, master switch; M.clu(dt) per-machine step
   core/machine-switch.js  setMachine (resets, then every machine's reset() and the selected one's onSelect()), chips
   core/loop.js            frame(), adapt() (auto quality, 4 levels: Q2, Q1, Q0, Q0 at 0.7 resolution; CPU-bound
                           frames skip the resolution drops), step() test hook
   core/loader3d.js        load3D(): fetches three + the renderer chunk; ready3D/fail3D fall back to 2D
-  hud/                    layout.js (resize), gauges.js (gauges, lamps, engine switch, inset placement),
-                          controls.js (lab, act, lever labels, START overlay), fps.js (?fps readout)
-  input/lever.js          lever(s) with the MIL detent, keyboard; while state.slide is set (Harrier deck landing) a
+  hud/                    layout.js (resize), gauges.js (dials, lamps with warm-up and bulb check, engine switch, inset
+                          placement), panel.js (insetFrame: the frame every inset shares), controls.js (lab and its
+                          two-part keys, act, lever labels, START overlay, the T+ run clock), fps.js (?fps readout)
+  input/lever.js          lever(s) with the MIL detent (the gate lights: #tq.latch), keyboard; while state.slide is set (Harrier deck landing) a
                           sideways drag on the view or ←/→ sets state.side (-1..1) and the camera stops orbiting
   audio/audio.js          Web Audio graph and one-shot sounds (per-machine voices live in the machine folders)
   sequence/sequence.js    SEQUENCE player (SQ, seqStart/Next/Stop/Tick/Cap)
@@ -51,8 +55,11 @@ src/
                           machine's `mission` sets the conditions and judges; progress shows in the machine's inset.
                           Daily challenge: dayNo() (#1 = 2026-10-28, local date), daySeed(name, n), tries/best per day in
                           localStorage (`tu-daily-<name>`), shareText() (the SHARE line)
+  mission/trace.js        the try's telemetry trace (TRC): two readouts sampled 10 times a second while a mission runs,
+                          drawn as a strip chart on the result card and the clip (traceDraw); display only
   mission/clip.js         the mission's 9:16 clip (CL, clipStart/clipFrame/clipDrop/clipOpen): records each try on its
-                          own 720×1280 canvas (3D view cropped 3:4 round the middle, title, readouts, verdict), ends
+                          own 720×1280 canvas (3D view cropped 3:4 round the middle; title band with a run clock, readouts,
+                          then the verdict panel with score and trace), ends
                           3.5 s after the verdict; the card's ▶ CLIP opens it in REC's CLIP READY panel (openClip)
   info/                   info.js (INFO panel), cut-text.js (the SCHLIEREN/THERMAL paragraphs)
   recorder/recorder.js    REC: WebGL + HUD composite into a MediaRecorder clip; recMime() and openClip() serve the
@@ -96,9 +103,9 @@ Frame: `frame(t)` → `seqTick` → `keys` → `update` → `misTick` → `audio
 `n` title, `btn` chip label, `sub` subtitle, `hint`, flags `need3d, space, warp, orbit, hover, nozzle, sky, inset, spike`, `insetF` (inset drawer).
 Hooks: `clu(dt)` per-frame machine step (Hall orbit, Saturn V, Harrier hover, NK-12, sky crane, Starship), `reset()` (runs for every machine on any switch), `onSelect()` (sky crane), `seqPre()` (sky crane's SEQUENCE pre-step), `camA(view)`, `warpName(i)` (Hall).
 Engine model: `idle, up, dn, coast, cN, cT, tk, ign, lk, e0f, lt, ab, stall, e:[EGT curve], f:[fuel curve]`.
-UI: `g` (3 gauges: `{t,cap,min,max,maj,mn,red,d,f}`), `gv()` values, `lv`/`lv2` lever labels `[text,pos,'t'|'b']`, `lp()` lamps, status words `off/st/cl/cut/wait`.
+UI: `g` (3 gauges: `{t,cap,min,max,maj,mn,red,d,f}`), `gv()` values, `lv`/`lv2` lever labels `[text,pos,'t'|'b']`, `lp()` lamps `[text, lit, role]` (role: `go`, `live`, `warn` or `info`, a token name, not a hex colour), status words `off/st/cl/cut/wait`.
 Feel: `shk()` camera shake strength (currently switched off for every machine: `SHAKE = 0` in `core/util.js`; it was a stylistic cue, not a measured effect), `au(s,V,pm)` audio voice.
-Game: `mission:{name, brief, tag, share(r), start(rng), end(), judge(), over(t)}` (sky crane): `start` sets the attempt's conditions from a seeded generator (never `Math.random`), `end` restores free play, `judge()` returns null until there is a verdict `{ok, title, why, rows:[[label,value]], score}`, `over(t)` says when to show the card (t = seconds since the verdict), `tag` names it in the share line and the clip, `share(r)` gives the line's detail, and `clip()` the clip's live readouts `[[label, value]]`. ◆ MISSION (and FLY AGAIN) starts today's daily challenge: the same conditions for everyone on the same date, tries counted; `misStart(seed)` with a seed (tests) is not a daily try. `?m=7&daily`, the link in the share line, starts it as soon as the engine runs. A machine with a mission shows ◆ MISSION in place of its FAULTS button (it has no stall); slow-mo is locked during a mission; SEQUENCE, machine switch and END MISSION stop it.
+Game: `mission:{name, brief, tag, share(r), start(rng), end(), judge(), over(t)}` (sky crane): `start` sets the attempt's conditions from a seeded generator (never `Math.random`), `end` restores free play, `judge()` returns null until there is a verdict `{ok, title, why, rows:[[label,value]], score}`, `over(t)` says when to show the card (t = seconds since the verdict), `tag` names it in the share line and the clip, `share(r)` gives the line's detail, `clip()` the clip's live readouts `[[label, value]]`, and `traceLab` + `trace()` the two quantities (names with units, and their current values) plotted on the result card and the clip. ◆ MISSION (and FLY AGAIN) starts today's daily challenge: the same conditions for everyone on the same date, tries counted; `misStart(seed)` with a seed (tests) is not a daily try. `?m=7&daily`, the link in the share line, starts it as soon as the engine runs. A machine with a mission shows ◆ MISSION in place of its FAULTS button (it has no stall); slow-mo is locked during a mission; SEQUENCE, machine switch and END MISSION stop it.
 Story: `sqc` + `sq[]` SEQUENCE steps (`{cap, lever|()=>, dur, wait, until(), max, view, do()}`), `info:{f:[facts], a:[approximations], cut:string|array, s:[[title,url]]}` (a string `cut` gets the shared SCHLIEREN/THERMAL paragraphs appended).
 2D-only: `nxf, r, gl, skyG, hzk, hzg, hza, blk, mc, dk, bl, bd, pl, draw, rear`.
 
@@ -124,6 +131,35 @@ Live at https://kkbosu.github.io/throttle-up/ (GitHub Pages, repo `kkbosu/thrott
 - `.github/workflows/deploy.yml`: every push to `main` runs lint, format check and `npm run check` (which builds the site) in headless Chromium, then publishes `dist/` to Pages; pull requests get the checks only. One-time repo setting: Settings > Pages > Source: GitHub Actions.
 - Sharing: `index.html` has the description, Open Graph / Twitter tags (absolute URLs to the live site) and the favicon. `public/` holds `favicon.svg`, `apple-touch-icon.png` and `og.png` (the 1200x630 preview, rendered from the game). Regenerate the PNGs with `node tools/site-images.mjs` when the visuals change (`--try <dir>` renders the candidate shots).
 
+## Interface design (since 2026-11-10, branch `ui/polish`)
+
+Direction: mission-control telemetry. Flat panels with square corners, small condensed capitals for labels, every number
+in a monospace with its unit, one amber for live values, green and red for status only, blue for missions. Controls you
+touch stay solid (the lever knob and its gate, keys that move when pressed).
+
+- **One set of tokens.** `src/style.css` `:root` defines colour roles, the two typefaces, the type scale, spacing and
+  timing. Canvas code reads the same values through `T`, `lbl()` and `num()` (`core/tokens.js`). Don't write a
+  colour or font literal in UI code; add a token. (Colours that depict something, like the sea or the Earth in an inset,
+  are drawing colours and stay where they are.)
+- **Type.** IBM Plex Sans Condensed 500/600 for labels and text, IBM Plex Mono 600 for numbers, self-hosted from
+  `@fontsource` (latin subset, about 55 kB of woff2), with fallbacks sized to match. The canvas HUD draws nothing until
+  they have loaded (`state.fontOK`, 3 s timeout); the test harness waits for it too.
+- **Three reading levels.** Glance: dial numerals, lit lamps, the verdict, the score. Rest: title, hint, key values,
+  lever labels. Fine print: captions, units, key names, the daily line.
+- **Keys.** Every button is the same part (`#ctl`, `#mch`, `#mis`, `#clip`, `#infx`): pressed, focus-visible, disabled
+  and lit (`.on`: the thing it controls is on; `.run`: it would stop something running). A setting key holds two parts,
+  name and value, but its text still reads `NAME: VALUE`, which the tests match. One solid green button per screen for
+  the main action (START ENGINE, SHARE, SAVE).
+- **Motion marks state changes only**, and only with `transform` and `opacity`. Panels animate on the way in
+  (`@keyframes rise`); `display` still flips at once and closing is instant, because the checks read `display` straight
+  after a click. No endless animation on `#ov span` (Playwright waits for it to hold still). No `backdrop-filter`,
+  blur, or animated shadow. `prefers-reduced-motion` makes everything instant.
+- **Per-frame cost.** The lever knobs move by transform and are written only when they change; dial faces are cached per
+  size and each dial draws one arc, one tick and one number a frame; the run clock writes once a second. `gauges()`
+  still reads two layout rects a frame (as before this work).
+- **Display state stays out of the sim.** Lamp warm-up, the bulb check and the trace read the sim and write nothing to
+  it, and draw no `Math.random()`; the golden manifest's sim state did not change with this work.
+
 ## Non-negotiable conventions
 
 - **Credibility first.** Every user-facing fact in INFO must come from a source listed in that machine's `info.s` (see `docs/SOURCES.md`). Anything modelled, assumed or simplified goes in `info.a` ("WHAT IS APPROXIMATED"), stated plainly. Don't state numbers you can't source (e.g. NK-12 propeller rpm, sky-crane descent stage mass are deliberately not claimed as fact).
@@ -131,7 +167,7 @@ Live at https://kkbosu.github.io/throttle-up/ (GitHub Pages, repo `kkbosu/thrott
 - Keep the 2D fallback working for machines 0–2 (`?r=2d`), and degrade gracefully when WebGL2 or the CDN fails.
 - Mobile matters: portrait phones, phones held sideways, two-lever layouts, insets must not overlap gauges. Test at 390×780 and 734×283 (a phone sideways in Chrome). Screens under 480 px tall get a compact title, hint and buttons (`style.css`), and the dials shrink to the room left above the buttons (`fitDials()` in `hud/gauges.js`, down to 40 px).
 - Captions/lamps are short (lamps fit ~9 characters).
-- Sound is synthesized (Web Audio) — no recordings yet.
+- Sound is synthesized (Web Audio) — no recordings yet. Keys and the engine switch click (`click()` in `audio/audio.js`), only on a real press, not when tests call `act()`.
 
 ## Testing
 
@@ -179,6 +215,13 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 
 ## Known issues
 
+- The mission clip's crop is centred on the view, not on the machine, so after a sky-crane landing the rover sits at the
+  bottom edge of the clip.
+- The lever knob shows no number: the mock-up had a percentage on it, but the lever is not a percentage on every machine
+  (kW on the Hall thruster, engines lit on the Saturn V).
+- The START overlay shows one loading state (LOADING 3D...), not a list of steps: fetching the 3D code is the only step
+  that takes time; building the models happens in the same instant it arrives.
+
 - Harrier and rover models are crude up close; Mars sunset blue glow is broad.
 - The Harrier MISSION's ship is blocky (box island, straight-sided hull), its downwash spray is the pad's tan dust even over the sea, and from the default camera the jet can look over the deck while still off its edge (the inset's map shows the truth).
 - Saturn V schlieren is busy where the plume meets the deflector.
@@ -193,6 +236,7 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 1. **Make it shippable**
    - ~~Split into a Vite project, one module per machine (sim + builder + config + info together), shared renderer/HUD/audio modules. Behaviour identical to v11 — compare screenshots before/after.~~ Done (branch `refactor/vite-split`): identical to v11 on the full golden suite.
    - ~~Git, then host on GitHub Pages; social preview image (Open Graph), favicon.~~ Done (live, see Hosting). Still open: privacy-friendly analytics (not chosen yet; needs Kingsley's choice and account, e.g. GoatCounter, Plausible, Cloudflare Web Analytics).
+   - ~~Interface polish: tokens, type system, keys, lever, dials and lamps, START overlay, INFO, result card with trace, clip frame.~~ Done 2026-11-10 on branch `ui/polish` (see Interface design). Not yet checked on a real phone.
    - Real-device test pass and fixes (performance budget for mid-range Android). Partly done (2026-10-22 to 10-28): the `?fps` readout, the CPU work above, and the landscape layout. Deferred until later (Kingsley's call, 2026-10-28): Starship's GPU cost on the Mali-G52 (see Known issues), iPhone Safari, listening on real speakers.
 
 2. **Game layer**

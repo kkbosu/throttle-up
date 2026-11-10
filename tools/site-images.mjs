@@ -48,8 +48,8 @@ for (const [name, s] of shots) {
   await page.addStyleTag({ content: '#c,#tq,#ctl,#hud,#ov,#inf,#clip{display:none!important}' });
   await page.evaluate((tag) => {
     const d = document.createElement('div');
-    d.style.cssText = 'position:fixed;left:0;right:0;bottom:0;padding:22px 34px 26px;background:linear-gradient(transparent,rgba(5,6,10,.82) 45%);font-family:ui-monospace,Menlo,Consolas,monospace;color:#e8ecf2';
-    d.innerHTML = `<div style="font-size:44px;letter-spacing:.32em;font-weight:600">THROTTLE UP</div><div style="font-size:19px;letter-spacing:.06em;color:#b8c0cc;margin-top:6px">${tag}</div>`;
+    d.style.cssText = 'position:fixed;left:0;right:0;bottom:0;padding:22px 34px 26px;background:linear-gradient(transparent,rgba(5,6,10,.82) 45%);font-family:var(--f-label);color:var(--hi)';
+    d.innerHTML = `<div style="font-size:48px;letter-spacing:.16em;font-weight:600">THROTTLE UP</div><div style="font-size:22px;letter-spacing:.02em;font-weight:500;color:var(--fg);margin-top:4px">${tag}</div>`;
     document.body.appendChild(d);
   }, TAGLINE);
   const out = tryDir ? resolve(tryDir, `${name}.png`) : resolve(ROOT, 'public/og.png');
