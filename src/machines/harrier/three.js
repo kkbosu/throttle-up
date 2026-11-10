@@ -37,10 +37,13 @@ export function buildHR() {
     512,
     512,
     (x, w, h) => {
-      x.fillStyle = '#646d66';
+      /* low-visibility greys, as the US Marine Corps flies them: patches of slightly different grey for wear and
+         touched-up paint, then panel lines */
+      x.fillStyle = '#7f878e';
       x.fillRect(0, 0, w, h);
+      x.globalAlpha = 0.45;
       for (let i = 0; i < 70; i++) {
-        x.fillStyle = ['#4f5a52', '#737c74', '#5a6458'][i % 3];
+        x.fillStyle = ['#737b83', '#8a9299', '#79818a'][i % 3];
         x.beginPath();
         x.ellipse(
           Math.random() * w,
@@ -52,6 +55,12 @@ export function buildHR() {
           6.3,
         );
         x.fill();
+      }
+      x.globalAlpha = 0.3;
+      x.fillStyle = '#3c4248';
+      for (let i = 0; i < 8; i++) {
+        x.fillRect(i * 64 + (i % 3) * 9, 0, 1.5, h);
+        x.fillRect(0, i * 64 + (i % 2) * 20, w, 1.5);
       }
     },
     true,
@@ -132,7 +141,7 @@ export function buildHR() {
         ),
         foil(
           [
-            [4.5, sg * 0.2, 0.26, 1.9, 0.06],
+            [4.35, 0, 0.3, 2.05, 0.06],
             [5.85, sg * 2.13, -0.24, 0.75, 0.06],
           ],
           paint,
@@ -152,7 +161,7 @@ export function buildHR() {
           8,
         ),
       );
-      beam(top, [1.75, 0.1, oz], [1.75, -1.55, oz], 0.06, MT.steel);
+      beam(top, [1.75, 0.16, oz], [1.75, -1.55, oz], 0.06, MT.steel);
       const ow = cyl(0.2, 0.2, 0.12, MT.hose, 14);
       ow.rotation.x = Math.PI / 2;
       ow.position.set(1.75, -1.7, oz);
@@ -172,11 +181,13 @@ export function buildHR() {
         ),
       );
     });
+    /* Every surface starts inside the body it joins (fin and tailplane roots on the centre line, legs up inside the
+       belly), so no gap shows from any side. */
     /* fin: its tip is 1.65 m above the fuselage centre line, which stands 1.9 m off the ground */
     top.add(
       foil(
         [
-          [3.9, 0.45, 0, 2.8, 0.05],
+          [3.45, 0.05, 0, 3.3, 0.05],
           [5.95, 1.65, 0, 0.95, 0.05],
         ],
         paint,
@@ -188,7 +199,7 @@ export function buildHR() {
       [-3.6, 0.27],
       [1.9, 0.36],
     ].forEach(([x, r]) => {
-      beam(top, [x, -0.7, 0], [x, -1.6, 0], 0.1, MT.steel);
+      beam(top, [x, -0.4, 0], [x, -1.6, 0], 0.1, MT.steel);
       const wl = cyl(r, r, 0.25, MT.hose, 16);
       wl.rotation.x = Math.PI / 2;
       wl.position.set(x, -1.9 + r, 0);
