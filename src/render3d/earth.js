@@ -33,11 +33,11 @@ export function createEarth() {
   float rim=pow(1.-max(dot(n,v),0.),3.);col+=(vec3(.25,.5,1.)*smoothstep(-.25,.4,d)+vec3(.9,.42,.15)*exp(-pow(d/.12,2.))*.7)*rim*.6;
   gl_FragColor=vec4(col,1.);}`,
     });
-    const e = new T.Mesh(new T.SphereGeometry(6371, 192, 96), m);
+    const e = new T.Mesh(new T.SphereGeometry(6371, 128, 64), m);
     e.userData.bg = 1;
     earth.add(e);
     const a = new T.Mesh(
-      new T.SphereGeometry(6371 * 1.016, 128, 64),
+      new T.SphereGeometry(6371 * 1.016, 96, 48),
       new T.ShaderMaterial({
         uniforms: earthU,
         vertexShader: earthV,

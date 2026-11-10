@@ -228,8 +228,8 @@ export function createKit() {
     [MT.dark, 'case'],
     [MT.bell, 'bell'],
   ]);
-  halfRing = (r, tube, x, mat, seg = 48) => {
-    const g = new T.TorusGeometry(r, tube, 8, seg, Math.PI);
+  halfRing = (r, tube, x, mat, seg = 32) => {
+    const g = new T.TorusGeometry(r, tube, 6, seg, Math.PI);
     g.rotateY(Math.PI / 2);
     g.rotateX(-Math.PI / 2);
     const m = new T.Mesh(g, mat);
@@ -251,8 +251,8 @@ export function createKit() {
     m.castShadow = m.receiveShadow = true;
     return m;
   };
-  ring = (r, tube, x, mat, seg = 72) => {
-    const g = new T.TorusGeometry(r, tube, 8, seg);
+  ring = (r, tube, x, mat, seg = 48) => {
+    const g = new T.TorusGeometry(r, tube, 6, seg);
     g.rotateY(Math.PI / 2);
     const m = new T.Mesh(g, mat);
     m.position.x = x;

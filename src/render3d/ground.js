@@ -83,21 +83,19 @@ export function createGround() {
   trees = (() => {
     const tp = [
       [0, 13],
-      [0.9, 11.5],
-      [0.5, 11.2],
-      [1.5, 9.6],
-      [0.9, 9.3],
-      [2.1, 7.6],
-      [1.3, 7.3],
-      [2.6, 5.4],
-      [1.6, 5.2],
+      [1.3, 9.7],
+      [0.7, 9.4],
+      [2.2, 6.3],
+      [1.2, 6],
       [2.9, 3.2],
-      [0.3, 3],
+      [0.3, 2],
     ]
       .map((p) => new T.Vector2(p[0], p[1]))
       .reverse();
-    const g = new T.LatheGeometry(tp, 8);
-    const tr = new T.CylinderGeometry(0.3, 0.4, 2, 6);
+    /* three tiers and six sides: the trees stand 110 m away or more (they were 185 triangles each, half the frame's
+       triangles on three machines) */
+    const g = new T.LatheGeometry(tp, 6);
+    const tr = new T.CylinderGeometry(0.3, 0.4, 2, 5, 1, true);
     tr.translate(0, 1, 0);
     const m = new T.InstancedMesh(g, std({ color: 0x1c2b1a, roughness: 0.9 }), 520),
       mt = new T.InstancedMesh(tr, std({ color: 0x2a2018, roughness: 0.9 }), 520),

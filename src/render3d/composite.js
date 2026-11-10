@@ -2,6 +2,7 @@
 import * as T from 'three';
 import { state } from '../core/state.js';
 import { X } from './addons.js';
+import { trees } from './ground.js';
 import { k3 } from './context.js';
 import { R, cam } from './kit.js';
 import { sun } from './lights.js';
@@ -66,6 +67,8 @@ export function createComposite() {
 export function setup() {
   k3.QA = state.Q;
   k3.LR = state.lowRes;
+  /* the lowest level draws a thinner tree line (any first part of the list is an even thinning) */
+  trees.children.forEach((t) => (t.count = state.Q ? 520 : 300));
   const D2 = Math.min(devicePixelRatio || 1, 2);
   k3.pr = state.Q > 1 ? Math.min(D2, 1.5) : state.Q > 0 || !state.lowRes ? Math.min(D2, 1) : 0.7;
   const w = Math.max(2, Math.round(state.W * k3.pr)),
