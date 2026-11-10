@@ -205,8 +205,27 @@ export function applyScene(s) {
     l.visible = !!c.fl;
   });
   R.toneMappingExposure = c.exp;
+  /* The environment the metals reflect is the sky plus what the sky shader leaves out: the ground as the Sun and sky
+     light it (albedo x irradiance / pi, plus the flood-lit pad at night), a dark band on the horizon, and in orbit
+     the Earth below at the size it has from the craft's altitude. Drawn once per scene change, so no cost per frame. */
+  const m = CFG[state.mi] || CFG[0],
+    al = m.envG || (mr ? [0.33, 0.13, 0.06] : m.mt ? [0.42, 0.36, 0.27] : [0.22, 0.22, 0.17]),
+    up = Math.max(skyU.uSun.value.y, 0) * c.sunL,
+    sk = [c.zen[0] + c.hor[0], c.zen[1] + c.hor[1], c.zen[2] + c.hor[2]];
+  if (sp) {
+    skyU.uEnvG.value.set(0.44, 0.64, 0.97).multiplyScalar(c.sunL / 2.3); // about twice the true Earth-shine, by eye
+    skyU.uEnvB.value.set(0.25, 0.5, 1).multiplyScalar(c.sunL / 2.3);
+    skyU.uEarth.value = 0.94; // Earth radius over orbit radius at about 400 km: the limb sits 20 degrees below level
+  } else {
+    skyU.uEnvG.value.set(
+      ...al.map((a, i) => (a * (c.sunC[i] * up + sk[i] * 0.9 + c.fl * 1.6 * [1, 0.84, 0.63][i])) / Math.PI),
+    );
+    skyU.uEnvB.value.set(c.hor[0] * 0.3, c.hor[1] * 0.3, c.hor[2] * 0.34);
+  }
+  skyU.uEnv.value = 1;
   if (k3.envRT) k3.envRT.dispose();
   k3.envRT = pm.fromScene(envScn, 0.02, 0.1, 200);
+  skyU.uEnv.value = 0;
   scn.environment = k3.envRT.texture;
   mountMat.color.setRGB(c.hor[0] * 0.55, c.hor[1] * 0.55, c.hor[2] * 0.6);
   placeSun();
