@@ -46,7 +46,13 @@ export default {
     state.vz = 0;
     state.slide = 1;
     state.side = 0;
-    /* already in the hover: engine at hover power, nozzles at the hover stop */
+    /* Already in the hover, so the engine is running, whatever it was doing when MISSION was pressed (still cranking,
+       or switched off): otherwise there is no thrust yet and the jet drops into the sea before the try has begun. */
+    if (state.ph != 2) {
+      state.ph = 2;
+      state.fu = 1;
+    }
+    /* engine at hover power, nozzles at the hover stop */
     state.raw = hovL();
     applyRaw();
     state.N = 0.27 + 0.73 * state.L;

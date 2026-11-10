@@ -408,6 +408,21 @@ const scenarios = [
     async run(page, rec) {
       const c = checker(page, rec);
       await c.start();
+      // the try starts in a hover even when the engine was off or still cranking: it must not drop into the sea
+      for (const how of ['off', 'cranking']) {
+        const h = await c.ev((how) => {
+          master();
+          if (how === 'cranking') { N = 0; master(); }
+          const p0 = ph;
+          misStart(5);
+          const a0 = alt;
+          step(60, 50);
+          const r = { p0, ph, a0, alt, td: HRD.td };
+          misStop();
+          return r;
+        }, how);
+        c.expect(h.ph === 2 && !h.td && Math.abs(h.alt - h.a0) < 1.5, `engine ${how} when MISSION is pressed: the jet holds its hover (${JSON.stringify(h)})`);
+      }
       await page.click('#ctl [data-k=mis]');
       const s0 = await c.ev(() => ({ on: MS.on, sea: HRD.on, slide, hint: document.getElementById('hint').textContent, btn: document.querySelector('#ctl [data-k=mis]').textContent }));
       c.expect(s0.on === 1 && s0.sea === 1 && s0.slide === 1 && /^MISSION:/.test(s0.hint) && s0.btn === '■ END MISSION', `MISSION puts the ship out (${JSON.stringify(s0)})`);
