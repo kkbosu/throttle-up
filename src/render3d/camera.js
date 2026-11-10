@@ -10,7 +10,7 @@ import { CFG } from './machine.js';
 import { PU } from './plume.js';
 
 // assigned by create*() below, when init3D runs
-export let cP, cT, tmp, sph, SH, LK;
+export let cP, cT, tmp, sph, sph2, SH, LK, calm;
 
 export function createCamera() {
   /* ======================= camera: smooth glide between presets, drag to orbit, wheel to zoom, shake ======================= */
@@ -23,6 +23,9 @@ export function createCamera() {
   cT = V3();
   tmp = V3();
   sph = new T.Spherical();
+  sph2 = new T.Spherical();
+  /* 'reduce motion' is set: a change of view cuts instead of gliding */
+  calm = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   SH = V3();
   LK = V3();
   cv.addEventListener('pointerdown', (e) => {
@@ -89,6 +92,7 @@ export function camera(dr) {
   }
   if (state.view !== k3.lastView) {
     k3.lastView = state.view;
+    if (calm) k3.camSnap = true;
     k3.yaw = k3.pit = 0;
     k3.zoom = 1;
   }
@@ -118,8 +122,17 @@ export function camera(dr) {
   tmp.setFromSpherical(sph).add(T0);
   if (!CFG[state.mi].space && tmp.y < 0.35) tmp.y = 0.35;
   const k = k3.camSnap ? 1 : 1 - Math.exp(-dr * (k3.dragC ? 14 : 3.2));
-  cP.lerp(tmp, k);
+  /* Glide: the aim point moves straight to its new place, and the camera swings round it (its bearing, height angle
+     and distance each ease), so a change from SIDE to REAR goes round the machine and never through it. */
+  sph.setFromVector3(tmp.sub(T0));
+  sph2.setFromVector3(cP.sub(cT));
+  let dth = sph.theta - sph2.theta;
+  dth -= Math.round(dth / (2 * Math.PI)) * 2 * Math.PI;
+  sph2.theta += dth * k;
+  sph2.phi += (sph.phi - sph2.phi) * k;
+  sph2.radius += (sph.radius - sph2.radius) * k;
   cT.lerp(T0, k);
+  cP.setFromSpherical(sph2).add(cT);
   /* put the machine in the part of the screen the HUD leaves free: a lens shift, so nothing changes size or
      perspective, and it glides like the camera does */
   const vs = viewShift();
