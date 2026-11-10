@@ -265,3 +265,15 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 - Before committing: `npm run format`, `npm run lint`, `npm run check` (builds, so it includes the chunk check). For changes that shouldn't alter behaviour, also the golden suite (see Testing).
 - Before adding facts, find a source; record it in `info.s` and `docs/SOURCES.md`.
 - Kingsley is a software developer (C#/.NET, Next.js), not an aerospace engineer — explain physics choices briefly in plain language when they matter.
+- **Subagents: spawn deliberately, and on the cheapest model that does the job as well** (Kingsley's rule, 2026-11-10).
+  - Before spawning one, ask whether a few direct tool calls would do. Spawn only for real parallel work or a wide search.
+  - Set the Agent tool's `model` on every spawn:
+    - `haiku` for mechanical lookups (find a file, grep for usages, list where something is used);
+    - `sonnet` for most delegated work (reading and summarising code, running and reading tests or screenshots,
+      focused edits that follow a clear brief, research);
+    - `opus` (or the session's own model) only when a cheaper one would do it worse: design and architecture calls,
+      subtle shader, physics or rendering bugs, accuracy judgements on sourced facts, and reviews meant to catch what the
+      main session missed.
+  - Quality comes first. If a cheaper model's result is thin or wrong, redo it on a stronger one, and use the stronger
+    one from the start next time for that kind of task.
+  - Forks always run on the parent's model, so prefer a fresh agent with a clear brief when the work is simple.
