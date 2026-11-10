@@ -41,6 +41,9 @@
   /* signal colours: live values; go / warn status; mission */
   --live: #ffb454;
   --live-dim: #7a5a22;
+  --live-lit: rgba(255, 180, 84, 0.2); /* the glow inside a lit key */
+  --info-lit: rgba(124, 192, 255, 0.18);
+  --warn-lit: rgba(255, 90, 74, 0.2);
   --go: #39d98a;
   --go-dim: #1c5a3c;
   --go-ink: #06140c;
@@ -305,6 +308,7 @@ body:has(#tq.two) #hint {
 #mis button:hover,
 #infx:hover {
   border-color: var(--rule-hi);
+  color: var(--hi);
 }
 #ctl button:active,
 #clip button:active,
@@ -314,6 +318,7 @@ body:has(#tq.two) #hint {
   transform: scale(0.96);
 }
 button:focus-visible,
+#ov span:focus-visible,
 #ib:focus-visible {
   outline: 2px solid var(--live);
   outline-offset: 2px;
@@ -323,8 +328,10 @@ button:disabled,
   opacity: 0.45;
   cursor: default;
 }
+/* a lit key glows from its edge up, like a panel key with a lamp behind it */
 #ctl button.on {
   border-bottom-color: var(--live);
+  background: linear-gradient(to top, var(--live-lit), transparent 75%), var(--panel);
 }
 /* a key with a setting: its name small, its value in the number face (the colon is there for screen readers and tests) */
 #ctl button .kl {
@@ -387,34 +394,89 @@ button:disabled,
   border-bottom-color: var(--live);
   color: var(--hi);
 }
-/* previous / next machine: one joined control, [◀][MACHINE: X ▶], that wraps as a unit */
+/* previous / next machine: one joined control, [◀ | MACHINE: X | ▶], that wraps as a unit. The two arrows are the
+   same triangle drawn here, mirrored (the ◀ ▶ characters stay in the text for screen readers and the tests, at no
+   size: as glyphs they came from different fonts and phones may draw them as emoji). */
 #ctl .mpair {
   display: flex;
 }
 #ctl button[data-k='machp'] {
-  padding-left: 10px;
-  padding-right: 10px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 0;
   border-right-width: 0;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
 #ctl button[data-k='mach'] {
+  display: flex;
+  align-items: center;
+  padding-right: 0;
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }
+#ctl button[data-k='mach'] b {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  margin: -9px 0 -8px 12px;
+  padding: 0 12px;
+  font-size: 0;
+  border-left: 1px solid var(--rule);
+}
+#ctl button[data-k='machp']::before,
+#ctl button[data-k='mach'] b::before {
+  content: '';
+  border: 5px solid transparent;
+  border-left-width: 0;
+  border-right: 8px solid var(--fg);
+}
+#ctl button[data-k='mach'] b::before {
+  transform: scaleX(-1);
+}
+#ctl button[data-k='machp']:hover::before,
+#ctl button[data-k='mach']:hover b::before {
+  border-right-color: var(--live);
+}
+/* the two keys that start something carry their colour as a lit edge and a glow; red while they would stop it */
 #ctl button[data-k='seq'] {
   border-color: var(--live-dim);
+  border-bottom-color: var(--live);
+  background: linear-gradient(to top, var(--live-lit), transparent 75%), var(--panel);
   color: var(--live);
+  font-weight: 600;
 }
 #ctl button[data-k='mis'] {
   border-color: var(--info-dim);
+  border-bottom-color: var(--info);
+  background: linear-gradient(to top, var(--info-lit), transparent 75%), var(--panel);
   color: var(--info);
+  font-weight: 600;
 }
 #ctl button.run,
 #ctl button[data-k='seq'].run,
 #ctl button[data-k='mis'].run {
   border-color: var(--warn-bg);
+  border-bottom-color: var(--warn);
+  background: linear-gradient(to top, var(--warn-lit), transparent 75%), var(--panel);
   color: var(--warn);
+}
+/* REC's dot is red, as on a recorder */
+#ctl button[data-k='rec']::first-letter {
+  color: var(--warn);
+}
+/* with the name above the value, the next arrow's cell spans both lines */
+@media (min-width: 561px) and (min-height: 481px) {
+  #ctl button[data-k='mach'] {
+    display: grid;
+    grid-template-columns: auto auto;
+  }
+  #ctl button[data-k='mach'] b {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    margin: -5px 0 -4px 12px;
+  }
 }
 /* MISSION result card: the thing people screenshot. A flight record: the verdict, the score as the largest thing on
    it with its bar of ten, the try's own trace, the figures, and SHARE as the one solid button. */
@@ -784,8 +846,11 @@ button:disabled,
     letter-spacing: 0.06em;
   }
   #ctl button[data-k='machp'] {
-    padding-left: 8px;
-    padding-right: 8px;
+    padding: 0 10px;
+  }
+  #ctl button[data-k='mach'] b {
+    margin: -7px 0 -7px 10px;
+    padding: 0 10px;
   }
 }
 /* START: the machine's data plate. The scene is dimmed right down behind it so the HUD doesn't show through the text. */
@@ -889,8 +954,12 @@ button:disabled,
   margin-left: 10px;
   font-family: var(--f-num);
   font-weight: 600;
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0;
+  color: var(--fg);
+}
+/* timing a SEQUENCE or a MISSION, not just the engine run */
+#clk.ev {
   color: var(--live);
 }
 #clk:empty {
@@ -972,8 +1041,11 @@ button:disabled,
     letter-spacing: 0.06em;
   }
   #ctl button[data-k='machp'] {
-    padding-left: 8px;
-    padding-right: 8px;
+    padding: 0 10px;
+  }
+  #ctl button[data-k='mach'] b {
+    margin: -6px 0 -6px 9px;
+    padding: 0 10px;
   }
   #ov {
     padding: 6px;

@@ -12,11 +12,12 @@ import { SQ, seqStart, seqStop } from '../sequence/sequence.js';
 
 /* A key with a setting shows its name and its value as two parts (styled in style.css); the text still reads
    "NAME: VALUE". on: the thing it controls is on, so its edge lights. */
-function setK(b, name, value, on) {
-  if (b.textContent !== name + ': ' + value) {
-    b.innerHTML = '<span class="kl"></span><i>: </i><em></em>';
-    b.firstChild.textContent = name;
-    b.lastChild.textContent = value;
+function setK(b, name, value, on, tail = '') {
+  if (b.textContent !== name + ': ' + value + tail) {
+    b.innerHTML = '<span class="kl"></span><i>: </i><em></em>' + (tail ? '<b></b>' : '');
+    b.children[0].textContent = name;
+    b.children[2].textContent = value;
+    if (tail) b.children[3].textContent = tail;
   }
   b.classList.toggle('on', !!on);
 }
@@ -35,7 +36,8 @@ export function lab() {
   solo(mb, MS.on ? '■ END MISSION' : '◆ MISSION');
   mb.classList.toggle('run', !!MS.on);
   q('machp').classList.add('solo');
-  setK(q('mach'), 'MACHINE', state.M.btn + ' ▶');
+  /* the next arrow is a part of its own, drawn by the stylesheet to mirror the previous key's */
+  setK(q('mach'), 'MACHINE', state.M.btn, 0, ' ▶');
   setK(q('view'), 'VIEW', VN[state.view]);
   if (state.G3) setK(q('exp'), 'CUTAWAY', state.exposed ? 'ON' : 'OFF', state.exposed);
   else setK(q('exp'), 'CASING', state.exposed ? 'EXPOSED' : 'COVERED', state.exposed);
@@ -64,19 +66,24 @@ export function say(t) {
   $('hint').style.opacity = 1;
   state.hinted = true;
 }
-/* The run clock beside the title: T+mm:ss while a SEQUENCE or a MISSION runs (a mission's stops at the verdict).
-   The text is written only when the second changes. */
-const CK = { t: 0, on: 0, s: -1 };
+/* The run clock beside the title: T+mm:ss since the engine was switched on. While a SEQUENCE or a MISSION runs it
+   shows that run's time instead, in amber (a mission's stops at the verdict). Written only when the second changes. */
+const CK = { e: 0, t: 0, on: 0, s: -1 };
 export function clock(dr) {
-  const on = SQ.on || MS.on ? 1 : 0;
+  const run = state.ph == 1 || state.ph == 2,
+    on = SQ.on || MS.on ? 1 : 0;
+  CK.e = run ? CK.e + dr : 0;
   if (MS.on) {
     CK.t = MS.res ? MS.tv : MS.t;
   } else if (on) CK.t = CK.on ? CK.t + dr : 0;
   CK.on = on;
-  const s = on ? Math.floor(CK.t) : -1;
+  const s = on ? Math.floor(CK.t) + 1e6 : run ? Math.floor(CK.e) : -1;
   if (s === CK.s) return;
   CK.s = s;
-  $('clk').textContent = on ? 'T+' + String((s / 60) | 0).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0') : '';
+  const v = s % 1e6,
+    e = $('clk');
+  e.textContent = s < 0 ? '' : 'T+' + String((v / 60) | 0).padStart(2, '0') + ':' + String(v % 60).padStart(2, '0');
+  e.classList.toggle('ev', !!on);
 }
 export function act(k) {
   if (k == 'view') {
@@ -149,6 +156,13 @@ export function buildLabels() {
 }
 /* load-time setup, called from main.js in v11's order */
 export function wireControls() {
+  /* START and INFO are not <button>s: let the keyboard reach and press them */
+  for (const b of [document.querySelector('#ov span'), $('ib')])
+    b.addEventListener('keydown', (e) => {
+      if (e.key != 'Enter' && e.key != ' ') return;
+      e.preventDefault();
+      b.click();
+    });
   $('ov').addEventListener('click', () => {
     if (state.ph || !state.R3done) return;
     initAudio();

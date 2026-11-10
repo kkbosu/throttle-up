@@ -1,12 +1,13 @@
-// A mission's telemetry trace: two of its readouts (for the missions so far, height and sink rate) sampled ten times a
-// second while the try runs, and drawn as a small strip chart on the result card and at the end of the clip. It is a
+// A mission's telemetry trace: two or three of its readouts (height and sink rate; for the Harrier also the distance
+// to the spot) sampled ten times a second while the try runs, and drawn as a small strip chart on the result card and at the end of the clip. It is a
 // record for display only: nothing in the sim reads it, and it plots the same quantities the readouts showed.
 import { T, lbl, num } from '../core/tokens.js';
 
-/* t: sample times (s); a, b: the two series; next: when the next sample is due */
-export const TRC = { t: [], a: [], b: [], next: 0 };
+/* t: sample times (s); a, b: the two series; c: the third, where the mission gives one; next: when the next sample
+   is due */
+export const TRC = { t: [], a: [], b: [], c: [], next: 0 };
 export function traceReset() {
-  TRC.t.length = TRC.a.length = TRC.b.length = 0;
+  TRC.t.length = TRC.a.length = TRC.b.length = TRC.c.length = 0;
   TRC.next = 0;
 }
 /* called every sim step of a running try; `last` forces a final sample at the verdict */
@@ -16,6 +17,7 @@ export function traceSample(t, get, last) {
   TRC.t.push(t);
   TRC.a.push(v[0]);
   TRC.b.push(v[1]);
+  if (v.length > 2) TRC.c.push(v[2]);
   TRC.next = t + 0.1;
 }
 /* a round number at or above v, for the top of a scale */
@@ -26,7 +28,8 @@ function top(v) {
 }
 /* Draw the trace into c (a 2D context) in the box x, y, w, h, at text scale k (1 on the card, larger on the clip).
    labs: the two series' names with units, e.g. ['ROVER m', 'DESCENT m/s']. Returns false when there is nothing to
-   draw. The first series is the white line on the left scale, the second the amber line on the right scale. */
+   draw. The first series is the white line on the left scale, the second the amber line on the right scale; a third
+   is a blue line with its own scale, written in blue under the first's. */
 export function traceDraw(c, x, y, w, h, labs, k = 1) {
   const n = TRC.t.length;
   if (n < 2) return false;
@@ -39,6 +42,8 @@ export function traceDraw(c, x, y, w, h, labs, k = 1) {
     tEnd = TRC.t[n - 1] || 1,
     aTop = top(Math.max(...TRC.a, 0.1)),
     bTop = top(Math.max(...TRC.b, 0.1)),
+    three = TRC.c.length === n && labs.length > 2,
+    cTop = three ? top(Math.max(...TRC.c, 0.1)) : 1,
     X = (t) => x0 + (t / tEnd) * (x1 - x0),
     line = (s, sTop, col, lw) => {
       c.strokeStyle = col;
@@ -64,6 +69,7 @@ export function traceDraw(c, x, y, w, h, labs, k = 1) {
   c.moveTo(x0, (y0 + y1) / 2);
   c.lineTo(x1, (y0 + y1) / 2);
   c.stroke();
+  if (three) line(TRC.c, cTop, T.info, 1.3);
   line(TRC.b, bTop, T.live, 1.3);
   line(TRC.a, aTop, T.hi, 1.8);
   /* where the try ended */
@@ -77,6 +83,10 @@ export function traceDraw(c, x, y, w, h, labs, k = 1) {
   c.fillStyle = T.dim;
   c.fillText(String(aTop), x0 - 4 * k, y0);
   c.fillText('0', x0 - 4 * k, y1);
+  if (three) {
+    c.fillStyle = T.info;
+    c.fillText(String(cTop), x0 - 4 * k, y0 + fs * 1.3);
+  }
   c.textAlign = 'left';
   c.fillStyle = T.live;
   c.fillText(String(bTop), x1 + 4 * k, y0);
@@ -84,6 +94,10 @@ export function traceDraw(c, x, y, w, h, labs, k = 1) {
   c.font = lbl(fs + k);
   c.fillStyle = T.dim;
   c.fillText(labs[0], x0, y + h - fs * 0.7);
+  if (three) {
+    c.fillStyle = T.info;
+    c.fillText(labs[2], x0 + c.measureText(labs[0]).width + 10 * k, y + h - fs * 0.7);
+  }
   c.textAlign = 'right';
   c.fillStyle = T.live;
   c.fillText(labs[1], x1, y + h - fs * 0.7);

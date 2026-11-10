@@ -46,7 +46,7 @@ src/
   core/loader3d.js        load3D(): fetches three + the renderer chunk; ready3D/fail3D fall back to 2D
   hud/                    layout.js (resize), gauges.js (dials, lamps with warm-up and bulb check, engine switch, inset
                           placement), panel.js (insetFrame: the frame every inset shares), controls.js (lab and its
-                          two-part keys, act, lever labels, START overlay, the T+ run clock), fps.js (?fps readout)
+                          two-part keys, act, lever labels, START overlay, the T+ run clock: time since engine start, or the SEQUENCE's / MISSION's own time in amber), fps.js (?fps readout)
   input/lever.js          lever(s) with the MIL detent (the gate lights: #tq.latch), keyboard; while state.slide is set (Harrier deck landing) a
                           sideways drag on the view or ←/→ sets state.side (-1..1) and the camera stops orbiting
   audio/audio.js          Web Audio graph and one-shot sounds (per-machine voices live in the machine folders)
@@ -55,7 +55,7 @@ src/
                           machine's `mission` sets the conditions and judges; progress shows in the machine's inset.
                           Daily challenge: dayNo() (#1 = 2026-10-28, local date), daySeed(name, n), tries/best per day in
                           localStorage (`tu-daily-<name>`), shareText() (the SHARE line)
-  mission/trace.js        the try's telemetry trace (TRC): two readouts sampled 10 times a second while a mission runs,
+  mission/trace.js        the try's telemetry trace (TRC): two or three readouts sampled 10 times a second while a mission runs,
                           drawn as a strip chart on the result card and the clip (traceDraw); display only
   mission/clip.js         the mission's 9:16 clip (CL, clipStart/clipFrame/clipDrop/clipOpen): records each try on its
                           own 720×1280 canvas (3D view cropped 3:4 round the middle; title band with a run clock, readouts,
@@ -105,7 +105,7 @@ Hooks: `clu(dt)` per-frame machine step (Hall orbit, Saturn V, Harrier hover, NK
 Engine model: `idle, up, dn, coast, cN, cT, tk, ign, lk, e0f, lt, ab, stall, e:[EGT curve], f:[fuel curve]`.
 UI: `g` (3 gauges: `{t,cap,min,max,maj,mn,red,d,f}`), `gv()` values, `lv`/`lv2` lever labels `[text,pos,'t'|'b']`, `lp()` lamps `[text, lit, role]` (role: `go`, `live`, `warn` or `info`, a token name, not a hex colour), status words `off/st/cl/cut/wait`.
 Feel: `shk()` camera shake strength (currently switched off for every machine: `SHAKE = 0` in `core/util.js`; it was a stylistic cue, not a measured effect), `au(s,V,pm)` audio voice.
-Game: `mission:{name, brief, tag, share(r), start(rng), end(), judge(), over(t)}` (sky crane): `start` sets the attempt's conditions from a seeded generator (never `Math.random`), `end` restores free play, `judge()` returns null until there is a verdict `{ok, title, why, rows:[[label,value]], score}`, `over(t)` says when to show the card (t = seconds since the verdict), `tag` names it in the share line and the clip, `share(r)` gives the line's detail, `clip()` the clip's live readouts `[[label, value]]`, and `traceLab` + `trace()` the two quantities (names with units, and their current values) plotted on the result card and the clip. ◆ MISSION (and FLY AGAIN) starts today's daily challenge: the same conditions for everyone on the same date, tries counted; `misStart(seed)` with a seed (tests) is not a daily try. `?m=7&daily`, the link in the share line, starts it as soon as the engine runs. A machine with a mission shows ◆ MISSION in place of its FAULTS button (it has no stall); slow-mo is locked during a mission; SEQUENCE, machine switch and END MISSION stop it.
+Game: `mission:{name, brief, tag, share(r), start(rng), end(), judge(), over(t)}` (sky crane): `start` sets the attempt's conditions from a seeded generator (never `Math.random`), `end` restores free play, `judge()` returns null until there is a verdict `{ok, title, why, rows:[[label,value]], score}`, `over(t)` says when to show the card (t = seconds since the verdict), `tag` names it in the share line and the clip, `share(r)` gives the line's detail, `clip()` the clip's live readouts `[[label, value]]`, and `traceLab` + `trace()` the two or three quantities (names with units, and their current values) plotted on the result card and the clip. ◆ MISSION (and FLY AGAIN) starts today's daily challenge: the same conditions for everyone on the same date, tries counted; `misStart(seed)` with a seed (tests) is not a daily try. `?m=7&daily`, the link in the share line, starts it as soon as the engine runs. A machine with a mission shows ◆ MISSION in place of its FAULTS button (it has no stall); slow-mo is locked during a mission; SEQUENCE, machine switch and END MISSION stop it.
 Story: `sqc` + `sq[]` SEQUENCE steps (`{cap, lever|()=>, dur, wait, until(), max, view, do()}`), `info:{f:[facts], a:[approximations], cut:string|array, s:[[title,url]]}` (a string `cut` gets the shared SCHLIEREN/THERMAL paragraphs appended).
 2D-only: `nxf, r, gl, skyG, hzk, hzg, hza, blk, mc, dk, bl, bd, pl, draw, rear`.
 
@@ -149,7 +149,9 @@ touch stay solid (the lever knob and its gate, keys that move when pressed).
 - **Keys.** Every button is the same part (`#ctl`, `#mch`, `#mis`, `#clip`, `#infx`): pressed, focus-visible, disabled
   and lit (`.on`: the thing it controls is on; `.run`: it would stop something running). A setting key holds two parts,
   name and value, but its text still reads `NAME: VALUE`, which the tests match. One solid green button per screen for
-  the main action (START ENGINE, SHARE, SAVE).
+  the main action (START ENGINE, SHARE, SAVE). The machine selector's two arrows are one CSS triangle, mirrored; the
+  ◀ ▶ characters stay in the text at no size. START and INFO are spans with `role="button"`, reachable by Tab and
+  pressed with Enter or Space.
 - **Motion marks state changes only**, and only with `transform` and `opacity`. Panels animate on the way in
   (`@keyframes rise`); `display` still flips at once and closing is instant, because the checks read `display` straight
   after a click. No endless animation on `#ov span` (Playwright waits for it to hold still). No `backdrop-filter`,
