@@ -3,10 +3,13 @@ import * as T from 'three';
 import { state } from '../../core/state.js';
 import { ENG } from '../../render3d/builders.js';
 import { k3 } from '../../render3d/context.js';
-import { CAT, MT, V3, beam, bladeRing, box, canvasTex, cyl, lathe, rnd, std } from '../../render3d/kit.js';
+import { ground, mountains } from '../../render3d/ground.js';
+import { CAT, MT, V3, beam, bladeRing, box, canvasTex, cyl, isolated, lathe, rnd, std } from '../../render3d/kit.js';
 import { TH, thSet } from '../../render3d/lenses.js';
 import { SMK, axisPt } from '../../render3d/particles.js';
 import { hangar, lightPole } from '../../render3d/props.js';
+import { HRD, deckUnder } from './machine.js';
+import { buildShip } from './ship.js';
 
 /* ======================= HARRIER: Pegasus jump jet on a VTOL pad ======================= */
 export function buildHR() {
@@ -262,16 +265,23 @@ export function buildHR() {
     x.textBaseline = 'middle';
     x.fillText('H', w / 2, h / 2);
   });
+  /* the pad and its surroundings, hidden while the deck-landing MISSION puts the ship under the aircraft */
+  const land = isolated(() => new T.Group(), 0x1a4d); /* (its UUID mustn't shift the random numbers after it) */
+  G.add(land);
   const pad = new T.Mesh(new T.PlaneGeometry(30, 30), std({ map: padT, roughness: 0.88 }));
   pad.rotation.x = -Math.PI / 2;
   pad.position.y = 0.012;
   pad.receiveShadow = true;
   pad.userData.bg = 1;
   CAT.set(pad.material, 'gnd');
-  G.add(pad);
-  const lp1 = lightPole(G, -12, 9),
-    lp2 = lightPole(G, 13, 8);
-  hangar(G, 58, -150, -0.35);
+  land.add(pad);
+  const lp1 = lightPole(land, -12, 9),
+    lp2 = lightPole(land, 13, 8);
+  hangar(land, 58, -150, -0.35);
+  /* the ship and the sea (its own random numbers, so building it shifts nothing else) */
+  const sh = isolated(() => buildShip(G), 0x5a1d);
+  sh.ship.visible = sh.sea.visible = false;
+  let atSea = false;
   const anchor = new T.Object3D();
   anchor.position.set(0.1, -0.35, 0);
   AC.add(anchor);
@@ -328,7 +338,7 @@ export function buildHR() {
       },
     ],
     /* what upd() moves or shows/hides: not merged (render3d/merge.js) */
-    keep: [fus, fusH, peg, rot, AC, ...NZ, anchor],
+    keep: [fus, fusH, peg, rot, AC, ...NZ, anchor, land, ...sh.keep],
     upd(dt) {
       const ex = state.exposed;
       fus.visible = !ex;
@@ -337,11 +347,18 @@ export function buildHR() {
       rot.rotation.x += state.N * dt * 7;
       pcM.emissiveIntensity = state.fu * (0.1 + state.N * 0.3);
       AC.position.y = 1.9 + state.alt;
-      AC.rotation.x = state.alt > 0.05 ? 0.006 * Math.sin(state.simT * 1.3) : 0;
+      AC.rotation.x = HRD.on ? -HRD.rl : state.alt > 0.05 ? 0.006 * Math.sin(state.simT * 1.3) : 0;
       AC.rotation.z = state.alt > 0.05 ? 0.004 * Math.sin(state.simT * 0.9 + 1) : 0;
       const a = (-state.nz * Math.PI) / 180;
       NZ.forEach((p) => (p.rotation.z = a));
       anchor.rotation.z = a;
+      if (!!HRD.on !== atSea) {
+        atSea = !!HRD.on;
+        land.visible = !atSea;
+        sh.ship.visible = sh.sea.visible = atSea;
+        ground.visible = mountains.visible = !atSea;
+      }
+      if (atSea) sh.upd(HRD.x, HRD.z, HRD.h, state.simT, 5);
     },
   };
 }
@@ -359,6 +376,21 @@ export default {
     mt: 1,
   },
   build: buildHR,
+  /* deck landing: SIDE looks forward along the ship from behind the jet's port quarter, so sliding right over the deck
+     is a slide to the right on screen; REAR stands off the port beam. (camA then lifts both with the jet.) */
+  cam(P0, T0) {
+    if (!HRD.on || state.view == 1) return;
+    if (state.view == 2) {
+      P0.set(4, 8, 40);
+      T0.set(0, 1, -10);
+    } else {
+      /* about level with the jet, so the sea between it and the deck edge shows, aimed just to its right so it stays
+         in a narrow frame (portrait phones, the 9:16 clip); near the deck, never below about 5 m or looking into it */
+      const a = state.alt;
+      P0.set(state.W < state.H ? 34 : 38, Math.max(1.5, 5 - a), state.W < state.H ? 5 : 9);
+      T0.set(0, Math.max(-2, 1 - a), -4);
+    }
+  },
   plume(u, fl) {
     let li, lc;
     {
@@ -405,17 +437,20 @@ export default {
   emit(dt, ax) {
     const nn = state.N * state.fu,
       e = ENG[5],
-      gy = e.AC.position.y - 1.9;
-    if (state.alt < 14 && nn > 0.4 && state.nz > 45) {
-      k3.sparkAcc += dt * nn * 70 * (1 - state.alt / 14) * (state.Q > 1 ? 1 : 0.6);
+      gy = e.AC.position.y - 1.9,
+      /* the surface the downwash strikes: the pad, or in the deck landing the deck or the sea below */
+      sy = HRD.on ? deckUnder() : 0,
+      ht = state.alt - sy;
+    if (ht < 14 && nn > 0.4 && state.nz > 45) {
+      k3.sparkAcc += dt * nn * 70 * (1 - ht / 14) * (state.Q > 1 ? 1 : 0.6);
       while (k3.sparkAcc > 1) {
         k3.sparkAcc--;
         const a = Math.random() * 6.283,
           r = rnd(0.5, 2.5),
-          sp = rnd(6, 16) * (1 - state.alt / 16);
+          sp = rnd(6, 16) * (1 - ht / 16);
         SMK.add({
           x: Math.cos(a) * r,
-          y: 0.25,
+          y: sy + 0.25,
           z: Math.sin(a) * r,
           vx: Math.cos(a) * sp,
           vy: rnd(0.4, 2.2),

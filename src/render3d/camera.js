@@ -25,6 +25,7 @@ export function createCamera() {
   SH = V3();
   LK = V3();
   cv.addEventListener('pointerdown', (e) => {
+    if (state.slide) return; /* the drag steers instead (input/lever.js) */
     const r = state.SWR;
     if (e.clientX >= r.x && e.clientX <= r.x + r.w && e.clientY >= r.y && e.clientY <= r.y + r.h) return;
     k3.dragC = { x: e.clientX, y: e.clientY, id: e.pointerId };

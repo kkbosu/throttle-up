@@ -28,6 +28,8 @@ Extracted from the INFO panels (now in `src/machines/<name>/machine.js`; origina
 ## HARRIER
 - [Rolls-Royce Pegasus (Wikipedia)](https://en.wikipedia.org/wiki/Rolls-Royce_Pegasus)
 - [AV-8 Harrier (FAS)](https://man.fas.org/dod-101/sys/ac/av-8.htm)
+- [Have You Ever Seen An AV-8B Harrier Use The Meatball To Land On An Amphibious Assault Ship? (The War Zone, Tyler Rogoway, 2021)](https://www.twz.com/42664/av-8b-harriers-also-use-the-meatball-when-landing-on-amphibious-assault-ships): the usual recovery, a hover to the left of the ship and then a move right over the deck before landing (and the straight-in approach over the stern); MISSION's start beside the ship
+- [USS Kearsarge (LHD-3) Ship's Loading Characteristics Pamphlet (FAS)](https://man.fas.org/dod-101/sys/ship/docs/slcp-lhd-3/Secti.html): an 818 ft flight deck, 65 ft freeboard to the flight deck; the size of MISSION's ship
 
 ## NK-12 TURBOPROP
 - [Kuznetsov NK-12 (Wikipedia)](https://en.wikipedia.org/wiki/Kuznetsov_NK-12)

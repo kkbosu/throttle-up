@@ -15,7 +15,7 @@ Throttle Up is a browser toy (heading toward a game) where you throttle up real 
 | 2 | SHUTTLE | RS-25 on a vertical test stand | no | hydrogen burn-off igniters, steam |
 | 3 | HALL | SPT-140-class Hall thruster on a Psyche-like craft in Earth orbit | yes | TIME WARP (1x / 1,000x / 100,000x), what-if orbit raising, EARTH view |
 | 4 | SATURN V | Five F-1s on an S-IC stage on a static stand | yes | lever lights engines in the real 1-2-2 order (F-1 can't throttle) |
-| 5 | HARRIER | Pegasus jump jet on a hover pad | yes | second lever = nozzle angle; vertical hover physics |
+| 5 | HARRIER | Pegasus jump jet on a hover pad | yes | second lever = nozzle angle; vertical hover physics; MISSION (deck landing on an amphibious assault ship, scored) |
 | 6 | NK-12 | Kuznetsov NK-12 turboprop, contra-rotating props, test stand | yes | constant-speed propeller (RPM holds, blade pitch coarsens), feathering |
 | 7 | SKY CRANE | Mars 2020 descent stage lowering Perseverance, Jezero Crater | yes | Mars gravity, 8 MLEs (4 drop to ~1%), second lever = bridle payout, auto cut + flyaway; MISSION (soft landing, scored) |
 | 8 | STARSHIP | Super Heavy booster (33 Raptor 3) static fire on Pad 2's launch mount at Starbase, on the Gulf coast | yes | lever lights the centre 3, middle ring and outer ring, then throttles all 33 from 40 to 100%; dual flame trench (fire and steam both ways); its own coastal site (beach, sea, lagoons, tank farm, Pad 1) |
@@ -43,7 +43,8 @@ src/
   core/loader3d.js        load3D(): fetches three + the renderer chunk; ready3D/fail3D fall back to 2D
   hud/                    layout.js (resize), gauges.js (gauges, lamps, engine switch, inset placement),
                           controls.js (lab, act, lever labels, START overlay), fps.js (?fps readout)
-  input/lever.js          lever(s) with the MIL detent, keyboard
+  input/lever.js          lever(s) with the MIL detent, keyboard; while state.slide is set (Harrier deck landing) a
+                          sideways drag on the view or ←/→ sets state.side (-1..1) and the camera stops orbiting
   audio/audio.js          Web Audio graph and one-shot sounds (per-machine voices live in the machine folders)
   sequence/sequence.js    SEQUENCE player (SQ, seqStart/Next/Stop/Tick/Cap)
   mission/mission.js      MISSION runner (MS, misStart(seed)/misStop/misTick, rng(seed), the result card #mis); the
@@ -62,6 +63,7 @@ src/
     kit.js                renderer, materials MT, thermal categories CAT, textures, geometry helpers
                           (lathe along local +X, ring, box, cyl, pipe, beam, bladeRing, canvasTex ...)
     sky, lights, scenes (SCN/SCNS/SCNM, applyScene), ground, earth, props
+    water.js              waveWater(): the sea's tiling wave normal map and material (Starship's Gulf, the Harrier's sea)
     plume.js              ray-marched volumetric plume shader; plumeParams() -> M3[mi].plume
     particles.js          pools (SPK, SMK, FIR, FLW), emitters() -> M3[mi].emit, burst()
     lenses.js             thermal/schlieren; thermalU() -> M3[mi].thermal
@@ -77,6 +79,9 @@ src/
     <name>/three.js       default export = { cfg, build, hooks }: the 3D model, camera/plume config, renderer hooks
     <name>/inset.js       inset panel (hall, harrier, nk-12, sky-crane, sr-71)
     sky-crane/mission.js  the soft-landing MISSION (start conditions, hydrazine budget, verdict and score)
+    harrier/mission.js    the deck-landing MISSION; harrier/machine.js has its physics (HRD: the jet's place relative to
+                          the spot, deck heave, touchdown; DECK outline, onDeck), harrier/ship.js the ship and sea
+                          (built in isolated(), shown only in the mission; the ship moves under the jet)
     shuttle/draw2d.js     the RS-25's 2D renderer
     shared/jet3d.js       3D hooks F-TYPE and SR-71 share;  shared/gimbal.js: RS-25/F-1 gimbal wobble
     starship/             three.js (cfg, hooks) builds booster.js (skin, frost, fins, bells), jets.js (33 jet shader), flame.js (trench flame volume)
@@ -141,6 +146,7 @@ Test hooks (in the page): `step(n, ms)` renders n frames at ms each (with sim up
 **Behaviour checks (`npm run check`, about 2 min):** builds the app, serves it, and asserts that the game works, failing on any console or page error. Covers:
 - every machine in 3D: engine reaches RUN; views cycle, with the button label checked; cutaway; lenses (Hall skips schlieren); scenes; INFO opens and closes;
 - the sky-crane MISSION (`mission-m7`): button, seeded conditions in range and repeatable, a gentle landing scores, FLY AGAIN relights after the flyaway, the three failures (too fast, bridles not out, out of hydrazine), slow-mo locked, CLOSE restores free play, other machines hide the button; the daily challenge (day numbers, seed, tries and best kept, the card's daily line, the share line, SHARE copies it), the 9:16 clip (CLIP waits, then a 720×1280 clip opens in the CLIP READY panel; CLOSE drops it), and `?daily` (`daily-link-m7`);
+- the Harrier deck landing (`mission-m5`): the ship comes out, a sideways drag on the view and ←/→ steer (and spring back), seeded conditions in range and repeatable, a careful landing on the spot scores, the three failures (in the sea, into the ship's side, too hard), CLOSE puts the jet back over its pad;
 - SEQUENCE runs to "Sequence complete." with a per-machine outcome: F-TYPE full afterburner, SR-71 Mach 2.8+, shuttle and NK-12 full power, Hall raises its orbit, Saturn V all five F-1s lit, Harrier lifts off, sky crane touches down, Starship lights all 33 at full throttle;
 - machines 0–2 in 2D (`?r=2d`) and the fallback from `?m=3&r=2d` to F-TYPE;
 - the compressor stall, deterministic in `?manual` mode. A slow ramp doesn't stall; a slam stalls with bangs and beeps and recovers; pulling back clears it early; FAULTS off prevents it;
@@ -174,6 +180,7 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 ## Known issues
 
 - Harrier and rover models are crude up close; Mars sunset blue glow is broad.
+- The Harrier MISSION's ship is blocky (box island, straight-sided hull), its downwash spray is the pad's tan dust even over the sea, and from the default camera the jet can look over the deck while still off its edge (the inset's map shows the truth).
 - Saturn V schlieren is busy where the plume meets the deflector.
 - In the Hall EARTH view under the TERMINATOR scene the craft is a dark silhouette.
 - Propellers are drawn slower than real (anti-strobe), stated in INFO.
@@ -189,7 +196,7 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
    - Real-device test pass and fixes (performance budget for mid-range Android). Partly done (2026-10-22 to 10-28): the `?fps` readout, the CPU work above, and the landscape layout. Deferred until later (Kingsley's call, 2026-10-28): Starship's GPU cost on the Mali-G52 (see Known issues), iPhone Safari, listening on real speakers.
 
 2. **Game layer**
-   - Missions with scores: ~~sky-crane soft landing~~ (first version done 2026-10-28: random start height and sink rate, limited hydrazine, score = softness + hydrazine saved; no wind, because Mars's air at ~0.016 kg/m³ makes gusts negligible against the stage's weight, stated in INFO; terrain not yet), Harrier ship-deck landing, Hall reach-an-orbit on least xenon, F-type stall-free run-up.
+   - Missions with scores: ~~sky-crane soft landing~~ (first version done 2026-10-28: random start height and sink rate, limited hydrazine, score = softness + hydrazine saved; no wind, because Mars's air at ~0.016 kg/m³ makes gusts negligible against the stage's weight, stated in INFO; terrain not yet), ~~Harrier ship-deck landing~~ (first version done 2026-10-29: start in a hover off the port side, slide right over the deck and land on spot 5 of a heaving deck; the sideways control is a drag on the view or ←/→, so phones need no third lever; score = softness + accuracy + time). Dropped after a look: Hall reach-an-orbit on least xenon (the model's Isp rises with power, so full power is both fastest and most frugal) and F-type stall-free run-up (a steady lever never stalls). Sky-crane terrain also dropped (the real stage came straight down; it chose its spot earlier).
    - ~~Daily challenge (same seed for everyone) with a Wordle-style share line.~~ Done 2026-10-28 for the sky crane: ◆ MISSION plays today's conditions, the card counts tries and today's best, SHARE copies (or, on phones, shares) a score bar plus a `?m=7&daily` link. Not yet: a leaderboard (would need a server).
    - ~~One-tap vertical (9:16) clip export with score overlay for TikTok/Reels/Shorts.~~ Done 2026-10-28 for missions: every try records itself (title, daily number and try, live readouts, verdict and score); ▶ CLIP on the result card saves or shares it. Not yet checked on a real phone (recording costs a 720×1280 draw and a video encode each frame).
 3. **Realism**

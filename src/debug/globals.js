@@ -38,6 +38,7 @@ import * as m33 from '../sequence/sequence.js';
 import * as m34 from '../mission/mission.js';
 import * as m35 from '../machines/sky-crane/mission.js';
 import * as m36 from '../mission/clip.js';
+import * as m37 from '../machines/harrier/mission.js';
 
 const d = (k, g, s) => {
   const o = Object.getOwnPropertyDescriptor(window, k);
@@ -391,6 +392,20 @@ d(
   },
 );
 d(
+  'slide',
+  () => state.slide,
+  (v) => {
+    state.slide = v;
+  },
+);
+d(
+  'side',
+  () => state.side,
+  (v) => {
+    state.side = v;
+  },
+);
+d(
   'prp',
   () => state.prp,
   (v) => {
@@ -738,6 +753,14 @@ d('harT', () => m17.harT);
 d('hovL', () => m17.hovL);
 d('hoverStep', () => m17.hoverStep);
 d('auHR', () => m17.auHR);
+d('HRD', () => m17.HRD);
+d('DECK', () => m17.DECK);
+d('onDeck', () => m17.onDeck);
+d('RL', () => m17.RL);
+d('DMP', () => m17.DMP);
+d('FB', () => m17.FB);
+d('deckUnder', () => m17.deckUnder);
+d('harMission', () => m37.default);
 d('MC', () => m18.MC);
 d('propInset', () => m19.propInset);
 d('TPW', () => m20.TPW);

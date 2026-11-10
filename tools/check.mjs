@@ -403,6 +403,67 @@ const scenarios = [
     },
   },
   {
+    // the Harrier deck landing: the ship comes out, sideways input steers, every way to end it
+    id: 'mission-m5', q: 0, m: 5, ctx: SMALL, notV11: true,
+    async run(page, rec) {
+      const c = checker(page, rec);
+      await c.start();
+      await page.click('#ctl [data-k=mis]');
+      const s0 = await c.ev(() => ({ on: MS.on, sea: HRD.on, slide, hint: document.getElementById('hint').textContent, btn: document.querySelector('#ctl [data-k=mis]').textContent }));
+      c.expect(s0.on === 1 && s0.sea === 1 && s0.slide === 1 && /^MISSION:/.test(s0.hint) && s0.btn === '■ END MISSION', `MISSION puts the ship out (${JSON.stringify(s0)})`);
+      await c.frames(3);
+      // sideways input: a drag on the view (springs back on release) and the arrow keys
+      const box = await page.$eval('canvas', e => { const r = e.getBoundingClientRect(); return { x: r.left + r.width * 0.45, y: r.top + r.height * 0.5 }; });
+      await page.mouse.move(box.x, box.y);
+      await page.mouse.down();
+      await page.mouse.move(box.x + 300, box.y, { steps: 4 });
+      const dr = await c.ev('side');
+      await page.mouse.up();
+      const up = await c.ev('side');
+      c.expect(dr === 1 && up === 0, `dragging sideways steers and springs back (${dr}, then ${up})`);
+      await page.keyboard.down('ArrowLeft');
+      const kl = await c.ev(() => { keys(0.05); return side; });
+      await page.keyboard.up('ArrowLeft');
+      const k0 = await c.ev(() => { keys(0.05); return side; });
+      c.expect(kl === -1 && k0 === 0, `←/→ steer during the deck landing (${kl}, then ${k0})`);
+      // fly with a fixed seed; kind: good (autopilot), sea (drift away and descend), hit (below deck level, then
+      // slide over), hard (over the spot, engine to idle)
+      const fly = (seed, kind) => c.ev(([seed, kind]) => {
+        misStart(seed);
+        const c0 = { x: HRD.x, z: HRD.z, alt, ha: HRD.ha, hp: HRD.hp };
+        for (let t = 0; t < 200 && MS.tr >= 0; t += .05) {
+          const ht = alt - HRD.h, over = Math.abs(HRD.z) < 3 && Math.abs(HRD.x) < 3;
+          let tv = over ? -0.8 : (ht < 6 ? 1 : 0) + 0.15 * (8 - ht), sd = 0.08 * HRD.z + 0.3 * HRD.vs;
+          if (kind === 'sea') { sd = -1; tv = HRD.z > 45 ? -3 : 0; }
+          if (kind === 'hit') { tv = ht > -4 && HRD.z > 20 ? -2 : 0; sd = ht < -3 ? 1 : 0; }
+          if (kind === 'hard' && over) tv = -20;
+          raw = Math.min(1, Math.max(0, hovL() + 0.15 * (tv - vz))); applyRaw();
+          side = Math.max(-1, Math.min(1, sd));
+          raw2 = 0.914 + Math.max(-0.06, Math.min(0.06, -0.012 * HRD.x - 0.03 * HRD.vx));
+          keys(.05); update(.05); misTick(.05);
+        }
+        step(2);
+        return { c0, title: document.getElementById('mish').textContent, score: document.getElementById('miss').textContent, res: MS.res };
+      }, [seed, kind]);
+      let r = await fly(3, 'good');
+      c.expect(r.c0.z >= 25 && r.c0.z <= 35 && Math.abs(r.c0.x) <= 15 && r.c0.alt >= 6 && r.c0.alt <= 12 && r.c0.ha >= 0.3 && r.c0.ha <= 1.2 && r.c0.hp >= 7 && r.c0.hp <= 11, `start conditions in range (${JSON.stringify(r.c0)})`);
+      c.expect(r.title === 'ON THE SPOT' && r.res.score > 600 && /^\d+ POINTS$/.test(r.score), `a careful landing on the spot scores (${r.title}, ${r.score})`);
+      const same = await fly(3, 'good');
+      c.expect(same.res.score === r.res.score && same.c0.z === r.c0.z, 'the same seed gives the same conditions and score');
+      r = await fly(5, 'sea');
+      c.expect(r.title === 'IN THE SEA' && r.score === 'NO SCORE', `coming down beside the ship fails (${r.title})`);
+      r = await fly(5, 'hit');
+      c.expect(r.title === 'HIT THE SHIP', `sliding over below deck level fails (${r.title})`);
+      r = await fly(5, 'hard');
+      c.expect(r.title === 'HARD LANDING', `dropping onto the deck fails (${r.title})`);
+      await c.frames(3);
+      await page.click('#misx');
+      const off = await c.ev(() => ({ on: MS.on, sea: HRD.on, slide, alt }));
+      c.expect(off.on === 0 && off.sea === 0 && off.slide === 0 && off.alt >= 0, `CLOSE puts the jet back over its pad (${JSON.stringify(off)})`);
+      await c.frames(3);
+    },
+  },
+  {
     // the link a shared result points to: START goes straight into today's challenge
     id: 'daily-link-m7', q: 0, m: 7, daily: true, ctx: SMALL, notV11: true,
     async run(page, rec) {

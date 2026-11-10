@@ -1,7 +1,7 @@
 // Input: throttle lever (with the MIL detent), second lever, keyboard.
 import { tick } from '../audio/audio.js';
 import { state } from '../core/state.js';
-import { $ } from '../core/util.js';
+import { $, cv } from '../core/util.js';
 import { act } from '../hud/controls.js';
 
 /* ---------- input: lever with a detent at MIL ---------- */
@@ -27,10 +27,19 @@ export function fromY2(y) {
   state.raw2 = Math.min(1, Math.max(0, 1 - (y - b.top) / b.height));
 }
 export const K = {};
+let sideK = 0;
 export function keys(dt) {
+  /* sliding (Harrier deck landing): ←/→ steer, A/D keep the nozzle lever */
+  if (state.slide) {
+    const s = (K.arrowright ? 1 : 0) - (K.arrowleft ? 1 : 0);
+    /* a key held sets the input; releasing it centres it (a drag in progress is left alone) */
+    if (s || sideK) state.side = s;
+    sideK = s;
+  }
   if (state.M.nozzle) {
-    const n = (K.arrowright || K.d ? 1 : 0) - (K.arrowleft || K.a ? 1 : 0);
-    if (n) state.raw2 = Math.min(1, Math.max(0, state.raw2 + n * 0.5 * dt));
+    const n = (state.slide ? K.d : K.arrowright || K.d) ? 1 : 0,
+      m = (state.slide ? K.a : K.arrowleft || K.a) ? 1 : 0;
+    if (n - m) state.raw2 = Math.min(1, Math.max(0, state.raw2 + (n - m) * 0.5 * dt));
   }
   const d = (K.arrowup || K.w ? 1 : 0) - (K.arrowdown || K.s ? 1 : 0);
   if (!d) return;
@@ -63,6 +72,27 @@ export function wireInput() {
     tq.addEventListener(n, () => {
       state.drag = state.drag2 = false;
       tq.style.cursor = 'grab';
+    }),
+  );
+  /* sliding: drag sideways anywhere on the view; the input springs back to centre on release */
+  let sx = null;
+  cv.addEventListener('pointerdown', (e) => {
+    if (!state.slide) return;
+    sx = { x: e.clientX, id: e.pointerId };
+    try {
+      cv.setPointerCapture(e.pointerId);
+    } catch (_) {}
+  });
+  cv.addEventListener('pointermove', (e) => {
+    if (sx && e.pointerId === sx.id)
+      state.side = Math.max(-1, Math.min(1, (e.clientX - sx.x) / Math.max(60, Math.min(160, state.W * 0.15))));
+  });
+  ['pointerup', 'pointercancel'].forEach((n) =>
+    cv.addEventListener(n, (e) => {
+      if (sx && e.pointerId === sx.id) {
+        sx = null;
+        state.side = 0;
+      }
     }),
   );
   addEventListener('keydown', (e) => {
