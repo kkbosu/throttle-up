@@ -3,6 +3,7 @@ import { M3 } from '../machines/three.js';
 import * as T from 'three';
 import { state } from '../core/state.js';
 import { SHAKE, cv } from '../core/util.js';
+import { viewShift } from '../hud/gauges.js';
 import { k3 } from './context.js';
 import { V3, cam } from './kit.js';
 import { CFG } from './machine.js';
@@ -119,6 +120,21 @@ export function camera(dr) {
   const k = k3.camSnap ? 1 : 1 - Math.exp(-dr * (k3.dragC ? 14 : 3.2));
   cP.lerp(tmp, k);
   cT.lerp(T0, k);
+  /* put the machine in the part of the screen the HUD leaves free: a lens shift, so nothing changes size or
+     perspective, and it glides like the camera does */
+  const vs = viewShift();
+  if (k3.camSnap || k3.vox == null) {
+    k3.vox = vs[0];
+    k3.voy = vs[1];
+  } else {
+    k3.vox += (vs[0] - k3.vox) * k;
+    k3.voy += (vs[1] - k3.voy) * k;
+  }
+  const vk = Math.round(k3.vox) + ',' + Math.round(k3.voy) + ',' + state.W + ',' + state.H;
+  if (vk !== k3.vkey) {
+    k3.vkey = vk;
+    cam.setViewOffset(state.W, state.H, -Math.round(k3.vox), -Math.round(k3.voy), state.W, state.H);
+  }
   k3.camSnap = false;
   const s = SHAKE * state.M.shk() * 0.0026 * (state.view == 1 ? 0.6 : 1),
     t = state.simT;

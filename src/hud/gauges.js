@@ -66,9 +66,39 @@ export function buildFaces() {
    enough that dials, lamps and engine switch (dsz + 56 px below gy) end above the buttons. */
 export function fitDials() {
   const w = Math.max(54, Math.min(88, (state.W - state.gx - 170) / 3.15)),
-    c = $('ctl').getBoundingClientRect(),
+    c = (state.CTR = $('ctl').getBoundingClientRect()),
     h = (c.height ? c.top : state.H) - 8 - 56 - state.gy;
   return Math.round(Math.max(40, Math.min(w, h)));
+}
+
+/* Where the middle of the 3D picture should sit, as a shift in CSS px from the middle of the screen: towards the
+   centre of the biggest area the HUD leaves free. Three candidates, all left of the levers: everything to the right
+   of the dials, inset and buttons; the band between the dials and the buttons (a phone held upright); and the strip
+   between the inset and the lever tracks above the buttons (a phone held sideways, where that strip is all there is,
+   so it may run under the lever labels). The picture keeps its size; the camera's lens shifts (render3d/camera.js).
+   With plenty of room it goes half way, so a plume that runs off to one side keeps its space; with little room it
+   goes nearly all the way. Never more than a quarter of the width or 15% of the height. No DOM reads: it uses what
+   the HUD worked out this frame. */
+export function viewShift() {
+  const W = state.W,
+    H = state.H,
+    c = state.CTR,
+    sw = state.SWR,
+    n = state.INR;
+  if (!sw || !c || !c.height || !state.TR) return [0, 0];
+  const lx = state.TR.left - (state.M.nozzle ? 150 : 95),
+    dr = Math.max(sw.x + sw.w, n ? n[0] + n[2] : 0),
+    db = Math.max(sw.y + sw.h, n ? n[1] + n[3] : 0),
+    ar = (r) => Math.max(0, r[2] - r[0]) * Math.max(0, r[3] - r[1]),
+    r = [
+      [Math.max(dr, c.right) + 8, 0, lx, H],
+      [0, db + 8, lx, c.top - 8],
+      [dr + 8, 0, state.TR.left - (state.M.nozzle ? 90 : 24), c.top - 8],
+    ].reduce((p, q) => (ar(q) > ar(p) ? q : p)),
+    cl = (v, m) => Math.max(-m, Math.min(m, v));
+  if (!ar(r)) return [0, 0];
+  const k = ar(r) < W * H * 0.25 ? 0.9 : 0.5;
+  return [cl(((r[0] + r[2]) / 2 - W / 2) * k, W * 0.25), cl(((r[1] + r[3]) / 2 - H / 2) * k, H * 0.15)];
 }
 
 /* lamp display state: lv, how lit each lamp is (0..1); test, seconds of bulb check left; ph, the phase last frame */

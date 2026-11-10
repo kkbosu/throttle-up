@@ -5,6 +5,7 @@ import { S } from '../audio/audio.js';
 import { state } from '../core/state.js';
 import { T, lbl, num } from '../core/tokens.js';
 import { $, mk } from '../core/util.js';
+import { viewShift } from '../hud/gauges.js';
 import { canRec, openClip, recMime } from '../recorder/recorder.js';
 import { MS } from './mission.js';
 import { traceDraw } from './trace.js';
@@ -106,7 +107,11 @@ export function clipFrame(dr) {
     sh = gh;
     sw = (gh * VW) / VID;
   }
-  if (gw && gh) vc.drawImage(g, (gw - sw) / 2, (gh - sh) / 2, sw, sh, 0, TOP, VW, VID);
+  /* ...moved by the same shift the camera's lens has, so the crop stays on the machine */
+  const vs = viewShift(),
+    cx = Math.max(0, Math.min(gw - sw, (gw - sw) / 2 + (vs[0] * gw) / state.W)),
+    cy = Math.max(0, Math.min(gh - sh, (gh - sh) / 2 + (vs[1] * gh) / state.H));
+  if (gw && gh) vc.drawImage(g, cx, cy, sw, sh, 0, TOP, VW, VID);
   vc.textBaseline = 'alphabetic';
   /* the title band: the name and the try on the left, the run clock on the right; its lower edge is amber while the
      try is flown, then green or red with the verdict */
