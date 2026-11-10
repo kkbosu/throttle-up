@@ -320,7 +320,8 @@ export default {
       "There is no wind. Mars's air is so thin (about 0.016 kg/m³ at the surface) that even a strong gust would push on the stage and rover with only tens of newtons, against a weight of about 7,900 N.",
       'The lever sets total thrust; the real stage is flown entirely by its guidance computer. A little artificial damping makes hand-flying manageable, and SEQUENCE flies it with a simple speed-hold loop.',
       'Here the switch to four engines happens when you start lowering the rover and the bridles pay out at up to 1 m/s; the real timings differ, so this descent takes a few seconds longer than the real 12.',
-      'The flyaway is simplified. The stage, rover, terrain and crater rim are hand-built approximations, and the dust is simple particles.',
+      'The flyaway is simplified. The stage, terrain and crater rim are hand-built approximations, and the dust is simple particles.',
+      'The rover is NASA/JPL-Caltech’s own 3D model of Perseverance, simplified to about 10,000 triangles with its textures reduced to flat colours. It is shown with its mast raised and its arm out, as that model has them; how the rover was folded for the landing is not shown.',
       "Mars's thin carbon-dioxide air would make the engines sound far fainter than this; the sound is synthesized.",
     ],
     cut: [
@@ -329,6 +330,10 @@ export default {
       "THERMAL is false colour by temperature, like an infrared camera. The temperatures are illustrative; the warm box at the rover's tail is its nuclear power source.",
     ],
     s: [
+      [
+        'Mars Perseverance Rover, 3D Model (NASA/JPL-Caltech)',
+        'https://science.nasa.gov/resource/mars-perseverance-rover-3d-model/',
+      ],
       [
         'Perseverance Touches Down on Mars (NASA)',
         'https://science.nasa.gov/photojournal/perseverance-touches-down-on-mars-illustration/',

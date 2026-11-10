@@ -36,6 +36,7 @@ Extracted from the INFO panels (now in `src/machines/<name>/machine.js`; origina
 - [Tupolev Tu-95 (Wikipedia)](https://en.wikipedia.org/wiki/Tupolev_Tu-95)
 
 ## MARS SKY CRANE
+- [Mars Perseverance Rover, 3D Model (NASA/JPL-Caltech)](https://science.nasa.gov/resource/mars-perseverance-rover-3d-model/): the rover model itself. The game ships a simplified copy (`src/machines/sky-crane/rover.bin`, made by `tools/rover-model.mjs`: about 10,000 triangles, vertex colours in place of textures, so none of NASA's insignia or nameplates are carried over). Used under [NASA's media usage guidelines](https://www.nasa.gov/nasa-brand-center/images-and-media/): credit NASA/JPL-Caltech, no suggestion of NASA endorsement, no NASA insignia or logotype.
 - [Perseverance Touches Down on Mars (NASA)](https://science.nasa.gov/photojournal/perseverance-touches-down-on-mars-illustration/)
 - [Mars 2020 landing quick facts (NASA JPL)](https://www.jpl.nasa.gov/news/press_kits/mars_2020/landing/quick_facts)
 - [MSL descent stage (Spaceflight101)](https://spaceflight101.com/msl/?p=311)

@@ -30,6 +30,7 @@ import { NOMERGE } from '../core/params.js';
    (ray-marched, stops at scene depth, alpha carries heat for the haze); composite (haze + plume + flash)
    -> bloom -> ACES tone map.
    ===================================================================================== */
+export { preload3D } from './assets.js';
 export function init3D() {
   loadM3();
   createContext();

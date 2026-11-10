@@ -2,10 +2,53 @@
 import * as T from 'three';
 import { state } from '../../core/state.js';
 import { k3 } from '../../render3d/context.js';
-import { CAT, MT, V3, beam, box, canvasTex, cyl, lathe, rnd, std } from '../../render3d/kit.js';
+import { AS } from '../../render3d/assets.js';
+import { CAT, MT, V3, beam, box, canvasTex, cyl, isolated, lathe, rnd, std } from '../../render3d/kit.js';
 import { TH, thSet } from '../../render3d/lenses.js';
 import { SMK, axisPt } from '../../render3d/particles.js';
 import { MLE, sc, skyRy } from './machine.js';
+
+/* The rover from rover.bin (layout in tools/rover-model.mjs): two meshes, metal and painted, coloured per vertex and
+   shaded flat, so the file carries no normals and no textures. Returns null if the file is not what was expected. */
+function roverModel(buf) {
+  const dv = new DataView(buf);
+  if (buf.byteLength < 32 || dv.getUint32(0, true) !== 0x31525652) return null;
+  const n = dv.getUint32(4, true),
+    bb = new Float32Array(buf, 8, 6),
+    g = new T.Group(),
+    lin = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  let o = 32;
+  for (let k = 0; k < n; k++) {
+    const nv = dv.getUint32(o, true),
+      ni = dv.getUint32(o + 4, true),
+      metal = dv.getUint32(o + 8, true),
+      p = new Uint16Array(buf, o + 12, nv * 4),
+      c = new Uint8Array(buf, o + 12 + nv * 8, nv * 4),
+      pos = new Float32Array(nv * 3),
+      col = new Float32Array(nv * 3);
+    for (let i = 0; i < nv; i++)
+      for (let a = 0; a < 3; a++) {
+        pos[i * 3 + a] = bb[a] + (p[i * 4 + a] / 65535) * (bb[a + 3] - bb[a]);
+        col[i * 3 + a] = lin(c[i * 4 + a] / 255);
+      }
+    const geo = new T.BufferGeometry();
+    geo.setAttribute('position', new T.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new T.BufferAttribute(col, 3));
+    geo.setIndex(new T.BufferAttribute(new Uint32Array(buf.slice(o + 12 + nv * 12, o + 12 + nv * 12 + ni * 4)), 1));
+    const mat = std({
+        vertexColors: true,
+        flatShading: true,
+        metalness: metal ? 0.85 : 0.1,
+        roughness: metal ? 0.42 : 0.7,
+      }),
+      m = new T.Mesh(geo, mat);
+    CAT.set(mat, 'case');
+    m.castShadow = m.receiveShadow = true;
+    g.add(m);
+    o += 12 + nv * 12 + ni * 4;
+  }
+  return g;
+}
 
 /* ======================= MARS 2020 SKY CRANE: descent stage, bridles, Perseverance ======================= */
 export function buildSC() {
@@ -192,6 +235,15 @@ export function buildSC() {
   const hga = cyl(0.2, 0.2, 0.04, MT.white, 6);
   hga.position.set(-0.5, 1.36, -0.45);
   RV.add(hga);
+  /* NASA's own model of the rover takes the hand-built one's place when its file arrived (render3d/assets.js). The
+     hand-built one is still built first, so the random numbers drawn up to here are the same either way. */
+  if (AS.rover) {
+    const m = isolated(() => roverModel(AS.rover), 0x2020);
+    if (m) {
+      RV.clear();
+      RV.add(m);
+    }
+  }
   /* three nylon bridles and the umbilical */
   const cordM = std({ color: 0xe6e2d6, roughness: 0.8 }),
     cords = [];

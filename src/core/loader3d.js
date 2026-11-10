@@ -64,7 +64,9 @@ export function load3D() {
       import('three/addons/postprocessing/OutputPass.js'),
       import('../render3d/index.js'),
     ])
-      .then(([T, a, b, c, d, r]) => {
+      .then(async ([T, a, b, c, d, r]) => {
+        /* model files, before anything is built (a failed fetch is not an error: the built-in model stays) */
+        await r.preload3D();
         clearTimeout(to);
         ready3D(true, {
           T,
