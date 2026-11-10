@@ -132,10 +132,66 @@ export function createKit() {
     true,
     [14, 1],
   );
+  /* Seen from a few metres the ribs are finer than a pixel, and the automatic smaller copies of this map (mipmaps)
+     still held ribs two texels wide, which beat against the pixel grid as moire rings. So the smaller copies are
+     drawn here, weaker at each step and flat from the fourth on. The ribs fade into a plain sheen with distance, as
+     1,080 thin tubes do. The anisotropic filter is off for this map because it reaches for the sharp copy whenever
+     the bell is stretched along its length on screen, which is always. */
+  tubeN.mipmaps = [0.6, 0.35, 0.14, 0, 0, 0, 0, 0, 0].map((k, l) => {
+    const w = 256 >> l,
+      c = mk(w, Math.max(1, 8 >> l)),
+      x = c.getContext('2d'),
+      id = x.createImageData(w, c.height),
+      p = Math.max(1, 8 >> l);
+    for (let i = 0; i < w; i++) {
+      const nx = ((((i % p) + 0.5) / p) * 2 - 1) * 0.85 * k,
+        nz = Math.sqrt(1 - nx * nx);
+      for (let j = 0; j < c.height; j++) id.data.set([(nx * 0.5 + 0.5) * 255, 128, nz * 255, 255], (j * w + i) * 4);
+    }
+    x.putImageData(id, 0, 0);
+    return c;
+  });
+  tubeN.generateMipmaps = false;
+  tubeN.anisotropy = 1;
+  /* worn metal: roughness that varies in streaks and patches, so a highlight breaks up instead of sliding over the
+     part like a gradient. Drawn with its own random numbers (isolated) so nothing built later shifts. */
+  const worn = isolated(
+    () =>
+      canvasTex(
+        256,
+        256,
+        (x, w, h) => {
+          x.fillStyle = '#b4b4b4';
+          x.fillRect(0, 0, w, h);
+          for (let i = 0; i < 900; i++) {
+            const v = (130 + Math.random() * 110) | 0;
+            x.fillStyle = `rgba(${v},${v},${v},.22)`;
+            x.fillRect(0, Math.random() * h, w, 1 + Math.random() * 2);
+          }
+          for (let i = 0; i < 46; i++) {
+            const px = Math.random() * w,
+              py = Math.random() * h,
+              r = 12 + Math.random() * 46,
+              v = Math.random() < 0.6 ? 255 : 70;
+            for (const ox of [-w, 0, w])
+              for (const oy of [-h, 0, h]) {
+                const gd = x.createRadialGradient(px + ox, py + oy, 0, px + ox, py + oy, r);
+                gd.addColorStop(0, `rgba(${v},${v},${v},.2)`);
+                gd.addColorStop(1, `rgba(${v},${v},${v},0)`);
+                x.fillStyle = gd;
+                x.fillRect(px + ox - r, py + oy - r, 2 * r, 2 * r);
+              }
+          }
+        },
+        false,
+        [2, 3],
+      ),
+    0x70a6,
+  );
   MT = {
-    alu: std({ color: 0xb9bec6, metalness: 1, roughness: 0.22 }),
+    alu: std({ color: 0xb9bec6, metalness: 1, roughness: 0.3, roughnessMap: worn }),
     ti: std({ color: 0x9a9ea4, metalness: 0.8, roughness: 0.42, roughnessMap: brushed, side: T.DoubleSide }),
-    steel: std({ color: 0xaab0b6, metalness: 0.8, roughness: 0.34, side: T.DoubleSide }),
+    steel: std({ color: 0xaab0b6, metalness: 0.8, roughness: 0.46, roughnessMap: worn, side: T.DoubleSide }),
     dark: std({ color: 0x30333a, metalness: 0.7, roughness: 0.5 }),
     hot: std({
       color: 0xffffff,
@@ -148,7 +204,7 @@ export function createKit() {
       side: T.DoubleSide,
     }),
     flap: std({ color: 0x6a6d72, metalness: 0.7, roughness: 0.52, emissive: 0xff5a1a, emissiveIntensity: 0 }),
-    sr: std({ color: 0x262a31, metalness: 0.55, roughness: 0.42, side: T.DoubleSide }),
+    sr: std({ color: 0x262a31, metalness: 0.55, roughness: 0.56, roughnessMap: worn, side: T.DoubleSide }),
     srHot: std({
       color: 0x2a2622,
       metalness: 0.6,
