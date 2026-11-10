@@ -167,7 +167,12 @@ touch stay solid (the lever knob and its gate, keys that move when pressed).
 
 ## Visual overhaul (branch `visual/overhaul`, started 2026-11-10)
 
-A pass on the machines, their scenes and the experience, one machine or area per commit, measured before and after with `tools/measure.mjs`. Rules it works under: at Q0 and Q1 no machine may cost more GPU time or draw calls than before (extra detail goes into textures or Q2), the sim does not change (golden manifest identical), no outside models without Kingsley's yes. Done so far: environment light, geometry diet, bell moire and worn-metal roughness, the Harrier and its ship (the pilot). A new model that replaces an old one keeps the random-number count the old one drew (build it in `isolated()` and draw the difference, as `HR_PAD` in `machines/harrier/three.js` does), so nothing built after it shifts; count with a `Math.random` wrapper up to `R3done`.
+A pass on the machines, their scenes and the experience, one machine or area per commit, measured before and after with `tools/measure.mjs`. Rules it works under: at Q0 and Q1 no machine may cost more GPU time or draw calls than before (extra detail goes into textures or Q2), the sim does not change (golden manifest identical), no outside models without Kingsley's yes. Done so far: environment light, geometry diet, bell moire and worn-metal roughness, the Harrier and its ship (the pilot), the daily link's cover, lever names, the sky crane's hover start, and the view shift (below). Still to do: sky crane, Saturn V, Starship, then the other machines (SR-71 and NK-12: the bare engine goes on the CUTAWAY key, not a new view), camera easing, share loop. A new model that replaces an old one keeps the random-number count the old one drew (build it in `isolated()` and draw the difference, as `HR_PAD` in `machines/harrier/three.js` does), so nothing built after it shifts; count with a `Math.random` wrapper up to `R3done`.
+
+- **The cover knows a daily link.** `cover()` in `hud/controls.js` sets the START overlay's text: with `?daily` on a machine that has a mission it reads DAILY CHALLENGE #n, the mission's brief and START THE CHALLENGE; otherwise the machine's title and START ENGINE. Tests still click `#ov span`.
+- **Lever names.** A two-lever machine gives `lvn: [main lever, second lever]` (THROTTLE, NOZZLES / BRIDLES); the names stand over the tracks (`#trk::before`, from `data-n`).
+- **The machine sits where the HUD isn't.** `viewShift()` in `hud/gauges.js` finds the biggest area the HUD leaves free and `render3d/camera.js` shifts the camera's lens towards it (`setViewOffset`: the picture keeps its size and perspective; shaders that use world positions and depth are unaffected). The mission clip's crop moves with it. With the HUD hidden there is no shift.
+- **The sky crane's free play begins in a hover** (the throttle goes to the hover setting as the engines reach RUN); a `?daily` link and SEQUENCE are left alone.
 
 ## Non-negotiable conventions
 
@@ -234,8 +239,8 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
   DevTools open, so tests never see it. A page cannot catch it, so `recMime()` records WebM on desktop and asks for
   MP4 only where the pointer is coarse (phones). Whether Android Chrome is affected is not known.
 
-- The mission clip's crop is centred on the view, not on the machine, so after a sky-crane landing the rover sits at the
-  bottom edge of the clip.
+- The mission clip's crop follows the view shift but not the machine itself, so after a sky-crane landing the rover
+  still sits low in the clip.
 - The lever knob shows no number: the mock-up had a percentage on it, but the lever is not a percentage on every machine
   (kW on the Hall thruster, engines lit on the Saturn V).
 - The START overlay shows one loading state (LOADING 3D...), not a list of steps: fetching the 3D code is the only step
@@ -249,7 +254,7 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 - Propellers are drawn slower than real (anti-strobe), stated in INFO.
 - Starship's mount, tower and tank farm are blocky up close; its site is placed by eye (stated in INFO). Its scene is the heaviest (about 2x the software-rendered frame time of the others).
 - Real phones (Mali-G52 Android, `?fps`): Starship was CPU-bound (JavaScript 33 of 43 ms a frame). After the triangle cut, the static-parts pass and CPU-aware auto quality (2026-10-22), JavaScript is about 10.5 ms, but the GPU now limits it to about 28 fps with auto quality at Q0 0.7 resolution (549×212 in landscape, blurry). Next step when this is picked up again: time the frame's GPU passes on this PC's real GPU (timer queries) and cut the costliest per-pixel work at low quality; suspects are the big blended steam sprites and Starship's site lights. The F-TYPE runs at about 50 fps on the same phone.
-- Phones held sideways: the machine insets sit beside the dials, in the middle of the screen, so on a small phone they cover part of the machine (as on desktop).
+- Phones held sideways: the machine insets sit beside the dials, in the middle of the screen. The view shift moves the machine into the strip between the inset and the levers, where on a two-lever machine it shares the space with the lever labels.
 
 ## Roadmap (agreed)
 
