@@ -241,6 +241,7 @@ export default {
     ['HOVER, EMPTY', 0.172],
     ['MIN', 0, 'b'],
   ],
+  lvn: ['THROTTLE', 'BRIDLES'],
   lv2: [
     ['6.4 m OUT', 1, 't'],
     ['STOWED', 0, 'b'],

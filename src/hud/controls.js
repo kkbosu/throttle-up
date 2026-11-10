@@ -1,4 +1,5 @@
 // Controls: button labels (lab), button actions (act), lever labels, hint text, the START overlay.
+import { DAILY } from '../core/params.js';
 import { click, initAudio } from '../audio/audio.js';
 import { master } from '../core/engine.js';
 import { nextM, prevM, setMachine, views } from '../core/machine-switch.js';
@@ -6,7 +7,7 @@ import { state } from '../core/state.js';
 import { $, SL, SLN, SN, SNM, VN } from '../core/util.js';
 import { showInfo } from '../info/info.js';
 import { tq, trk } from '../input/lever.js';
-import { MS, misStart, misStop } from '../mission/mission.js';
+import { MS, dayNo, misStart, misStop } from '../mission/mission.js';
 import { startRec, stopRec } from '../recorder/recorder.js';
 import { SQ, seqStart, seqStop } from '../sequence/sequence.js';
 
@@ -152,7 +153,21 @@ export function buildLabels() {
     } else d.style.bottom = l[1] * 100 + '%';
     h2.appendChild(d);
   });
+  /* two levers: a name over each, so the hint's words (BRIDLES, NOZZLES) have something to point at */
+  const nm = (state.M.nozzle && state.M.lvn) || ['', ''];
+  $('trk').dataset.n = nm[0];
+  $('trk2').dataset.n = nm[1];
   state.TR = trk.getBoundingClientRect();
+}
+/* The cover. A ?daily link to a machine with a mission says so: the day's number, the task in one line, and a
+   button that names what it starts. Any other visit gets the machine's own title and START ENGINE. */
+export function cover() {
+  const m = DAILY && state.M.mission,
+    sb = document.querySelector('#ov span');
+  $('ov').classList.toggle('daily', !!m);
+  $('ovk').textContent = m ? 'DAILY CHALLENGE #' + dayNo() : 'THROTTLE UP';
+  $('ovs').textContent = m ? m.brief.replace(/^MISSION: /, '').replace(/^./, (c) => c.toUpperCase()) : state.M.sub;
+  if (!sb.classList.contains('wait')) sb.textContent = m ? 'START THE CHALLENGE' : 'START ENGINE';
 }
 /* load-time setup, called from main.js in v11's order */
 export function wireControls() {

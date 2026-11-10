@@ -891,6 +891,26 @@ button:disabled,
   font-size: 13px;
   letter-spacing: 0.04em;
 }
+/* a daily link's cover: the mission's blue on the line that names the challenge */
+#ov.daily #ovk {
+  color: var(--info);
+}
+/* the name over each lever on two-lever machines */
+#trk::before,
+#trk2::before {
+  content: attr(data-n);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 3px;
+  font: 600 var(--t-label) / 12px var(--f-label);
+  letter-spacing: 0.08em;
+  color: var(--fg);
+  text-shadow: var(--halo);
+  white-space: nowrap;
+  pointer-events: none;
+}
 #ov #ovk {
   font-size: var(--t-label);
   font-weight: 600;

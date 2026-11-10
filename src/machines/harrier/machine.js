@@ -204,6 +204,7 @@ export default {
     ['HOVER', 0.9],
     ['IDLE', 0, 'b'],
   ],
+  lvn: ['THROTTLE', 'NOZZLES'],
   lv2: [
     ['BRAKE 98.5°', 1, 't'],
     ['HOVER 90°', 0.914],

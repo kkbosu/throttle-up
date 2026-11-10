@@ -1,7 +1,7 @@
 // Machine selection: the chip buttons, which machines are available (3D-only ones need 3D), switching and resetting.
 import { state } from './state.js';
 import { $ } from './util.js';
-import { buildLabels, lab, say } from '../hud/controls.js';
+import { buildLabels, cover, lab, say } from '../hud/controls.js';
 import { GV, buildFaces } from '../hud/gauges.js';
 import { applyRaw } from '../input/lever.js';
 import { MC } from '../machines/index.js';
@@ -81,7 +81,7 @@ export function setMachine(i) {
   buildFaces();
   buildLabels();
   $('ovh').textContent = state.M.n;
-  $('ovs').textContent = state.M.sub;
+  cover();
   [...$('mch').children].forEach((b, j) => b.classList.toggle('on', j == i));
   const hud = $('hud');
   hud.classList.remove('swap');

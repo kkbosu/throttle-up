@@ -2,7 +2,7 @@
 import { chips, views } from './machine-switch.js';
 import { state } from './state.js';
 import { $, SN } from './util.js';
-import { lab } from '../hud/controls.js';
+import { cover, lab } from '../hud/controls.js';
 
 /* ---------- 3D renderer loader: Three.js is a separate chunk, fetched only here; anything goes wrong (no WebGL2, offline, error) and the 2D renderer above carries on ---------- */
 /* why: when 3D doesn't start, the reason (kept in state.no3D, shown by ?fps, logged) */
@@ -26,8 +26,8 @@ export function ready3D(ok, X, why) {
   }
   if (!state.G3) $('gl').style.display = 'none';
   const sb = document.querySelector('#ov span');
-  sb.textContent = 'START ENGINE';
   sb.classList.remove('wait');
+  cover();
   chips();
   lab();
 }
