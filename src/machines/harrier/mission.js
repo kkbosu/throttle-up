@@ -15,6 +15,9 @@ export default {
   tag: 'Harrier deck landing',
   /* no longer than the longest hint the layout checks try, so it fits a phone held sideways */
   brief: 'MISSION: drag sideways (or ←/→) to slide over the deck, land on spot 5.',
+  /* the trace on the result card and the clip: the same two quantities as the first two readouts */
+  traceLab: ['HEIGHT m', 'SINK m/s'],
+  trace: () => [Math.max(0, state.alt - HRD.h), HRD.td ? 0 : HRD.hv - state.vz],
   clip: () => [
     ['HEIGHT', Math.max(0, state.alt - HRD.h).toFixed(1) + ' m'],
     ['SINK', (HRD.td ? 0 : HRD.hv - state.vz).toFixed(2) + ' m/s'],

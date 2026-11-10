@@ -13,6 +13,9 @@ export default {
   /* for the share line */
   tag: 'Mars sky crane landing',
   /* the clip's readouts */
+  /* the trace on the result card and the clip: the same two quantities as the first two readouts */
+  traceLab: ['ROVER m', 'DESCENT m/s'],
+  trace: () => [Math.max(0, skyRy()), sc.td ? 0 : -state.vz],
   clip: () => [
     ['ROVER', Math.max(0, skyRy()).toFixed(1) + ' m'],
     ['DESCENT', (sc.td ? 0 : -state.vz).toFixed(2) + ' m/s'],

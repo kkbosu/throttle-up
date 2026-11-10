@@ -416,7 +416,8 @@ button:disabled,
   border-color: var(--warn-bg);
   color: var(--warn);
 }
-/* MISSION result card */
+/* MISSION result card: the thing people screenshot. A flight record: the verdict, the score as the largest thing on
+   it with its bar of ten, the try's own trace, the figures, and SHARE as the one solid button. */
 #mis {
   position: fixed;
   inset: 0;
@@ -431,32 +432,50 @@ button:disabled,
 }
 #misb {
   width: 100%;
-  max-width: 360px;
-  max-height: 92vh;
+  max-width: 380px;
+  max-height: 94vh;
   overflow: auto;
+  box-sizing: border-box;
   border: 1px solid var(--rule);
+  border-top: 2px solid var(--warn);
   border-radius: var(--r);
   background: var(--plate);
-  padding: 18px 22px;
-  font-size: 12px;
-  line-height: 1.6;
+  padding: 16px 20px 18px;
+  font-size: 13px;
+  line-height: 1.5;
   color: var(--fg);
-  text-align: center;
+  text-align: left;
+  animation: rise var(--d-panel) var(--ease);
+}
+#mis.ok #misb {
+  border-top-color: var(--go);
 }
 #misd {
-  margin: 0 0 6px;
-  font-size: 10px;
-  letter-spacing: 0.18em;
+  margin: 0 0 8px;
+  font-family: var(--f-num);
+  font-weight: 600;
+  font-size: var(--t-fine);
+  letter-spacing: 0.04em;
   color: var(--dim);
 }
 #misd:empty {
   display: none;
 }
+/* the verdict lands like a stamp; the score counts up just after it */
+@keyframes stamp {
+  from {
+    opacity: 0;
+    transform: scale(1.12);
+  }
+}
 #mish {
-  margin: 0 0 4px;
-  font-size: 15px;
-  letter-spacing: 0.22em;
+  margin: 0;
+  font-size: var(--t-glance);
+  line-height: 1.2;
+  letter-spacing: 0.12em;
   font-weight: 600;
+  transform-origin: 0 50%;
+  animation: stamp 0.16s var(--ease) 0.1s backwards;
 }
 #mish.ok {
   color: var(--go);
@@ -465,15 +484,80 @@ button:disabled,
   color: var(--warn);
 }
 #misr {
-  margin: 0 0 10px;
+  margin: 2px 0 10px;
   color: var(--dim);
+}
+@property --n {
+  syntax: '<integer>';
+  initial-value: 0;
+  inherits: true;
+}
+@keyframes count {
+  from {
+    --n: 0;
+  }
+}
+#miss {
+  margin: 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+  font-size: var(--t-label);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  color: var(--dim);
+}
+/* the number itself is in the page (and reads "769 POINTS"); what is seen is a counter over it that runs up to it */
+#miss b {
+  position: relative;
+  margin-right: 4px;
+  font-family: var(--f-num);
+  font-weight: 600;
+  font-size: var(--t-score);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: transparent;
+  animation: count 0.7s var(--ease) 0.25s backwards;
+}
+#miss b::after {
+  counter-reset: n var(--n);
+  content: counter(n);
+  position: absolute;
+  right: 0;
+  top: 0;
+  color: var(--hi);
+}
+#misbar {
+  display: flex;
+  gap: 3px;
+  margin: 8px 0 12px;
+}
+#misbar:empty {
+  display: none;
+}
+#misbar i {
+  flex: 1;
+  height: 6px;
+  background: var(--rule);
+}
+#misbar i.f {
+  background: var(--go);
+}
+/* (the page's two full-screen canvases are styled by the bare canvas rule; this one is an ordinary picture) */
+#misc {
+  position: static;
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 0 6px;
 }
 #mist div {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   border-top: 1px solid var(--rule);
   padding: 4px 0;
-  letter-spacing: 0.08em;
+  font-size: var(--t-label);
+  letter-spacing: 0.12em;
 }
 #mist span {
   color: var(--dim);
@@ -481,57 +565,86 @@ button:disabled,
 #mist b {
   font-family: var(--f-num);
   font-weight: 600;
-  color: var(--fg);
-}
-#miss {
-  margin: 10px 0 12px;
-  font-family: var(--f-num);
-  font-weight: 600;
-  font-size: 20px;
-  letter-spacing: 0.06em;
-  color: var(--fg);
+  font-size: 13px;
+  letter-spacing: 0;
+  color: var(--hi);
 }
 #mis .row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  justify-content: center;
+  margin-top: 12px;
 }
 #mis button {
-  padding: 9px 14px 8px;
+  padding: 9px 12px 8px;
 }
 #mis #misy {
-  border-color: var(--go-dim);
-  color: var(--go);
+  background: var(--go);
+  border-color: var(--go);
+  color: var(--go-ink);
+  font-weight: 600;
 }
 /* a portrait phone: the four buttons in one row */
 @media (max-width: 440px) {
   #mis button {
-    padding: 9px 8px;
+    padding: 9px 8px 8px;
     letter-spacing: 0.06em;
   }
 }
-/* a phone held sideways: the whole card fits without scrolling */
+/* a phone held sideways: two columns, so the whole card fits without scrolling */
 @media (max-height: 480px) {
   #mis {
-    padding: 8px;
+    padding: 6px;
   }
   #misb {
-    padding: 10px 18px;
-    line-height: 1.4;
+    max-width: 620px;
+    padding: 8px 16px 10px;
+    line-height: 1.35;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 18px;
+    grid-template-areas: 'd d' 'h c' 'r c' 's t' 'b t' 'k k';
+    align-items: start;
+  }
+  #misd {
+    grid-area: d;
+    margin-bottom: 4px;
+  }
+  #mish {
+    grid-area: h;
+    font-size: 19px;
   }
   #misr {
-    margin-bottom: 6px;
+    grid-area: r;
+    margin-bottom: 4px;
+  }
+  #miss {
+    grid-area: s;
+    padding-top: 4px;
+  }
+  #miss b {
+    font-size: 40px;
+  }
+  #misbar {
+    grid-area: b;
+    margin: 4px 0 0;
+  }
+  #misc {
+    grid-area: c;
+    margin: 0;
+  }
+  #mist {
+    grid-area: t;
   }
   #mist div {
     padding: 2px 0;
   }
-  #miss {
-    margin: 6px 0 8px;
-    font-size: 17px;
+  #mis .row {
+    grid-area: k;
+    margin-top: 8px;
   }
   #mis button {
-    padding: 7px 14px;
+    padding: 7px 14px 6px;
   }
 }
 #ib {
@@ -779,6 +892,17 @@ button:disabled,
   font-size: 12px;
   letter-spacing: 0;
   color: var(--live);
+}
+#clk:empty {
+  display: none;
+}
+/* on a narrow phone the title line has no room beside the lever labels: the clock takes a line of its own */
+@media (max-width: 560px) {
+  #clk {
+    display: block;
+    margin: 0;
+    line-height: 16px;
+  }
 }
 #clip {
   position: fixed;

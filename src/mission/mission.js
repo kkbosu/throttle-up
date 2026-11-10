@@ -8,6 +8,7 @@ import { $ } from '../core/util.js';
 import { lab, say } from '../hud/controls.js';
 import { SQ, seqStop } from '../sequence/sequence.js';
 import { clipDrop, clipLab, clipOpen, clipStart } from './clip.js';
+import { traceDraw, traceReset, traceSample } from './trace.js';
 
 /* on: running; res: the machine's verdict once it has one; tr: seconds since then; seed: this attempt's conditions;
    day: the daily challenge's number (0 for an attempt with a given seed); tries/best: today's attempts and best score;
@@ -70,6 +71,7 @@ export function misStart(seed) {
   MS.on = 1;
   MS.t = MS.tr = 0;
   MS.res = null;
+  traceReset();
   state.sl = 0;
   state.tsT = 1;
   m.start(rng(MS.seed));
@@ -102,6 +104,7 @@ export function misTick(dr) {
   MS.t += dr;
   if (!MS.res) {
     MS.res = m.judge();
+    traceSample(MS.t, m.trace, !!MS.res);
     if (MS.res && MS.res.ok && MS.day && MS.res.score > MS.best) {
       MS.best = MS.res.score;
       save(m.name);
@@ -157,7 +160,22 @@ function showCard(r) {
     d.lastChild.textContent = v;
     $('mist').appendChild(d);
   });
-  $('miss').textContent = r.ok ? r.score + ' POINTS' : 'NO SCORE';
+  /* the score: the number (counted up by the stylesheet) and a bar of ten, one square per 100 points as in the share
+     line; then the try's trace */
+  const sc = $('miss');
+  if (r.ok) {
+    sc.innerHTML = '<b></b> POINTS';
+    sc.firstChild.textContent = r.score;
+    sc.firstChild.style.setProperty('--n', r.score);
+  } else sc.textContent = 'NO SCORE';
+  const n = r.ok ? Math.round(r.score / 100) || 0 : -1;
+  $('misbar').innerHTML = n < 0 ? '' : '<i class="f"></i>'.repeat(n) + '<i></i>'.repeat(10 - n);
+  const cv = $('misc'),
+    c = cv.getContext('2d');
+  c.setTransform(2, 0, 0, 2, 0, 0);
+  c.clearRect(0, 0, 340, 95);
+  cv.style.display = state.M.mission.traceLab && traceDraw(c, 0, 0, 340, 95, state.M.mission.traceLab) ? '' : 'none';
+  $('mis').className = r.ok ? 'ok' : '';
   $('misy').style.display = MS.day ? '' : 'none';
   clipLab();
   $('mis').style.display = 'flex';
