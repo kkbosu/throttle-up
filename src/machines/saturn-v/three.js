@@ -3,7 +3,24 @@ import * as T from 'three';
 import { state } from '../../core/state.js';
 import { k3 } from '../../render3d/context.js';
 import { padTex } from '../../render3d/ground.js';
-import { CAT, MT, V3, beam, box, canvasTex, cyl, halfRing, lathe, pipe, ring, rnd, std } from '../../render3d/kit.js';
+import {
+  CAT,
+  MT,
+  V3,
+  beam,
+  box,
+  canvasTex,
+  cyl,
+  foil,
+  isolated,
+  lathe,
+  loft,
+  pipe,
+  ring,
+  rnd,
+  std,
+  taperRing,
+} from '../../render3d/kit.js';
 import { TH, thSet } from '../../render3d/lenses.js';
 import { SMK } from '../../render3d/particles.js';
 import { lightPole } from '../../render3d/props.js';
@@ -63,7 +80,8 @@ export function buildF1() {
       lathe(prof, MT.bell, 64),
       lathe(ext, extM, 64),
       lathe(cham, MT.steel, 48),
-      ring(1.62, 0.21, X1 + 0.06, MT.dark, 64),
+      /* the turbine exhaust manifold: fat where the turbine's duct joins it, tapering round the nozzle */
+      taperRing(1.6, 0.1, 0.27, X1 + 0.06, MT.dark, 48),
     );
     [3.9, 4.6, 5.25].forEach((x) =>
       full.add(ring(1.45 + ((x - X1) / (X2 - X1)) * 0.39 + 0.02, 0.025, x, MT.steel, 64)),
@@ -73,7 +91,7 @@ export function buildF1() {
         lathe(prof, bellHM, 48, true),
         lathe(ext, extM, 48, true),
         lathe(cham, MT.steel, 40, true),
-        halfRing(1.62, 0.21, X1 + 0.06, MT.dark, 40),
+        taperRing(1.6, 0.1, 0.27, X1 + 0.06, MT.dark, 24, Math.PI, Math.PI * 2),
       );
     }
     E.add(
@@ -164,21 +182,82 @@ export function buildF1() {
   stage.position.y = 21.9;
   stage.castShadow = stage.receiveShadow = true;
   G.add(stage);
-  const st2 = cyl(5, 5, 36, MT.white, 64);
-  st2.position.y = 45.9;
+  /* The stage stands 42 m (it was drawn 48 m). Above the thrust structure: fuel tank, the corrugated intertank,
+     the oxygen tank with USA down two sides, the forward skirt. Where the bands and markings sit is by eye. */
+  const st2M = isolated(
+    () =>
+      std({
+        roughness: 0.55,
+        metalness: 0.1,
+        map: canvasTex(1024, 1024, (x, w, h) => {
+          const Y = (m) => h - (m / 30) * h;
+          x.fillStyle = '#ebebe6';
+          x.fillRect(0, 0, w, h);
+          [
+            [9, 15.5],
+            [26.5, 30],
+          ].forEach(([a, b]) => {
+            x.fillStyle = '#e2e2dc';
+            x.fillRect(0, Y(b), w, Y(a) - Y(b));
+            x.fillStyle = '#141414';
+            for (let i = 0; i < 4; i++) x.fillRect((i * w) / 4, Y(b), w / 8, Y(a) - Y(b));
+            x.fillStyle = 'rgba(0,0,0,.16)';
+            for (let i = 0; i < 256; i++) x.fillRect(i * 4, Y(b), 1, Y(a) - Y(b));
+            x.fillStyle = 'rgba(0,0,0,.35)';
+            x.fillRect(0, Y(a) - 2, w, 2);
+            x.fillRect(0, Y(b), w, 2);
+          });
+          x.fillStyle = '#b3261f';
+          x.font = 'bold 74px sans-serif';
+          x.textAlign = 'center';
+          x.textBaseline = 'middle';
+          [3 / 16, 11 / 16].forEach((u) => [...'USA'].forEach((c, i) => x.fillText(c, u * w, Y(24) + i * 86)));
+          x.fillStyle = 'rgba(0,0,0,.05)';
+          for (let i = 0; i < 12; i++) x.fillRect(0, Y(2.5 * i) - 1, w, 2);
+        }),
+      }),
+    0x5a7c,
+  );
+  const st2 = cyl(5, 5, 30, st2M, 64);
+  st2.position.y = 42.9;
   G.add(st2);
   const base = cyl(5, 5, 0.4, MT.dark, 64);
   base.position.y = 15.7;
   G.add(base);
   const frM = std({ color: 0xe4e4df, roughness: 0.55, side: T.DoubleSide });
+  /* Over each outer engine: the big conical fairing that leans into the stage's side, and on it a swept fin with an
+     aerofoil section. Shapes by eye from photographs. Each is one mesh with its place baked into the geometry. */
   POS.slice(1).forEach(([x, z]) => {
-    const f = new T.Mesh(new T.CylinderGeometry(0.95, 1.3, 2.3, 32, 1, true), frM);
-    f.position.set(x * 1.24, 14.75, z * 1.24);
-    f.castShadow = true;
-    G.add(f);
     const a = Math.atan2(z, x),
-      fn = box(3.4, 4.6, 0.28, MT.white);
-    fn.position.set(Math.cos(a) * 6.6, 17.9, Math.sin(a) * 6.6);
+      f = loft(
+        [
+          [0, 0, 1.75, 1.9, 1.9, 1, 4.3],
+          [2.5, 0, 1.5, 1.62, 1.62, 1, 4.35],
+          [5, 0, 0.95, 1.02, 1.02, 1, 4.6],
+          [7.2, 0, 0.1, 0.12, 0.12, 1, 4.96],
+        ],
+        frM,
+        20,
+      );
+    /* the loft runs along X with its offset along Z: stand it up, then swing its offset out to the engine's side */
+    f.geometry.rotateZ(Math.PI / 2);
+    f.geometry.rotateY(Math.PI / 2);
+    f.geometry.translate(0, 14.3, 0);
+    f.geometry.computeVertexNormals();
+    f.rotation.y = -a;
+    G.add(f);
+    const fn = foil(
+      [
+        [0, 0, 0, 4.4, 0.1],
+        [1.9, 3.3, 0, 2.0, 0.07],
+      ],
+      frM,
+    );
+    /* chord down the stage with the leading edge on top, span outwards */
+    fn.geometry.rotateZ(-Math.PI / 2);
+    fn.geometry.rotateY(Math.PI / 2);
+    fn.geometry.translate(5.3, 19.2, 0);
+    fn.geometry.computeVertexNormals();
     fn.rotation.y = -a;
     G.add(fn);
   });

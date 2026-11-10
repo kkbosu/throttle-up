@@ -499,3 +499,38 @@ export function foil(secs, mat, fin = false) {
   w.castShadow = w.receiveShadow = true;
   return w;
 }
+
+/* A ring whose tube is fat on one side and thin on the other, like the F-1's turbine exhaust manifold: the tube's
+   radius is r1 at angle 0 (local +Y) and falls to r0 on the far side. a0..a1 is the part of the way round to build
+   (pi..2pi is the half a cutaway keeps). */
+export function taperRing(R, r0, r1, x, mat, seg = 48, a0 = 0, a1 = Math.PI * 2) {
+  const pos = [],
+    uv = [],
+    idx = [],
+    n = 8;
+  for (let i = 0; i <= seg; i++) {
+    const a = a0 + ((a1 - a0) * i) / seg,
+      rt = r0 + (r1 - r0) * (0.5 + 0.5 * Math.cos(a));
+    for (let j = 0; j <= n; j++) {
+      const b = (j / n) * Math.PI * 2,
+        rr = R + rt * Math.cos(b);
+      pos.push(rt * Math.sin(b), Math.cos(a) * rr, Math.sin(a) * rr);
+      uv.push(i / seg, j / n);
+    }
+  }
+  for (let i = 0; i < seg; i++)
+    for (let j = 0; j < n; j++) {
+      const a = i * (n + 1) + j,
+        b = a + n + 1;
+      idx.push(a, b, a + 1, a + 1, b, b + 1);
+    }
+  const g = new T.BufferGeometry();
+  g.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new T.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  const m = new T.Mesh(g, mat);
+  m.position.x = x;
+  m.castShadow = true;
+  return m;
+}

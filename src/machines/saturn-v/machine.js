@@ -126,6 +126,7 @@ export default {
       'Total thrust is five times the single-engine figure; the S-IC is quoted at up to 34,500 kN.',
       'The stand is a generic vertical test stand in the spirit of the S-IC static test stands, and the stage, engines and plume are simplified hand-built models.',
       'The sound is synthesized.',
+      'The stage’s engine fairings, fins and painted markings are drawn by eye from photographs, not from drawings.',
     ],
     cut: 'CUTAWAY removes half of one outer engine. Pale blue dots are liquid oxygen, amber is RP-1 kerosene, grey is turbine exhaust piped into the manifold and down the inside wall of the nozzle extension, and orange is the burning gas. Speeds are slowed enormously so you can follow them.',
     s: [
