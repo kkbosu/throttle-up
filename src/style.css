@@ -1,11 +1,72 @@
+/* Design tokens: the one definition of colour, type, spacing and timing. The DOM uses them as custom properties; the
+   canvas-drawn HUD (gauges, lamps, insets, captions, the clip frame) reads the same values once at boot through
+   core/tokens.js, so the two can't drift apart. Direction: mission-control telemetry. Flat panels, square corners,
+   one amber for live values, green and red for status only. */
+@import '@fontsource/ibm-plex-sans-condensed/latin-500.css';
+@import '@fontsource/ibm-plex-sans-condensed/latin-600.css';
+@import '@fontsource/ibm-plex-mono/latin-600.css';
+/* Fallbacks that size like the real faces, so nothing jumps when they swap in: Arial squeezed to Plex Sans
+   Condensed's width, and a 0.6 em monospace for Plex Mono. */
+@font-face {
+  font-family: 'TU Label Fallback';
+  src: local('Arial Narrow'), local('ArialNarrow');
+  size-adjust: 104%;
+}
+@font-face {
+  font-family: 'TU Label Fallback';
+  src: local('Arial'), local('Helvetica Neue'), local('Roboto');
+  size-adjust: 86%;
+}
 :root {
   color-scheme: dark;
+  /* surfaces */
   --bg: #05060a;
-  --fg: #d8dde6;
-  --dim: #6c7482;
+  --well: #0a0d12; /* recessed: lever track, video */
+  --plate: #0c1016; /* opaque panels: INFO, result card */
+  --panel: rgba(8, 11, 16, 0.84); /* panels over the 3D scene */
+  --scrim: rgba(5, 6, 10, 0.9);
+  --scrim-lo: rgba(5, 6, 10, 0.72);
+  --scrim-hi: rgba(5, 6, 10, 0.95);
+  --rule: #2b3442;
+  --rule-hi: #5c6878;
+  /* text */
+  --fg: #e6ebf2;
+  --hi: #f2f5f9;
+  --dim: #8f9bad;
+  --off: #5d6878;
   /* text drawn straight over the 3D scene: light, with a dark halo so it reads on bright sky and at night alike */
-  --over: #c3cad6;
+  --over: #e6ebf2;
   --halo: 0 0 3px rgba(4, 6, 10, 0.95), 0 1px 2px rgba(4, 6, 10, 0.9);
+  --halo-c: rgba(4, 6, 10, 0.88); /* the same halo as a canvas text outline */
+  /* signal colours: live values; go / warn status; mission */
+  --live: #ffb454;
+  --live-dim: #7a5a22;
+  --go: #39d98a;
+  --go-dim: #1c5a3c;
+  --go-ink: #06140c;
+  --warn: #ff5a4a;
+  --warn-bg: #b3261a;
+  --info: #7cc0ff;
+  --info-dim: #2e5a80;
+  /* type: labels in a condensed sans, every number in a monospace */
+  --f-label: 'IBM Plex Sans Condensed', 'TU Label Fallback', 'Arial Narrow', sans-serif;
+  --f-num: 'IBM Plex Mono', Menlo, 'Courier New', ui-monospace, monospace;
+  --t-fine: 10px; /* captions, units */
+  --t-label: 11px; /* keys, lever labels */
+  --t-rest: 14px; /* title, hint, body */
+  --t-read: 15px; /* INFO */
+  --t-glance: 22px; /* verdicts */
+  --t-score: 56px;
+  /* spacing, radius */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 18px;
+  --r: 2px;
+  /* timing: quick and damped, no overshoot */
+  --d-press: 120ms;
+  --d-panel: 180ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   box-sizing: border-box;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -19,7 +80,8 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-family: var(--f-label);
+  font-weight: 500;
   overflow: hidden;
   touch-action: none;
   user-select: none;
@@ -35,15 +97,19 @@ canvas {
   position: fixed;
   left: max(18px, env(safe-area-inset-left));
   top: calc(22px + env(safe-area-inset-top));
-  font-size: 12px;
+  font-size: var(--t-rest);
+  font-weight: 600;
   letter-spacing: 0.14em;
-  line-height: 1.9;
+  line-height: 22px;
   color: var(--over);
   text-shadow: var(--halo);
 }
 /* the hint wraps before the lever column: its tracks and labels sit on the right (130px, or 230px with two levers) */
 #hint {
   margin-top: 2px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 20px;
   transition: opacity 1.2s;
   max-width: calc(100vw - 188px);
 }
@@ -53,6 +119,7 @@ canvas {
   line-height: 1.5;
   letter-spacing: 0.04em;
   font-size: 11px;
+  font-weight: 500;
   max-width: calc(100vw - 188px);
 }
 #fps div {
@@ -80,8 +147,8 @@ body:has(#tq.two) #hint {
   bottom: 0;
   width: 12px;
   border-radius: 6px;
-  background: #0e1118;
-  border: 1px solid #2a3040;
+  background: var(--well);
+  border: 1px solid var(--rule);
   box-shadow: inset 0 0 8px #000;
 }
 #abz {
@@ -101,7 +168,7 @@ body:has(#tq.two) #hint {
   height: 34px;
   margin-bottom: -17px;
   border-radius: 7px;
-  border: 1px solid #6a7282;
+  border: 1px solid var(--rule-hi);
   background: repeating-linear-gradient(0deg, #3a404c 0 3px, #2a2f3a 3px 6px), #2a2f3a;
   box-shadow: 0 2px 6px #000;
 }
@@ -112,7 +179,7 @@ body:has(#tq.two) #hint {
   bottom: 0;
   width: 12px;
   border-radius: 6px;
-  background: #0e1118;
+  background: var(--well);
   border: 1px solid #2a3a44;
   box-shadow: inset 0 0 8px #000;
   display: none;
@@ -131,8 +198,8 @@ body:has(#tq.two) #hint {
 .lb2 {
   position: absolute;
   right: 132px;
-  font-size: 10px;
-  letter-spacing: 0.12em;
+  font-size: var(--t-label);
+  letter-spacing: 0.1em;
   color: #7f98a6;
   transform: translateY(50%);
   white-space: nowrap;
@@ -146,7 +213,7 @@ body:has(#tq.two) #hint {
   }
   .lb2 {
     right: 118px;
-    font-size: 9px;
+    font-size: var(--t-fine);
     letter-spacing: 0.04em;
   }
   #tq.two {
@@ -156,8 +223,8 @@ body:has(#tq.two) #hint {
 .lb {
   position: absolute;
   right: 50px;
-  font-size: 10px;
-  letter-spacing: 0.14em;
+  font-size: var(--t-label);
+  letter-spacing: 0.1em;
   color: var(--over);
   text-shadow: var(--halo);
   transform: translateY(50%);
@@ -176,19 +243,19 @@ body:has(#tq.two) #hint {
 #clip button,
 #mch button {
   font: inherit;
-  font-size: 11px;
-  letter-spacing: 0.12em;
+  font-size: 12px;
+  letter-spacing: 0.1em;
   color: var(--fg);
-  background: rgba(20, 24, 32, 0.8);
-  border: 1px solid #2a3040;
-  border-radius: 4px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
   padding: 9px 12px;
   cursor: pointer;
 }
 #ctl button:hover,
 #clip button:hover,
 #mch button:hover {
-  border-color: #6a7282;
+  border-color: var(--rule-hi);
 }
 #mch {
   display: flex;
@@ -198,9 +265,9 @@ body:has(#tq.two) #hint {
   margin: 4px 0;
 }
 #mch button.on {
-  border-color: #d8dde6;
-  color: #fff;
-  background: rgba(40, 48, 64, 0.9);
+  border-color: var(--fg);
+  color: var(--hi);
+  background: var(--rule);
 }
 /* previous / next machine: one joined control, [◀][MACHINE: X ▶], that wraps as a unit */
 #ctl .mpair {
@@ -218,20 +285,20 @@ body:has(#tq.two) #hint {
   border-bottom-left-radius: 0;
 }
 #ctl button[data-k='seq'] {
-  border-color: #7a5228;
-  color: #ffb36b;
+  border-color: var(--live-dim);
+  color: var(--live);
 }
 #ctl button[data-k='seq'].run {
-  border-color: #c0392b;
-  color: #ff8a7a;
+  border-color: var(--warn-bg);
+  color: var(--warn);
 }
 #ctl button[data-k='mis'] {
-  border-color: #2e5a80;
-  color: #8fc8ff;
+  border-color: var(--info-dim);
+  color: var(--info);
 }
 #ctl button[data-k='mis'].run {
-  border-color: #c0392b;
-  color: #ff8a7a;
+  border-color: var(--warn-bg);
+  color: var(--warn);
 }
 /* MISSION result card */
 #mis {
@@ -240,7 +307,7 @@ body:has(#tq.two) #hint {
   display: none;
   align-items: center;
   justify-content: center;
-  background: rgba(5, 6, 10, 0.72);
+  background: var(--scrim-lo);
   z-index: 6;
   touch-action: auto;
   padding: 16px;
@@ -251,13 +318,13 @@ body:has(#tq.two) #hint {
   max-width: 360px;
   max-height: 92vh;
   overflow: auto;
-  border: 1px solid #2a3040;
-  border-radius: 6px;
-  background: #0b0d12;
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  background: var(--plate);
   padding: 18px 22px;
   font-size: 12px;
   line-height: 1.6;
-  color: #c4cad6;
+  color: var(--fg);
   text-align: center;
 }
 #misd {
@@ -276,10 +343,10 @@ body:has(#tq.two) #hint {
   font-weight: 600;
 }
 #mish.ok {
-  color: #3fcf7a;
+  color: var(--go);
 }
 #mish.bad {
-  color: #ff8a5a;
+  color: var(--warn);
 }
 #misr {
   margin: 0 0 10px;
@@ -288,7 +355,7 @@ body:has(#tq.two) #hint {
 #mist div {
   display: flex;
   justify-content: space-between;
-  border-top: 1px solid #1c2130;
+  border-top: 1px solid var(--rule);
   padding: 4px 0;
   letter-spacing: 0.08em;
 }
@@ -296,13 +363,16 @@ body:has(#tq.two) #hint {
   color: var(--dim);
 }
 #mist b {
+  font-family: var(--f-num);
   font-weight: 600;
   color: var(--fg);
 }
 #miss {
   margin: 10px 0 12px;
+  font-family: var(--f-num);
+  font-weight: 600;
   font-size: 20px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.06em;
   color: var(--fg);
 }
 #mis .row {
@@ -316,18 +386,18 @@ body:has(#tq.two) #hint {
   font-size: 11px;
   letter-spacing: 0.12em;
   color: var(--fg);
-  background: rgba(20, 24, 32, 0.8);
-  border: 1px solid #2a3040;
-  border-radius: 4px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
   padding: 9px 14px;
   cursor: pointer;
 }
 #mis button:hover {
-  border-color: #6a7282;
+  border-color: var(--rule-hi);
 }
 #mis #misy {
-  border-color: #2e7a4e;
-  color: #7ee0a4;
+  border-color: var(--go-dim);
+  color: var(--go);
 }
 #mis button:disabled {
   opacity: 0.45;
@@ -367,9 +437,9 @@ body:has(#tq.two) #hint {
   display: inline-block;
   margin-left: 10px;
   padding: 0 8px;
-  border: 1px solid rgba(195, 202, 214, 0.5);
+  border: 1px solid var(--rule-hi);
   border-radius: 3px;
-  background: rgba(8, 10, 15, 0.45);
+  background: var(--panel);
   font-size: 10px;
   line-height: 18px;
   letter-spacing: 0.14em;
@@ -377,7 +447,7 @@ body:has(#tq.two) #hint {
   vertical-align: 1px;
 }
 #ib:hover {
-  border-color: #6a7282;
+  border-color: var(--rule-hi);
   color: var(--fg);
 }
 #inf {
@@ -386,7 +456,7 @@ body:has(#tq.two) #hint {
   display: none;
   align-items: center;
   justify-content: center;
-  background: rgba(5, 6, 10, 0.9);
+  background: var(--scrim);
   z-index: 8;
   touch-action: auto;
   padding: 16px;
@@ -397,13 +467,13 @@ body:has(#tq.two) #hint {
   width: 100%;
   max-height: 88vh;
   overflow: auto;
-  border: 1px solid #2a3040;
-  border-radius: 6px;
-  background: #0b0d12;
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  background: var(--plate);
   padding: 20px 24px;
   font-size: 12px;
   line-height: 1.7;
-  color: #c4cad6;
+  color: var(--fg);
   touch-action: pan-y;
   user-select: text;
   -webkit-user-select: text;
@@ -434,7 +504,7 @@ body:has(#tq.two) #hint {
   color: var(--dim);
 }
 #infb a {
-  color: #8fb4ff;
+  color: var(--info);
 }
 #infx {
   margin-top: 14px;
@@ -442,9 +512,9 @@ body:has(#tq.two) #hint {
   font-size: 11px;
   letter-spacing: 0.14em;
   color: var(--fg);
-  background: rgba(20, 24, 32, 0.8);
-  border: 1px solid #2a3040;
-  border-radius: 4px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
   padding: 9px 14px;
   cursor: pointer;
 }
@@ -458,17 +528,16 @@ body:has(#tq.two) #hint {
   }
   #hint {
     max-width: calc(100vw - 133px);
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    line-height: 1.6;
+    font-size: 13px;
+    line-height: 18px;
   }
   body:has(#tq.two) #hint {
     max-width: calc(100vw - 208px);
   }
   #ctl button {
     padding: 7px 10px;
-    font-size: 10px;
-    letter-spacing: 0.08em;
+    font-size: 11px;
+    letter-spacing: 0.06em;
   }
   #ctl button[data-k='machp'] {
     padding-left: 8px;
@@ -483,7 +552,7 @@ body:has(#tq.two) #hint {
   align-items: center;
   justify-content: center;
   gap: 14px;
-  background: rgba(5, 6, 10, 0.9);
+  background: var(--scrim);
   text-align: center;
   cursor: pointer;
   z-index: 5;
@@ -502,11 +571,11 @@ body:has(#tq.two) #hint {
   letter-spacing: 0.12em;
 }
 #ov span {
-  border: 1px solid #6a7282;
+  border: 1px solid var(--rule-hi);
   padding: 12px 26px;
   letter-spacing: 0.2em;
   font-size: 13px;
-  border-radius: 4px;
+  border-radius: var(--r);
 }
 #clip {
   position: fixed;
@@ -516,16 +585,16 @@ body:has(#tq.two) #hint {
   align-items: center;
   justify-content: center;
   gap: 14px;
-  background: rgba(5, 6, 10, 0.95);
+  background: var(--scrim-hi);
   z-index: 7;
   touch-action: auto;
 }
 #clip video {
   max-width: 92vw;
   max-height: 68vh;
-  border: 1px solid #2a3040;
-  border-radius: 4px;
-  background: #000;
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  background: var(--bg);
 }
 #clip .row {
   display: flex;
@@ -542,12 +611,12 @@ body:has(#tq.two) #hint {
 @media (max-height: 480px) {
   #hud {
     top: calc(10px + env(safe-area-inset-top));
-    line-height: 1.6;
+    line-height: 19px;
   }
   #hint {
     margin-top: 0;
-    font-size: 11px;
-    letter-spacing: 0.06em;
+    font-size: 13px;
+    line-height: 18px;
   }
   #tq {
     top: calc(20px + env(safe-area-inset-top));
@@ -559,8 +628,8 @@ body:has(#tq.two) #hint {
   }
   #ctl button {
     padding: 6px 9px;
-    font-size: 10px;
-    letter-spacing: 0.08em;
+    font-size: 11px;
+    letter-spacing: 0.06em;
   }
   #ctl button[data-k='machp'] {
     padding-left: 8px;

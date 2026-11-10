@@ -664,6 +664,13 @@ d(
     state.recLast = v;
   },
 );
+d(
+  'fontOK',
+  () => state.fontOK,
+  (v) => {
+    state.fontOK = v;
+  },
+);
 d('S', () => m0.S);
 d('VV', () => m0.VV);
 d('initAudio', () => m0.initAudio);

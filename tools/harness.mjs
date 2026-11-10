@@ -112,7 +112,8 @@ export async function load(page, base, sc) {
   let url = `${base}?${qs}`;
   if (sc.manual !== false) url += '&manual';
   await page.goto(url);
-  await page.waitForFunction('R3done', null, { timeout: 60_000 });
+  // also the HUD typefaces (fontOK): the canvas HUD draws nothing until they are in (v11 has no such flag)
+  await page.waitForFunction("R3done && (typeof fontOK === 'undefined' || fontOK)", null, { timeout: 60_000 });
   if (sc.ctx.isMobile) {
     // Mobile emulation fires one resize at a variable time (34 ms to 2 s after load). After 3D has started it
     // makes the renderer rebuild its targets (24 random draws for UUIDs). Wait for it, then send one more, so

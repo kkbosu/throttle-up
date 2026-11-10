@@ -64,7 +64,7 @@ export function fitDials() {
 
 /* ---------- cockpit gauges: N1, EGT, fuel flow, plus annunciator lamps (drawn on the canvas so clips include them) ---------- */
 export function gauges(dr) {
-  if (!state.FC.length) return;
+  if (!state.FC.length || !state.fontOK) return;
   {
     const hb = $('hud').getBoundingClientRect().bottom + 18;
     if (Math.abs(hb - state.gy) > 1) state.gy = hb;

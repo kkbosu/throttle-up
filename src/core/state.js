@@ -94,4 +94,5 @@ export const state = {
   clipURL: null,
   clipFile: null,
   recLast: -2,
+  fontOK: 0 /* the HUD typefaces have loaded (core/tokens.js fontsReady): the canvas HUD waits for it */,
 };
