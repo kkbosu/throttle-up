@@ -636,38 +636,110 @@ button:disabled,
     padding-right: 8px;
   }
 }
+/* START: the machine's data plate. The scene is dimmed right down behind it so the HUD doesn't show through the text. */
 #ov {
   position: fixed;
   inset: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  background: var(--scrim);
+  background: var(--scrim-hi);
   text-align: center;
   cursor: pointer;
   z-index: 5;
+  padding: 12px;
+  box-sizing: border-box;
   transition: opacity 0.6s;
 }
-#ov h1 {
-  margin: 0;
-  font-size: clamp(22px, 6vw, 40px);
-  letter-spacing: 0.3em;
-  font-weight: 500;
+#ovp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  box-sizing: border-box;
+  max-width: 100%;
+  max-height: 100%;
+  padding: 24px 28px 26px;
+  background: var(--plate);
+  border: 1px solid var(--rule);
+  border-top: 2px solid var(--live);
+  border-radius: var(--r);
 }
 #ov p {
   margin: 0;
   color: var(--dim);
   font-size: 13px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.04em;
 }
+#ov #ovk {
+  font-size: var(--t-label);
+  font-weight: 600;
+  letter-spacing: 0.3em;
+}
+#ov h1 {
+  margin: 0;
+  font-size: clamp(24px, 6vw, 40px);
+  line-height: 1.1;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+  color: var(--hi);
+}
+#ov #ovs {
+  font-size: var(--t-rest);
+  color: var(--fg);
+}
+/* the one thing to press: solid green once the engine can start, an outline while the 3D renderer is loading */
 #ov span {
-  border: 1px solid var(--rule-hi);
-  padding: 12px 26px;
-  letter-spacing: 0.2em;
-  font-size: 13px;
+  background: var(--go);
+  color: var(--go-ink);
+  border: 1px solid var(--go);
+  padding: 13px 30px 12px;
+  letter-spacing: 0.18em;
+  font-size: var(--t-rest);
+  font-weight: 600;
   border-radius: var(--r);
+  transition: transform var(--d-press) var(--ease);
+}
+#ov span:active {
+  transform: scale(0.97);
+}
+#ov span.wait {
+  background: none;
+  color: var(--dim);
+  border-color: var(--rule-hi);
+}
+/* phones: the machine chips in an even grid (three across upright; five, then four, held sideways) */
+@media (max-width: 560px) {
+  #ovp {
+    padding: 20px 14px 22px;
+  }
+  #mch {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+  }
+  #mch button {
+    padding: 10px 2px 9px;
+    letter-spacing: 0.04em;
+  }
+}
+/* a machine switch: the title and hint come up fresh */
+@keyframes swap {
+  from {
+    opacity: 0;
+  }
+}
+#hud.swap {
+  animation: swap 0.35s var(--ease);
+}
+/* the run clock, beside the title while a SEQUENCE or a MISSION is running */
+#clk {
+  margin-left: 10px;
+  font-family: var(--f-num);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0;
+  color: var(--live);
 }
 #clip {
   position: fixed;
@@ -728,13 +800,32 @@ button:disabled,
     padding-right: 8px;
   }
   #ov {
-    gap: 8px;
+    padding: 6px;
+  }
+  #ovp {
+    gap: 7px;
+    padding: 10px 16px 12px;
   }
   #ov h1 {
-    font-size: 26px;
+    font-size: 24px;
+  }
+  #ov #ovn {
+    display: none;
+  }
+  #ov span {
+    padding: 9px 26px 8px;
   }
   #mch {
     margin: 0;
+    gap: 5px;
+    display: grid;
+    grid-template-columns: repeat(5, auto);
+    width: auto;
+  }
+  #mch button {
+    padding: 6px 9px 5px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
   }
   /* the ?fps readout goes top right, beside the lever column, and the hint wraps short of it: as four more lines
      under the title it would leave the dials no room */

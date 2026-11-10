@@ -5,6 +5,7 @@ import { MAN, QP } from './params.js';
 import { state } from './state.js';
 import { $, cv } from './util.js';
 import { fpsDone, fpsTick } from '../hud/fps.js';
+import { clock } from '../hud/controls.js';
 import { gauges } from '../hud/gauges.js';
 import { keys } from '../input/lever.js';
 import { clipFrame } from '../mission/clip.js';
@@ -84,6 +85,7 @@ export function frame(t) {
   keys(dr);
   update(dt);
   misTick(dr);
+  clock(dr);
   audio();
   draw(dt, dr);
   gauges(dr);

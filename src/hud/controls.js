@@ -64,6 +64,20 @@ export function say(t) {
   $('hint').style.opacity = 1;
   state.hinted = true;
 }
+/* The run clock beside the title: T+mm:ss while a SEQUENCE or a MISSION runs (a mission's stops at the verdict).
+   The text is written only when the second changes. */
+const CK = { t: 0, on: 0, s: -1 };
+export function clock(dr) {
+  const on = SQ.on || MS.on ? 1 : 0;
+  if (MS.on) {
+    if (!MS.res) CK.t = MS.t;
+  } else if (on) CK.t = CK.on ? CK.t + dr : 0;
+  CK.on = on;
+  const s = on ? Math.floor(CK.t) : -1;
+  if (s === CK.s) return;
+  CK.s = s;
+  $('clk').textContent = on ? 'T+' + String((s / 60) | 0).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0') : '';
+}
 export function act(k) {
   if (k == 'view') {
     const v = views();

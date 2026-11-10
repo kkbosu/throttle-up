@@ -719,6 +719,7 @@ d('SHAKE', () => m6.SHAKE);
 d('lab', () => m7.lab);
 d('say', () => m7.say);
 d('act', () => m7.act);
+d('clock', () => m7.clock);
 d('buildLabels', () => m7.buildLabels);
 d('wireControls', () => m7.wireControls);
 d('A0', () => m8.A0);

@@ -25,7 +25,9 @@ export function ready3D(ok, X, why) {
     }
   }
   if (!state.G3) $('gl').style.display = 'none';
-  document.querySelector('#ov span').textContent = 'START ENGINE';
+  const sb = document.querySelector('#ov span');
+  sb.textContent = 'START ENGINE';
+  sb.classList.remove('wait');
   chips();
   lab();
 }
@@ -43,7 +45,9 @@ export function fail3D() {
 /* load-time setup, called from main.js in v11's order */
 export function load3D() {
   (function () {
-    document.querySelector('#ov span').textContent = 'LOADING 3D...';
+    const sb = document.querySelector('#ov span');
+    sb.textContent = 'LOADING 3D...';
+    sb.classList.add('wait');
     if (new URLSearchParams(location.search).get('r') === '2d') {
       ready3D(false, null, 'r=2d');
       return;

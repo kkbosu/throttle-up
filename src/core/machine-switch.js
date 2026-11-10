@@ -83,6 +83,10 @@ export function setMachine(i) {
   $('ovh').textContent = state.M.n;
   $('ovs').textContent = state.M.sub;
   [...$('mch').children].forEach((b, j) => b.classList.toggle('on', j == i));
+  const hud = $('hud');
+  hud.classList.remove('swap');
+  void hud.offsetWidth;
+  hud.classList.add('swap');
   if (state.ph) {
     state.ph = 1;
     state.st = 0;
