@@ -1,4 +1,5 @@
 // HALL thruster: the 3D side. Builder (the model), cfg (plume box, shadow area, camera presets, ground) and renderer hooks (plume, particles, thermal lens, flame light, tracers, EARTH view).
+import { k3 } from '../../render3d/context.js';
 import * as T from 'three';
 import { state } from '../../core/state.js';
 import { sm } from '../../core/util.js';
@@ -390,7 +391,9 @@ export default {
       const h = Math.max(100, (orb.r - RE) / 1e3),
         rho = Math.asin(6371 / (6371 + h)),
         pc = Math.acos(6371 / (6371 + h)) + 0.13 - 0.165 * sm(0.6, 0.3, rho),
-        hd = V3(-1, 0, 0.12).normalize();
+        /* stand on the craft's sunlit side: with the Sun low ahead (TERMINATOR) the usual place behind it showed only
+           its shadowed faces, a silhouette */
+        hd = V3(k3.curP.sun[0] > 0.5 ? 1 : -1, 0, 0.12).normalize();
       P0.copy(T0).addScaledVector(hd, Math.cos(pc) * 12);
       P0.y += Math.sin(pc) * 12;
     }

@@ -179,6 +179,7 @@ export default {
     ],
     a: [
       "The 240 mN maximum is NASA's figure for Psyche. Thrust, power and xenon flow in between are interpolated, and the specific impulse is assumed to fall at low power.",
+      'The spacecraft is Psyche-like, not Psyche: it is drawn with two thrusters where Psyche carries four, and its shape and solar arrays are simplified.',
       'The orbit panel is a what-if: this spacecraft raising its orbit from 400 km with one thruster at full power, ignoring drag and eclipses. Psyche itself left Earth on its rocket.',
       'Real cathode start-up takes much longer than the few seconds here.',
       'There is no sound in a vacuum. The faint hum is a stand-in for the power electronics.',
