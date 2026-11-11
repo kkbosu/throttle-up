@@ -11,7 +11,7 @@ import { createEarth } from './earth.js';
 import { createFlow } from './flow.js';
 import { createFrame, createFrame2, render } from './frame.js';
 import { createGround } from './ground.js';
-import { CAT, R, createKit, glc, isolated, scn } from './kit.js';
+import { CAT, R, V3, cam, createKit, glc, isolated, scn } from './kit.js';
 import { createLenses } from './lenses.js';
 import { createLights } from './lights.js';
 import { applyMachine, createMachine } from './machine.js';
@@ -74,6 +74,11 @@ export function init3D() {
     },
     snap: () => {
       k3.camSnap = true;
+    },
+    /* where a point in the world falls on the canvas, as parts of its width and height (the mission clip's crop) */
+    project: (x, y, z) => {
+      const p = V3(x, y, z).project(cam);
+      return [(p.x + 1) / 2, (1 - p.y) / 2];
     },
     R,
     merged: MERGED,

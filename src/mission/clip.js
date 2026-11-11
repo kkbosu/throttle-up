@@ -18,7 +18,7 @@ const VW = 720,
   PAD = 36;
 /* rec: the recorder; blob: the finished clip; after: seconds since the verdict (the clip runs on 3.5 s);
    cv: the canvas it records */
-export const CL = { rec: null, blob: null, after: 0, t: 0, cv: null };
+export const CL = { rec: null, blob: null, after: 0, t: 0, cv: null, cx: null, cy: null };
 let vc = null;
 
 /* a new attempt: drop the last clip and start recording (not while REC is already recording, and only in 3D) */
@@ -52,6 +52,7 @@ export function clipStart() {
     m.start(500);
     CL.rec = m;
     CL.after = CL.t = 0;
+    CL.cx = CL.cy = null;
   } catch (e) {
     CL.rec = null;
   }
@@ -109,8 +110,15 @@ export function clipFrame(dr) {
   }
   /* ...moved by the same shift the camera's lens has, so the crop stays on the machine */
   const vs = viewShift(),
-    cx = Math.max(0, Math.min(gw - sw, (gw - sw) / 2 + (vs[0] * gw) / state.W)),
-    cy = Math.max(0, Math.min(gh - sh, (gh - sh) / 2 + (vs[1] * gh) / state.H));
+    /* a mission can name the point to keep in the middle (aim); the crop glides to it */
+    ap = m.aim && state.G3.project ? state.G3.project(...m.aim()) : null,
+    tx = ap ? ap[0] * gw - sw / 2 : (gw - sw) / 2 + (vs[0] * gw) / state.W,
+    ty = ap ? ap[1] * gh - sh / 2 : (gh - sh) / 2 + (vs[1] * gh) / state.H,
+    kk = CL.cx == null ? 1 : 1 - Math.exp(-dr * 3);
+  CL.cx = (CL.cx ?? tx) + (tx - (CL.cx ?? tx)) * kk;
+  CL.cy = (CL.cy ?? ty) + (ty - (CL.cy ?? ty)) * kk;
+  const cx = Math.max(0, Math.min(gw - sw, CL.cx)),
+    cy = Math.max(0, Math.min(gh - sh, CL.cy));
   if (gw && gh) vc.drawImage(g, cx, cy, sw, sh, 0, TOP, VW, VID);
   vc.textBaseline = 'alphabetic';
   /* the title band: the name and the try on the left, the run clock on the right; its lower edge is amber while the

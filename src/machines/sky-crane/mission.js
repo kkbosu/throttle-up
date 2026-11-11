@@ -15,6 +15,8 @@ export default {
   /* the clip's readouts */
   /* the trace on the result card and the clip: the same two quantities as the first two readouts */
   traceLab: ['ROVER m', 'DESCENT m/s'],
+  /* the clip keeps the middle of the stage-and-rover pair in the middle of its frame */
+  aim: () => [0, (state.alt + Math.max(0, skyRy())) / 2 + 0.6, 0],
   trace: () => [Math.max(0, skyRy()), sc.td ? 0 : -state.vz],
   clip: () => [
     ['ROVER', Math.max(0, skyRy()).toFixed(1) + ' m'],
