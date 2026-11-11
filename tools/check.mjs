@@ -123,7 +123,10 @@ async function machineRun(page, rec, m, r2d) {
   const space = await c.ev('!!M.space');
   // 2D: SIDE, CLOSE-UP, REAR; 3D adds EARTH for the machine in orbit, DRONE for the others
   const list = !has3D ? [0, 1, 2] : space ? [0, 1, 2, 3] : [0, 1, 2, 4];
-  for (let i = 1; i <= list.length; i++) {
+  // a machine can open in a view of its own (v0: Starship opens in DRONE); the cycle starts from there
+  const v0 = (has3D && !V11 && (await c.ev('M.v0'))) || 0;
+  c.expect((await c.ev('view')) === v0, `opens in view ${v0}`);
+  for (let i = 1 + list.indexOf(v0), n = i + list.length; i < n; i++) {
     await c.act('view'); await c.frames(2);
     const [v, label, VNv] = await c.ev(() => [view, document.querySelector('#ctl [data-k=view]').textContent, VN[view]]);
     const want = list[i % list.length];

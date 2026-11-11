@@ -28,6 +28,11 @@ export function prevM(i) {
   } while (MC[j].need3d && !state.G3 && j !== i);
   return j;
 }
+/* the selected machine's opening view, once the renderer that has it is there */
+export function openView() {
+  const v = state.M.v0;
+  if (v && views().includes(v)) state.view = v;
+}
 export function chips() {
   [...$('mch').children].forEach((b, j) => (b.style.display = MC[j].need3d && !state.G3 ? 'none' : ''));
   if (state.M.need3d && !state.G3) setMachine(0);
@@ -36,8 +41,13 @@ export function chips() {
 export function setMachine(i) {
   seqStop(false);
   misStop();
+  /* a machine can name the view it opens in (v0: Starship's fire is in its trench, which only DRONE shows); leaving it,
+     that view goes back to SIDE unless the player chose it elsewhere */
+  const was = state.M && state.M.v0;
   state.mi = i;
   state.M = MC[i];
+  if (was && state.view == was) state.view = 0;
+  openView();
   state.GC = state.M.g;
   state.sl = 0;
   state.tsT = state.TS = 1;

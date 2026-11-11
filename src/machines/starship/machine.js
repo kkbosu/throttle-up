@@ -55,6 +55,8 @@ export default {
   n: 'STARSHIP SUPER HEAVY',
   btn: 'STARSHIP',
   need3d: 1,
+  /* opens in DRONE: from SIDE on a phone the trench fire is a glow behind the mount */
+  v0: 4,
   clu: (dt) => ssStep(dt),
   sub: 'Super Heavy, the 33-engine Starship booster, on the orbital launch mount at Starbase.',
   hint: 'Drag the lever up: centre 3, middle ring, all 33, then throttle.',

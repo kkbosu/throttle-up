@@ -1,8 +1,18 @@
 // 3D loader: fetches three and the renderer chunk; anything goes wrong (no WebGL2, offline, error) and the 2D renderer carries on.
-import { chips, views } from './machine-switch.js';
+import { chips, openView, views } from './machine-switch.js';
 import { state } from './state.js';
 import { $, SN } from './util.js';
 import { cover, lab } from '../hud/controls.js';
+import roverUrl from '../machines/sky-crane/rover.bin?url';
+
+/* a model file's bytes, or null after 8 s or on any failure (the machine then keeps its built-in model) */
+function bytes(url) {
+  const ac = new AbortController(),
+    to = setTimeout(() => ac.abort(), 8000);
+  return fetch(url, { signal: ac.signal })
+    .then((r) => (r.ok ? r.arrayBuffer() : null))
+    .finally(() => clearTimeout(to));
+}
 
 /* ---------- 3D renderer loader: Three.js is a separate chunk, fetched only here; anything goes wrong (no WebGL2, offline, error) and the 2D renderer above carries on ---------- */
 /* why: when 3D doesn't start, the reason (kept in state.no3D, shown by ?fps, logged) */
@@ -27,6 +37,8 @@ export function ready3D(ok, X, why) {
   if (!state.G3) $('gl').style.display = 'none';
   const sb = document.querySelector('#ov span');
   sb.classList.remove('wait');
+  /* 3D has arrived while the cover is still up: the machine's opening view can be used now */
+  if (state.G3 && !state.ph) openView();
   cover();
   chips();
   lab();
@@ -56,6 +68,9 @@ export function load3D() {
       if (!state.R3done) console.warn('3D: still loading after 20 s, using 2D');
       ready3D(false, null, 'load timeout');
     }, 20000);
+    /* the model files travel alongside the 3D code, not after it */
+    const files = { rover: bytes(roverUrl) };
+    files.rover.catch(() => {});
     Promise.all([
       import('three'),
       import('three/addons/postprocessing/EffectComposer.js'),
@@ -66,7 +81,7 @@ export function load3D() {
     ])
       .then(async ([T, a, b, c, d, r]) => {
         /* model files, before anything is built (a failed fetch is not an error: the built-in model stays) */
-        await r.preload3D();
+        await r.preload3D(files);
         clearTimeout(to);
         ready3D(true, {
           T,
