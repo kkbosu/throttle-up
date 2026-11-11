@@ -2,7 +2,7 @@
 // judges the result and shows its progress in its inset; this module runs it: the ◆ MISSION button, the daily
 // challenge (the same conditions for everyone on the same date), the result card and its share line.
 import { master } from '../core/engine.js';
-import { DAILY, dailyLink } from '../core/params.js';
+import { DAILY, M0, VS, dailyLink } from '../core/params.js';
 import { state } from '../core/state.js';
 import { $ } from '../core/util.js';
 import { lab, say } from '../hud/controls.js';
@@ -34,6 +34,22 @@ export function daySeed(name, n) {
   for (const ch of name + '#' + n) h = Math.imul(h ^ ch.charCodeAt(0), 0x01000193);
   return h >>> 0;
 }
+/* The result to beat, when this visit came from a friend's link (?vs) and this is the machine it was for. The day may
+   be an earlier one (or the sender's tomorrow, a time zone ahead): its conditions are flown either way. */
+export function vsOn() {
+  return VS && state.M.mission && state.mi === M0 && VS.day <= dayNo() + 1 ? VS : null;
+}
+/* how a try stands against the result to beat: [headline, detail, won] (null when there is nothing to beat) */
+export function vsLine(r = MS.res) {
+  const v = vsOn();
+  if (!v || !r || MS.day !== v.day) return null;
+  const d = r.ok ? r.score - v.score : -1;
+  return [
+    !r.ok ? 'THEIRS STANDS' : d > 0 ? 'YOU WIN BY ' + d : d < 0 ? -d + ' SHORT' : 'LEVEL',
+    'THEIRS ' + v.score,
+    d > 0,
+  ];
+}
 /* today's attempts and best score, per mission, kept in this browser only (storage can be missing or blocked) */
 function load(name, n) {
   try {
@@ -45,6 +61,8 @@ function load(name, n) {
   return { d: n, tries: 0, best: 0, go: 0 };
 }
 function save(name) {
+  /* a friend's challenge from another day is counted in this visit only, and leaves today's record alone */
+  if (MS.day !== dayNo()) return;
   try {
     localStorage.setItem('tu-daily-' + name, JSON.stringify({ d: MS.day, tries: MS.tries, best: MS.best }));
   } catch {
@@ -57,7 +75,13 @@ export function misStart(seed) {
   if (!m || !state.ph) return;
   if (SQ.on) seqStop(false);
   hideCard();
-  if (seed == null) {
+  const v = seed == null && vsOn();
+  if (v && v.day !== dayNo()) {
+    if (MS.day !== v.day) MS.tries = MS.best = 0;
+    MS.day = v.day;
+    MS.tries++;
+    MS.seed = daySeed(m.name, v.day);
+  } else if (seed == null) {
     const s = load(m.name, dayNo());
     MS.day = s.d;
     MS.tries = s.tries + 1;
@@ -83,6 +107,15 @@ export function misStart(seed) {
   say(m.brief);
   lab();
   clipStart();
+}
+/* the try as four numbers for a link: the day, the score and two of the mission's own (mission.vs) */
+function vsCode(r) {
+  const m = state.M.mission;
+  return r.ok && m.vs ? [MS.day, r.score, ...m.vs(r)].join('.') : '';
+}
+/* the link a try hands on: with a score, the challenge to beat it; without, the daily itself */
+export function shareLink(r = MS.res) {
+  return dailyLink(state.mi, state.M.slug, vsCode(r));
 }
 export function misStop() {
   if (!MS.on) return;
@@ -127,7 +160,7 @@ export function shareText(r = MS.res) {
     'Throttle Up daily #' + MS.day + ' · ' + m.tag,
     head + ' (try ' + MS.tries + ')',
     m.share(r),
-    dailyLink(state.mi, state.M.slug),
+    (vsCode(r) ? 'Beat it: ' : '') + shareLink(r),
   ].join('\n');
 }
 function share() {
@@ -135,7 +168,7 @@ function share() {
     b = $('misy'),
     done = (s) => {
       b.textContent = s;
-      setTimeout(() => (b.textContent = 'SHARE'), 2000);
+      setTimeout(() => (b.textContent = (vsLine() || [])[2] ? 'SEND IT BACK' : 'SHARE'), 2000);
     };
   /* a phone's share sheet where there is one, the clipboard elsewhere */
   if (navigator.share && matchMedia('(pointer: coarse)').matches) {
@@ -159,6 +192,11 @@ function showCard(r) {
   $('misd').textContent = MS.day
     ? 'DAILY #' + MS.day + ' · TRY ' + MS.tries + (MS.best ? ' · BEST ' + MS.best : '')
     : '';
+  /* against a friend's result: who won, and theirs */
+  const vl = vsLine(r);
+  $('misvs').textContent = vl ? vl[0] + ' · ' + vl[1] : '';
+  $('misvs').className = vl && vl[2] ? 'won' : '';
+  $('misy').textContent = vl && vl[2] ? 'SEND IT BACK' : 'SHARE';
   $('mish').textContent = r.title;
   $('mish').className = r.ok ? 'ok' : 'bad';
   $('misr').textContent = r.why;
@@ -200,5 +238,5 @@ export function wireMission() {
   /* the same conditions again: today's (a new try) or the given seed's */
   $('misa').onclick = () => misStart(MS.day ? null : MS.seed);
   $('misx').onclick = () => misStop();
-  MS.go = DAILY ? 1 : 0;
+  MS.go = DAILY || VS ? 1 : 0;
 }

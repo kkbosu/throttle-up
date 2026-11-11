@@ -528,6 +528,19 @@ button:disabled,
   letter-spacing: 0.04em;
   color: var(--dim);
 }
+/* the result against a friend's: blue, green when it beats theirs */
+#misvs {
+  margin: 0;
+  font: 600 var(--t-rest) / 1.2 var(--f-label);
+  letter-spacing: 0.1em;
+  color: var(--info);
+}
+#misvs.won {
+  color: var(--go);
+}
+#misvs:empty {
+  display: none;
+}
 #misd:empty {
   display: none;
 }
@@ -899,6 +912,16 @@ button:disabled,
 /* a daily link's cover: the mission's blue on the line that names the challenge */
 #ov.daily #ovk {
   color: var(--info);
+}
+/* a friend's link: their score is the biggest thing on the cover after the machine's name */
+#ov #ovv {
+  font: 600 22px/1.1 var(--f-num);
+  color: var(--info);
+  letter-spacing: 0.04em;
+}
+#ov #ovv:empty,
+#ov #ovw:empty {
+  display: none;
 }
 /* ...and no machine chips: someone sent this challenge, so the cover offers that and nothing else (the MACHINE key
    is still there once it starts) */

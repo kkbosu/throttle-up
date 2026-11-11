@@ -8,7 +8,7 @@ import { T, lbl, num } from '../core/tokens.js';
 import { $, mk } from '../core/util.js';
 import { viewShift } from '../hud/gauges.js';
 import { canRec, openClip, recMime } from '../recorder/recorder.js';
-import { MS } from './mission.js';
+import { MS, shareLink, vsLine, vsOn } from './mission.js';
 import { traceDraw } from './trace.js';
 
 /* the frame: a title band, the 3D view at 3:4, and a band for the readouts */
@@ -131,6 +131,7 @@ export function clipFrame(dr) {
   vc.fillRect(0, TOP + VID, VW, VH - TOP - VID);
   vc.fillStyle = edge;
   vc.fillRect(0, TOP - 4, VW, 4);
+  const vo = vsOn();
   txt('THROTTLE UP', PAD, 74, lbl(42, 600), T.hi, 'left', 6);
   txt(
     (MS.day ? 'DAILY #' + MS.day + ' · TRY ' + MS.tries : 'MISSION') + ' · ' + m.tag.toUpperCase(),
@@ -144,11 +145,13 @@ export function clipFrame(dr) {
   txt(
     'T+' + String((s / 60) | 0).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'),
     VW - PAD,
-    72,
+    vo && MS.day === vo.day ? 80 : 72,
     num(28),
     edge,
     'right',
   );
+  /* a friend's result to beat, over the clock, in the mission's blue */
+  if (vo && MS.day === vo.day) txt('TO BEAT ' + vo.score, VW - PAD, 38, lbl(20, 600), T.info, 'right', 2);
   /* the readouts, in columns */
   const rows = m.clip(),
     cw = VW / rows.length;
@@ -158,10 +161,13 @@ export function clipFrame(dr) {
   });
   /* where to play it: for a daily try, the link that opens today's challenge */
   txt(
-    (MS.day ? dailyLink(state.mi, state.M.slug) : PAGES || location.origin + location.pathname).replace(
-      /^https?:\/\/|\/$/g,
-      '',
-    ),
+    /* ...and once a try has scored, the link that challenges a friend to beat it */
+    (MS.day
+      ? r
+        ? shareLink(r)
+        : dailyLink(state.mi, state.M.slug)
+      : PAGES || location.origin + location.pathname
+    ).replace(/^https?:\/\/|\/$/g, ''),
     VW / 2,
     VH - 26,
     num(19),
@@ -184,6 +190,11 @@ export function clipFrame(dr) {
       txt(String(r.score), PAD + 26, y + 148, num(100), T.hi, 'left', -3);
       const w = vc.measureText(String(r.score)).width;
       txt('POINTS', PAD + 44 + w, y + 148, lbl(24), T.dim, 'left', 4);
+      const vl = vsLine(r);
+      if (vl) {
+        txt(vl[0], VW - PAD - 26, y + 112, lbl(26, 600), vl[2] ? T.go : T.info, 'right', 3);
+        txt(vl[1], VW - PAD - 26, y + 148, lbl(22), T.dim, 'right', 3);
+      } else if (MS.day) txt('CAN YOU BEAT IT?', VW - PAD - 26, y + 148, lbl(22, 600), T.info, 'right', 3);
     } else txt('NO SCORE', PAD + 30, y + 138, lbl(60, 600), T.dim, 'left', 4);
     vc.letterSpacing = '0px';
     if (tr) traceDraw(vc, PAD + 22, y + 166, VW - 2 * PAD - 44, tr, m.traceLab, 2);

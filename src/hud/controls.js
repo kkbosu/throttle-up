@@ -1,5 +1,5 @@
 // Controls: button labels (lab), button actions (act), lever labels, hint text, the START overlay.
-import { DAILY, MAN } from '../core/params.js';
+import { DAILY, MAN, VS } from '../core/params.js';
 import { click, initAudio } from '../audio/audio.js';
 import { master } from '../core/engine.js';
 import { nextM, prevM, setMachine, views } from '../core/machine-switch.js';
@@ -7,7 +7,7 @@ import { state } from '../core/state.js';
 import { $, SL, SLN, SN, SNM, VN } from '../core/util.js';
 import { showInfo } from '../info/info.js';
 import { tq, trk } from '../input/lever.js';
-import { MS, dayNo, misStart, misStop } from '../mission/mission.js';
+import { MS, dayNo, misStart, misStop, vsOn } from '../mission/mission.js';
 import { startRec, stopRec } from '../recorder/recorder.js';
 import { SQ, seqStart, seqStop } from '../sequence/sequence.js';
 
@@ -80,7 +80,7 @@ const TIPS = [
   ],
   TP = { t: 0, i: -1 };
 function tips(dr) {
-  if (MAN || DAILY || TP.i >= TIPS.length) return;
+  if (MAN || DAILY || VS || TP.i >= TIPS.length) return;
   if (TP.i < 0) {
     try {
       TP.i = +localStorage.getItem('tu-tips') || 0;
@@ -197,14 +197,19 @@ export function buildLabels() {
   state.TR = trk.getBoundingClientRect();
 }
 /* The cover. A ?daily link to a machine with a mission says so: the day's number, the task in one line, and a
-   button that names what it starts. Any other visit gets the machine's own title and START ENGINE. */
+   button that names what it starts. A friend's link (?vs) names their score as the thing to beat. Any other visit
+   gets the machine's own title and START ENGINE. */
 export function cover() {
-  const m = DAILY && state.M.mission,
+  const v = vsOn(),
+    m = (DAILY || v) && state.M.mission,
     sb = document.querySelector('#ov span');
   $('ov').classList.toggle('daily', !!m);
-  $('ovk').textContent = m ? 'DAILY CHALLENGE #' + dayNo() : 'THROTTLE UP';
+  $('ovk').textContent = v ? 'BEAT THIS LANDING · DAILY #' + v.day : m ? 'DAILY CHALLENGE #' + dayNo() : 'THROTTLE UP';
+  $('ovv').textContent = v ? v.score + ' POINTS TO BEAT' : '';
+  $('ovw').textContent = v && m.vsText ? 'Theirs: ' + m.vsText(v.a, v.b) + '. Same conditions for you.' : '';
   $('ovs').textContent = m ? m.brief.replace(/^MISSION: /, '').replace(/^./, (c) => c.toUpperCase()) : state.M.sub;
-  if (!sb.classList.contains('wait')) sb.textContent = m ? 'START THE CHALLENGE' : 'START ENGINE';
+  if (!sb.classList.contains('wait'))
+    sb.textContent = v ? 'TAKE THE CHALLENGE' : m ? 'START THE CHALLENGE' : 'START ENGINE';
 }
 /* load-time setup, called from main.js in v11's order */
 export function wireControls() {

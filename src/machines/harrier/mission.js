@@ -23,6 +23,9 @@ export default {
     ['SINK', (HRD.td ? 0 : HRD.hv - state.vz).toFixed(2) + ' m/s'],
     ['TO SPOT', dist().toFixed(1) + ' m'],
   ],
+  /* a friend's link carries the touchdown speed in cm/s and the distance from the spot in tenths of a metre */
+  vs: (r) => [Math.round(parseFloat(r.rows[0][1]) * 100), Math.round(parseFloat(r.rows[1][1]) * 10)],
+  vsText: (a, b) => 'touchdown ' + (a / 100).toFixed(2) + ' m/s, ' + (b / 10).toFixed(1) + ' m from the spot',
   share: (r) => 'Touchdown ' + r.rows[0][1] + ', ' + r.rows[1][1] + ' from the spot, ' + r.rows[2][1],
   start(r) {
     Object.assign(HRD, {

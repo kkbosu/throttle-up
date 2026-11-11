@@ -111,6 +111,8 @@ export async function load(page, base, sc) {
   if (sc.r2d) qs.set('r', '2d');
   if (sc.fps) qs.set('fps', '');
   if (sc.daily) qs.set('daily', '');
+  // sc.vs: a friend's result to beat; DAY-n stands for the daily number n days ago
+  if (sc.vs) qs.set('vs', sc.vs.replace(/DAY-(\d+)/, (_, n) => Math.round((Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()) - Date.UTC(2026, 9, 28)) / 864e5) + 1 - n));
   let url = `${base}${sc.path || ''}?${qs}`;
   if (sc.manual !== false) url += '&manual';
   await page.goto(url);

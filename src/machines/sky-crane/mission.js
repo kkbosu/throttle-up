@@ -24,6 +24,9 @@ export default {
     ['DESCENT', (sc.td ? 0 : -state.vz).toFixed(2) + ' m/s'],
     ['HYDRAZINE', Math.ceil(skyLeft()) + ' kg'],
   ],
+  /* a friend's link carries the touchdown speed in cm/s and the hydrazine left in kg */
+  vs: (r) => [Math.round(sc.tdv * 100), parseInt(r.rows[2][1])],
+  vsText: (a, b) => 'touchdown ' + (a / 100).toFixed(2) + ' m/s, ' + b + ' kg of hydrazine left',
   share: (r) => 'Touchdown ' + sc.tdv.toFixed(2) + ' m/s, ' + r.rows[2][1] + ' hydrazine left',
   /* no longer than the longest hint the layout checks try, so it fits a phone held sideways */
   brief: 'MISSION: all 6.4 m of bridle out, land at 0.75 m/s or less, save hydrazine.',

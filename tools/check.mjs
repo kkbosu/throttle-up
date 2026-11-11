@@ -368,7 +368,7 @@ const scenarios = [
       r = await fly('daily', 'good');
       const bar = r.res && r.res.ok ? '🟩'.repeat(Math.round(r.res.score / 100)) + '⬜'.repeat(10 - Math.round(r.res.score / 100)) : '';
       c.expect(r.title === 'ROVER DOWN SAFELY' && r.daily === `DAILY #${today} · TRY 3 · BEST ${r.res.score}`, `a good daily landing sets today's best (${r.title}, ${r.daily})`);
-      c.expect(r.text[1] === `${bar} ${r.res.score} points (try 3)` && /^Touchdown \d\.\d\d m\/s, \d+ of \d+ kg hydrazine left$/.test(r.text[2]), `a scored try's share line (${JSON.stringify(r.text)})`);
+      c.expect(r.text[1] === `${bar} ${r.res.score} points (try 3)` && /^Touchdown \d\.\d\d m\/s, \d+ of \d+ kg hydrazine left$/.test(r.text[2]) && new RegExp(`^Beat it: .*/sky-crane/daily/\\?vs=${today}\\.${r.res.score}\\.\\d+\\.\\d+$`).test(r.text[3]), `a scored try's share line ends in the link that challenges a friend (${JSON.stringify(r.text)})`);
       const kept = await c.ev(() => JSON.parse(localStorage.getItem('tu-daily-' + skyMission.name)));
       c.expect(kept.d === today && kept.tries === 3 && kept.best === r.res.score, `today's tries and best are kept in the browser (${JSON.stringify(kept)})`);
       await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
@@ -507,6 +507,32 @@ const scenarios = [
       await c.start();
       await c.frames(2);
       c.expect(await c.ev(() => MS.on === 1 && MS.day === dayNo()), 'START goes into the day’s challenge');
+    },
+  },
+  {
+    // "Beat this landing": a friend's link (?vs=day.score.a.b) names their score on the cover, flies that day's
+    // conditions, and the card says who won; another day's challenge leaves today's record alone
+    id: 'beat-m7', q: 0, m: 7, path: 'sky-crane/daily/', vs: 'DAY-3.700.72.30', ctx: SMALL, notV11: true,
+    async run(page, rec) {
+      const c = checker(page, rec);
+      const day = (await c.ev('dayNo()')) - 3;
+      const cov = await c.ev(() => ({ k: document.getElementById('ovk').textContent, v: document.getElementById('ovv').textContent, w: document.getElementById('ovw').textContent, b: document.querySelector('#ov span').textContent, chips: getComputedStyle(document.getElementById('mch')).display }));
+      c.expect(cov.k === `BEAT THIS LANDING · DAILY #${day}` && cov.v === '700 POINTS TO BEAT' && /0\.72 m\/s, 30 kg/.test(cov.w) && cov.b === 'TAKE THE CHALLENGE' && cov.chips === 'none', `the cover names the score to beat (${JSON.stringify(cov)})`);
+      await c.start();
+      await c.frames(2);
+      const st = await c.ev(() => ({ on: MS.on, day: MS.day, seed: MS.seed, want: daySeed(skyMission.name, dayNo() - 3), tries: MS.tries }));
+      c.expect(st.on === 1 && st.day === day && st.seed === st.want && st.tries === 1, `START flies the challenge's own day (${JSON.stringify(st)})`);
+      const fly = () => c.ev(() => {
+        raw2 = 1;
+        for (let t = 0; t < 200 && MS.tr >= 0; t += 0.05) { const ry = alt - RH - sc.bl; raw = Math.min(1, Math.max(0, skyHov() + 0.4 * ((ry > 4 ? -2.2 : -0.7) - vz))); applyRaw(); keys(0.05); update(0.05); misTick(0.05); }
+        return { res: MS.res, vs: document.getElementById('misvs').textContent, btn: document.getElementById('misy').textContent, text: shareText().split('\n'), kept: localStorage.getItem('tu-daily-' + skyMission.name) };
+      });
+      const r = await fly();
+      c.expect(r.res && r.res.ok && r.res.score > 700 && r.vs === `YOU WIN BY ${r.res.score - 700} · THEIRS 700` && r.btn === 'SEND IT BACK', `a better landing wins (${JSON.stringify([r.res && r.res.score, r.vs, r.btn])})`);
+      c.expect(r.text[0].startsWith(`Throttle Up daily #${day} `) && new RegExp(`\\?vs=${day}\\.${r.res.score}\\.`).test(r.text[3]), `the answer carries the same day and the new score (${JSON.stringify(r.text)})`);
+      c.expect(r.kept === null, `another day's challenge leaves today's record alone (${r.kept})`);
+      await page.click('#misa');
+      c.expect((await c.ev(() => [MS.day, MS.tries]))[1] === 2, 'FLY AGAIN is try 2 of the same challenge');
     },
   },
   {
