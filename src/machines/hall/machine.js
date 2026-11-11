@@ -66,6 +66,8 @@ export default {
   warpName: (i) => WN[i],
   n: 'HALL THRUSTER',
   btn: 'HALL',
+  /* its own page: /hall/ (tools/pages.mjs) */
+  slug: 'hall',
   need3d: 1,
   space: 1,
   warp: 1,

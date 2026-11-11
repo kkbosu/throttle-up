@@ -36,6 +36,8 @@ export default {
   reset: () => sicE.fill(0),
   n: 'SATURN V F-1',
   btn: 'SATURN V',
+  /* its own page: /saturn-v/ (tools/pages.mjs) */
+  slug: 'saturn-v',
   need3d: 1,
   clu: (dt) => sicStep(dt),
   sub: 'Five F-1 engines at the base of an S-IC first stage, on a static test stand.',

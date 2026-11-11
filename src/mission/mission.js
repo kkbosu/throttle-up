@@ -2,7 +2,7 @@
 // judges the result and shows its progress in its inset; this module runs it: the ◆ MISSION button, the daily
 // challenge (the same conditions for everyone on the same date), the result card and its share line.
 import { master } from '../core/engine.js';
-import { DAILY } from '../core/params.js';
+import { DAILY, dailyLink } from '../core/params.js';
 import { state } from '../core/state.js';
 import { $ } from '../core/util.js';
 import { lab, say } from '../hud/controls.js';
@@ -127,7 +127,7 @@ export function shareText(r = MS.res) {
     'Throttle Up daily #' + MS.day + ' · ' + m.tag,
     head + ' (try ' + MS.tries + ')',
     m.share(r),
-    location.origin + location.pathname + '?m=' + state.mi + '&daily',
+    dailyLink(state.mi, state.M.slug),
   ].join('\n');
 }
 function share() {

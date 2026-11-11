@@ -52,6 +52,8 @@ export default {
   },
   n: 'NK-12 TURBOPROP',
   btn: 'NK-12',
+  /* its own page: /nk-12/ (tools/pages.mjs) */
+  slug: 'nk-12',
   need3d: 1,
   clu: (dt) => tpStep(dt),
   inset: 1,

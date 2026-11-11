@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node tools/check-chunks.mjs",
+    "build": "vite build && node tools/check-chunks.mjs && node tools/pages.mjs",
     "preview": "vite preview",
     "check": "node tools/check.mjs",
     "lint": "eslint src",

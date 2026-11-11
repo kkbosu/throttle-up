@@ -45,6 +45,8 @@ export default {
   insetF: spikeInset,
   n: 'SR-71',
   btn: 'SR-71 J58',
+  /* its own page: /sr-71/ (tools/pages.mjs) */
+  slug: 'sr-71',
   sub: 'Blackbird turbojet. Watch the inlet spike and the green flash.',
   hint: 'Drag the lever up. It also sets the simulated Mach.',
   nxf: 0.34,

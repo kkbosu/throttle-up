@@ -26,6 +26,8 @@ export function auSS(s, V, pm) {
 export default {
   n: 'RS-25',
   btn: 'SHUTTLE',
+  /* its own page: /shuttle/ (tools/pages.mjs) */
+  slug: 'shuttle',
   sub: 'Space Shuttle main engine. Hydrogen and oxygen, no afterburner.',
   hint: 'Drag the lever up. 100% is rated power, 109% is full.',
   nxf: 0.46,

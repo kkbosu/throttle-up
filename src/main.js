@@ -1,9 +1,9 @@
-// Entry point: wires the page up in the order v11 did, picks the machine from ?m, starts the loop and the 3D loader.
+// Entry point: wires the page up in the order v11 did, picks the machine from ?m (or the page's own), starts the loop and the 3D loader.
 import { wireAudio } from './audio/audio.js';
 import { load3D } from './core/loader3d.js';
 import { frame } from './core/loop.js';
 import { setMachine, wireMachineSwitch } from './core/machine-switch.js';
-import { MAN } from './core/params.js';
+import { M0, MAN } from './core/params.js';
 import { fontsReady, wireTokens } from './core/tokens.js';
 import { wireControls } from './hud/controls.js';
 import { wireFps } from './hud/fps.js';
@@ -27,7 +27,7 @@ wireRecorder();
 wireMachineSwitch();
 wireMission();
 wireFps();
-setMachine(Math.min(MC.length - 1, Math.max(0, +new URLSearchParams(location.search).get('m') || 0)));
+setMachine(Math.min(MC.length - 1, Math.max(0, M0)));
 resize();
 /* the dial faces are cached drawings: draw them again once the typefaces are in */
 fontsReady(buildFaces);

@@ -1,0 +1,138 @@
+[
+ {
+  "slug": "f-type",
+  "m": 0,
+  "name": "AFTERBURNER",
+  "title": "Afterburner: push a jet engine through the detent",
+  "desc": "Run a generic afterburning jet engine on a test stand: push the lever through the detent, light the afterburner, slam it and stall the compressor. See it in cutaway, schlieren and thermal.",
+  "alt": "A jet engine on a test stand at night with its afterburner lit, from Throttle Up.",
+  "shot": {
+   "view": 1,
+   "scenes": 2,
+   "lever": 1,
+   "secs": 12
+  }
+ },
+ {
+  "slug": "sr-71",
+  "m": 1,
+  "name": "SR-71'S J58",
+  "title": "SR-71: run the Blackbird's J58 engine",
+  "desc": "Run the SR-71 Blackbird's J58 on a test stand: start it from the start cart, light the afterburner and watch the inlet spike move as the simulated Mach number climbs. Every fact cites its source.",
+  "alt": "The SR-71's J58 engine on a test stand at dusk with its afterburner lit, from Throttle Up.",
+  "shot": {
+   "view": 0,
+   "scenes": 0,
+   "lever": 1,
+   "secs": 20
+  }
+ },
+ {
+  "slug": "shuttle",
+  "m": 2,
+  "name": "RS-25",
+  "title": "RS-25: run the Space Shuttle main engine",
+  "desc": "Run the Space Shuttle's main engine on a vertical test stand: the hydrogen burn-off igniters, ignition, steam, and the throttle up to full power. Every fact cites its source.",
+  "alt": "An RS-25 rocket engine firing on a vertical test stand, from Throttle Up.",
+  "shot": {
+   "view": 0,
+   "scenes": 1,
+   "lever": 1,
+   "secs": 10
+  }
+ },
+ {
+  "slug": "hall",
+  "m": 3,
+  "name": "HALL THRUSTER",
+  "title": "Hall thruster: fly an electric engine in Earth orbit",
+  "desc": "Run a Hall thruster on a spacecraft in Earth orbit: faint thrust, a tiny flow of xenon, and a time warp to watch it raise the orbit. Every fact cites its source.",
+  "alt": "A spacecraft with a glowing Hall thruster above the Earth, from Throttle Up.",
+  "shot": {
+   "view": 0,
+   "scenes": 1,
+   "lever": 1,
+   "secs": 10
+  }
+ },
+ {
+  "slug": "saturn-v",
+  "m": 4,
+  "name": "SATURN V",
+  "title": "Saturn V: light all five F-1 engines",
+  "desc": "Light the five F-1 engines of the Saturn V's first stage on a static test stand, in the real 1-2-2 order. Every fact cites its source.",
+  "alt": "Five F-1 engines firing under a Saturn V first stage on a test stand at night, from Throttle Up.",
+  "shot": {
+   "view": 0,
+   "scenes": 2,
+   "lever": 1,
+   "secs": 14
+  }
+ },
+ {
+  "slug": "harrier",
+  "m": 5,
+  "name": "HARRIER",
+  "title": "Harrier: hover a jump jet on its own thrust",
+  "desc": "Hover a Harrier on its Pegasus engine: one lever for thrust, one for the nozzles. Then try the deck landing on a ship at sea, scored. Every fact cites its source.",
+  "alt": "A Harrier jump jet hovering above its pad, from Throttle Up.",
+  "shot": {
+   "view": 0,
+   "scenes": 1,
+   "lever": 1,
+   "secs": 9
+  },
+  "daily": {
+   "title": "Daily challenge: land the Harrier on the deck",
+   "desc": "Today's challenge, the same for everyone: slide a hovering Harrier over a ship's heaving deck and land on spot 5. Scored on softness, accuracy and time."
+  }
+ },
+ {
+  "slug": "nk-12",
+  "m": 6,
+  "name": "NK-12",
+  "title": "NK-12: run the turboprop with contra-rotating propellers",
+  "desc": "Run the Kuznetsov NK-12 turboprop on a test stand: two propellers turning opposite ways, speed held steady while the blades take a bigger bite. Every fact cites its source.",
+  "alt": "The NK-12 turboprop with its contra-rotating propellers on a test stand, from Throttle Up.",
+  "shot": {
+   "view": 0,
+   "scenes": 1,
+   "lever": 1,
+   "secs": 14
+  }
+ },
+ {
+  "slug": "sky-crane",
+  "m": 7,
+  "name": "MARS SKY CRANE",
+  "title": "Mars sky crane: lower Perseverance to the ground",
+  "desc": "Fly the Mars 2020 descent stage: hold the hover on eight engines, lower the Perseverance rover on its bridles and set it down in Jezero Crater. Every fact cites its source.",
+  "alt": "The Mars 2020 descent stage lowering the Perseverance rover on bridles above Mars, from Throttle Up.",
+  "shot": {
+   "view": 0,
+   "scenes": 1,
+   "lever": null,
+   "lever2": 1,
+   "secs": 8
+  },
+  "daily": {
+   "title": "Daily challenge: land the Mars sky crane",
+   "desc": "Today's challenge, the same for everyone: lower the Perseverance rover on its bridles and touch down at 0.75 m/s or less, on a limited load of hydrazine. Scored."
+  }
+ },
+ {
+  "slug": "starship",
+  "m": 8,
+  "name": "STARSHIP SUPER HEAVY",
+  "title": "Starship Super Heavy: light all 33 Raptors",
+  "desc": "Static-fire Starship's Super Heavy booster on its launch mount at Starbase: light the centre three, the middle ring and the outer ring, then throttle all 33 engines to full. Every fact cites its source.",
+  "alt": "Aerial view of a Starship Super Heavy booster firing on its launch mount at dusk, flame pouring out of the trench both ways, from Throttle Up.",
+  "shot": {
+   "view": 4,
+   "scenes": 0,
+   "lever": 1,
+   "secs": 14,
+   "t": 9
+  }
+ }
+]

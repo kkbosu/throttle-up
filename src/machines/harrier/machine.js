@@ -157,6 +157,8 @@ export default {
   insetF: hoverInset,
   n: 'HARRIER',
   btn: 'HARRIER',
+  /* its own page: /harrier/ (tools/pages.mjs) */
+  slug: 'harrier',
   need3d: 1,
   hover: 1,
   nozzle: 1,

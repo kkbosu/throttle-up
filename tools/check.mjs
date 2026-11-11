@@ -364,7 +364,7 @@ const scenarios = [
       r = await fly('daily', 'drop');
       c.expect(r.title === 'HARD LANDING' && r.score === 'NO SCORE', `falling fails as a hard landing (${r.title})`);
       c.expect(r.daily === `DAILY #${today} · TRY 2` && r.share, `the card shows the daily number and try (${r.daily})`);
-      c.expect(r.text.length === 4 && r.text[0] === `Throttle Up daily #${today} · Mars sky crane landing` && r.text[1] === '🟥 HARD LANDING (try 2)' && /^Touchdown \d+\.\d\d m\/s, \d+ of \d+ kg hydrazine left$/.test(r.text[2]) && /\?m=7&daily$/.test(r.text[3]), `a failed try's share line (${JSON.stringify(r.text)})`);
+      c.expect(r.text.length === 4 && r.text[0] === `Throttle Up daily #${today} · Mars sky crane landing` && r.text[1] === '🟥 HARD LANDING (try 2)' && /^Touchdown \d+\.\d\d m\/s, \d+ of \d+ kg hydrazine left$/.test(r.text[2]) && /\/sky-crane\/daily\/$/.test(r.text[3]), `a failed try's share line (${JSON.stringify(r.text)})`);
       r = await fly('daily', 'good');
       const bar = r.res && r.res.ok ? '🟩'.repeat(Math.round(r.res.score / 100)) + '⬜'.repeat(10 - Math.round(r.res.score / 100)) : '';
       c.expect(r.title === 'ROVER DOWN SAFELY' && r.daily === `DAILY #${today} · TRY 3 · BEST ${r.res.score}`, `a good daily landing sets today's best (${r.title}, ${r.daily})`);
@@ -492,6 +492,32 @@ const scenarios = [
       await c.frames(2); // the mission starts from the frame loop (misTick) once the engine runs
       const r = await c.ev(() => ({ on: MS.on, day: MS.day, today: dayNo(), tries: MS.tries, alt: SKY0.alt, hint: document.getElementById('hint').textContent }));
       c.expect(r.on === 1 && r.day === r.today && r.tries === 1 && r.alt !== 32 && /^MISSION:/.test(r.hint), `?daily starts today's challenge at START (${JSON.stringify(r)})`);
+    },
+  },
+  {
+    // a machine's own page (tools/pages.mjs): its own title and preview, the machine it names, and for a mission's
+    // daily page the challenge at START
+    id: 'page-sky-crane-daily', q: 0, m: 7, path: 'sky-crane/daily/', ctx: SMALL, notV11: true,
+    async run(page, rec) {
+      const c = checker(page, rec);
+      const p = await c.ev(() => ({ mi, g3: !!G3, title: document.title, img: document.querySelector('meta[property="og:image"]').content, url: document.querySelector('meta[property="og:url"]').content, k: document.getElementById('ovk').textContent }));
+      c.expect(p.mi === 7 && p.g3, `the page opens its machine in 3D (${JSON.stringify(p)})`);
+      c.expect(/^Daily challenge: land the Mars sky crane/.test(p.title) && /\/sky-crane\/daily\/$/.test(p.url) && /\/og\/sky-crane\.jpg$/.test(p.img), `its own title, address and picture (${JSON.stringify(p)})`);
+      c.expect(/^DAILY CHALLENGE #/.test(p.k), `the cover names the challenge (${p.k})`);
+      await c.start();
+      await c.frames(2);
+      c.expect(await c.ev(() => MS.on === 1 && MS.day === dayNo()), 'START goes into the day’s challenge');
+    },
+  },
+  {
+    id: 'page-starship', q: 0, m: 8, path: 'starship/', ctx: SMALL, notV11: true,
+    async run(page, rec) {
+      const c = checker(page, rec);
+      const p = await c.ev(() => ({ mi, g3: !!G3, title: document.title, k: document.getElementById('ovk').textContent }));
+      c.expect(p.mi === 8 && p.g3 && /^Starship Super Heavy/.test(p.title) && p.k === 'THROTTLE UP', `the page opens its machine (${JSON.stringify(p)})`);
+      await c.start();
+      await c.frames(2);
+      c.expect(await c.ev(() => ph >= 1), 'the engine starts');
     },
   },
   {

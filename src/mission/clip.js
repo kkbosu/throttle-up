@@ -2,6 +2,7 @@
 // view cropped around the machine, the title and daily number above, the mission's live readouts below, and the
 // verdict at the end. The result card's CLIP button opens it in the CLIP READY panel to save or share.
 import { S } from '../audio/audio.js';
+import { PAGES, dailyLink } from '../core/params.js';
 import { state } from '../core/state.js';
 import { T, lbl, num } from '../core/tokens.js';
 import { $, mk } from '../core/util.js';
@@ -157,7 +158,10 @@ export function clipFrame(dr) {
   });
   /* where to play it: for a daily try, the link that opens today's challenge */
   txt(
-    location.host + location.pathname.replace(/\/$/, '') + (MS.day ? '/?m=' + state.mi + '&daily' : ''),
+    (MS.day ? dailyLink(state.mi, state.M.slug) : PAGES || location.origin + location.pathname).replace(
+      /^https?:\/\/|\/$/g,
+      '',
+    ),
     VW / 2,
     VH - 26,
     num(19),

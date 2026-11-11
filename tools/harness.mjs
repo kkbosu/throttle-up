@@ -59,6 +59,7 @@ export async function serveBuild() {
   const vite = await import('vite');
   await vite.build({ root: ROOT, logLevel: 'warn' });
   await import('./check-chunks.mjs');   // exits on failure
+  await import('./pages.mjs');          // a page per machine, as `npm run build` writes them
   const server = await vite.preview({ root: ROOT, logLevel: 'warn', preview: { port: 4173 } });
   return { url: server.resolvedUrls.local[0], close: () => server.close() };
 }
@@ -105,11 +106,12 @@ export async function newPage(browser, sc, record) {
 export async function load(page, base, sc) {
   const qs = new URLSearchParams();
   if (sc.q != null) qs.set('q', sc.q);
-  qs.set('m', sc.m);
+  // sc.path: one of the machines' own pages (sky-crane/daily/), which names its machine itself
+  if (!sc.path) qs.set('m', sc.m);
   if (sc.r2d) qs.set('r', '2d');
   if (sc.fps) qs.set('fps', '');
   if (sc.daily) qs.set('daily', '');
-  let url = `${base}?${qs}`;
+  let url = `${base}${sc.path || ''}?${qs}`;
   if (sc.manual !== false) url += '&manual';
   await page.goto(url);
   // also the HUD typefaces (fontOK): the canvas HUD draws nothing until they are in (v11 has no such flag)

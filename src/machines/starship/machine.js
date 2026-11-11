@@ -54,6 +54,8 @@ export default {
   },
   n: 'STARSHIP SUPER HEAVY',
   btn: 'STARSHIP',
+  /* its own page: /starship/ (tools/pages.mjs) */
+  slug: 'starship',
   need3d: 1,
   /* opens in DRONE: from SIDE on a phone the trench fire is a glow behind the mount */
   v0: 4,

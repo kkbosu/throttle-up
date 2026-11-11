@@ -199,6 +199,8 @@ export default {
   seqPre: () => ({ cap: 'POWERED DESCENT', do: () => skyReset(), wait: 0.1 }),
   n: 'MARS SKY CRANE',
   btn: 'SKY CRANE',
+  /* its own page: /sky-crane/ (tools/pages.mjs) */
+  slug: 'sky-crane',
   need3d: 1,
   sky: 1,
   nozzle: 1,

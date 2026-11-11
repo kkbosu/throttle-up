@@ -4,9 +4,11 @@
 // - public/apple-touch-icon.png (180x180), rendered from public/favicon.svg.
 //
 //   node tools/site-images.mjs                    -> both (the preview uses the shot chosen in SHOT)
+//   node tools/site-images.mjs --pages            -> public/og/<slug>.jpg, the preview of each machine's own page
+//                                 [--only <regex>]   (tools/pages.json has each shot; tools/pages.mjs uses the files)
 //   node tools/site-images.mjs --try <dir>        -> every preview candidate in CANDIDATES, to compare
 //                                 [--only <regex>]   (just the candidates whose name matches)
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { FF, ROOT, launch, load, newPage, serveBuild } from './harness.mjs';
 
@@ -29,7 +31,12 @@ const TAGLINE = 'Throttle up real engines. Watch, hear and read what happens.';
 const args = process.argv.slice(2);
 const tryDir = args.includes('--try') ? args[args.indexOf('--try') + 1] : null;
 const only = args.includes('--only') ? new RegExp(args[args.indexOf('--only') + 1]) : null;
-const shots = tryDir ? Object.entries(CANDIDATES).filter(([n]) => !only || only.test(n)) : [[SHOT, CANDIDATES[SHOT]]];
+const pages = args.includes('--pages');
+const PAGES = pages ? JSON.parse(await readFile(resolve(ROOT, 'tools/pages.json'), 'utf8')) : [];
+// a page's picture carries the machine's name and what you do with it (its title, after the colon)
+const shots = pages
+  ? PAGES.filter((p) => !only || only.test(p.slug)).map((p) => [p.slug, { m: p.m, ...p.shot, name: p.name, tag: p.title.replace(/^[^:]*: /, '').replace(/^./, (c) => c.toUpperCase()) + '.' }])
+  : tryDir ? Object.entries(CANDIDATES).filter(([n]) => !only || only.test(n)) : [[SHOT, CANDIDATES[SHOT]]];
 const ctx = { viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 };
 
 const srv = await serveBuild();
@@ -41,24 +48,24 @@ for (const [name, s] of shots) {
   await page.click('#ov span');
   await page.waitForSelector('#ov', { state: 'hidden' });
   await page.evaluate(FF, 6);
-  await page.evaluate((l) => { raw = l; applyRaw(); }, s.lever);
+  await page.evaluate((s) => { if (s.lever != null) { raw = s.lever; applyRaw(); } if (s.lever2 != null) raw2 = s.lever2; }, s);
   await page.evaluate(FF, s.secs);
   await page.evaluate((s) => { if (s.t != null) simT = s.t; for (let i = 0; i < s.scenes; i++) act('scn'); view = s.view; lab(); step(1); G3.snap(); step(6); }, s);
   // hide the HUD, levers and buttons; add the title band
   await page.addStyleTag({ content: '#c,#tq,#ctl,#hud,#ov,#inf,#clip{display:none!important}' });
-  await page.evaluate((tag) => {
+  await page.evaluate(([tag, name]) => {
     const d = document.createElement('div');
     d.style.cssText = 'position:fixed;left:0;right:0;bottom:0;padding:22px 34px 26px;background:linear-gradient(transparent,rgba(5,6,10,.82) 45%);font-family:var(--f-label);color:var(--hi)';
-    d.innerHTML = `<div style="font-size:48px;letter-spacing:.16em;font-weight:600">THROTTLE UP</div><div style="font-size:22px;letter-spacing:.02em;font-weight:500;color:var(--fg);margin-top:4px">${tag}</div>`;
+    d.innerHTML = `${name ? '<div style="font-size:20px;letter-spacing:.3em;font-weight:600;color:var(--live);margin-bottom:6px">THROTTLE UP</div>' : ''}<div style="font-size:48px;letter-spacing:.16em;font-weight:600">${name || 'THROTTLE UP'}</div><div style="font-size:22px;letter-spacing:.02em;font-weight:500;color:var(--fg);margin-top:4px">${tag}</div>`;
     document.body.appendChild(d);
-  }, TAGLINE);
-  const out = tryDir ? resolve(tryDir, `${name}.png`) : resolve(ROOT, 'public/og.png');
+  }, [s.tag || TAGLINE, s.name]);
+  const out = pages ? resolve(ROOT, `public/og/${name}.jpg`) : tryDir ? resolve(tryDir, `${name}.png`) : resolve(ROOT, 'public/og.png');
   await mkdir(resolve(out, '..'), { recursive: true });
-  await page.screenshot({ path: out });
+  await page.screenshot(pages ? { path: out, type: 'jpeg', quality: 86 } : { path: out });
   console.log(`${name} -> ${out}${rec.errors.length ? `  (${rec.errors.length} page errors)` : ''}`);
   await c.close();
 }
-if (!tryDir) {
+if (!tryDir && !pages) {
   // touch icon from the favicon (the SVG scales cleanly; iOS wants a PNG)
   const { page, ctx: c } = await newPage(browser, { ctx: { viewport: { width: 180, height: 180 } } }, { errors: [] });
   await page.setContent(`<body style="margin:0;background:#0b0e14"><img src="${srv.url}favicon.svg" style="width:180px;height:180px;display:block"></body>`);

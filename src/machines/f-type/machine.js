@@ -41,6 +41,8 @@ export function auF(s, V, pm) {
 export default {
   n: 'AFTERBURNER',
   btn: 'F-TYPE',
+  /* its own page: /f-type/ (tools/pages.mjs) */
+  slug: 'f-type',
   sub: 'Afterburning turbofan. Push through the detent.',
   hint: 'Drag the lever up. Push through the detent.',
   nxf: 0.34,
