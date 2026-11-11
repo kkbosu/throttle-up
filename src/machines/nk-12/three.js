@@ -251,7 +251,10 @@ export function buildTP() {
       MT.hose,
     ),
   );
-  const pad = new T.Mesh(new T.PlaneGeometry(44, 40), std({ map: padTex(0.55, 0.5, 0.4, 0.22), roughness: 0.9 }));
+  const pad = new T.Mesh(
+    new T.PlaneGeometry(44, 40),
+    std({ map: padTex(0.55, 0.5, 0.4, 0.22, [0.41, 0.5, 0.09, 0.06, 0.5]), roughness: 0.9 }),
+  );
   pad.rotation.x = -Math.PI / 2;
   pad.position.set(4, 0.012, 0);
   pad.receiveShadow = true;

@@ -299,7 +299,10 @@ export function buildSR() {
       MT.steel,
     ),
   );
-  const pad = new T.Mesh(new T.PlaneGeometry(44, 26), std({ map: padTex(0.4, 0.5, 0.55, 0.22), roughness: 0.88 }));
+  const pad = new T.Mesh(
+    new T.PlaneGeometry(44, 26),
+    std({ map: padTex(0.4, 0.5, 0.55, 0.22, [0.42, 0.5, 0.115, 0.075, 0.5]), roughness: 0.88 }),
+  );
   pad.rotation.x = -Math.PI / 2;
   pad.position.set(3, 0.012, 0);
   pad.receiveShadow = true;

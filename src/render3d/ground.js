@@ -335,8 +335,10 @@ export function marsTex() {
   });
   return [t1, t2];
 }
-/* concrete pad: slabs, joints, oil, and the exhaust scorch fan downstream of the nozzle */
-export function padTex(scX, scY, len, wide) {
+/* concrete pad: slabs, joints, oil, and the exhaust scorch fan downstream of the nozzle. ao = [x, y, radius x,
+   radius y, strength] in parts of the texture: a soft dark patch under the machine and its stand, so they sit on the
+   pad at the quality level that draws no shadows (it costs nothing per frame; real shadows fall over it higher up) */
+export function padTex(scX, scY, len, wide, ao) {
   return canvasTex(1024, 1024, (x, w, h) => {
     x.fillStyle = '#8e8a82';
     x.fillRect(0, 0, w, h);
@@ -369,6 +371,18 @@ export function padTex(scX, scY, len, wide) {
       gd.addColorStop(1, 'rgba(20,18,14,0)');
       x.fillStyle = gd;
       x.fillRect(ox - r, oy - r, r * 2, r * 2);
+    }
+    if (ao) {
+      x.save();
+      x.translate(ao[0] * w, ao[1] * h);
+      x.scale(ao[2] * w, ao[3] * h);
+      const sg = x.createRadialGradient(0, 0, 0, 0, 0, 1);
+      sg.addColorStop(0, `rgba(12,11,10,${ao[4]})`);
+      sg.addColorStop(0.55, `rgba(12,11,10,${ao[4] * 0.6})`);
+      sg.addColorStop(1, 'rgba(12,11,10,0)');
+      x.fillStyle = sg;
+      x.fillRect(-1, -1, 2, 2);
+      x.restore();
     }
     x.save();
     x.translate(scX * w, scY * h);

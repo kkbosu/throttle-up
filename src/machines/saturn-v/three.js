@@ -286,7 +286,10 @@ export function buildF1() {
   S.add(box(26.2, 4, 6, MT.conc, 0, 25, -4.5), box(34, 10, 1.6, MT.conc, 13, 5, -9.6));
   for (let i = 0; i < 6; i++) beam(S, [-6 + i * 2.4, 0, -12], [-6 + i * 2.4, 62, -12], 0.5, stl);
   for (let y = 4; y < 62; y += 5) beam(S, [-6.5, y, -12], [6.5, y, -12], 0.35, stl);
-  const pad = new T.Mesh(new T.PlaneGeometry(70, 50), std({ map: padTex(0.45, 0.5, 0.45, 0.3), roughness: 0.9 }));
+  const pad = new T.Mesh(
+    new T.PlaneGeometry(70, 50),
+    std({ map: padTex(0.45, 0.5, 0.45, 0.3, [0.33, 0.47, 0.24, 0.26, 0.45]), roughness: 0.9 }),
+  );
   pad.rotation.x = -Math.PI / 2;
   pad.position.set(12, 0.012, 0);
   pad.receiveShadow = true;

@@ -277,7 +277,10 @@ export function buildSS() {
   rt.position.set(-9, 13, -10);
   S.add(rt);
   beam(S, [-9, 0, -10], [-9, 8, -10], 1.2, MT.gry);
-  const pad = new T.Mesh(new T.PlaneGeometry(40, 30), std({ map: padTex(0.45, 0.5, 0.4, 0.3), roughness: 0.9 }));
+  const pad = new T.Mesh(
+    new T.PlaneGeometry(40, 30),
+    std({ map: padTex(0.45, 0.5, 0.4, 0.3, [0.33, 0.5, 0.2, 0.3, 0.45]), roughness: 0.9 }),
+  );
   pad.rotation.x = -Math.PI / 2;
   pad.position.set(6, 0.012, 0);
   pad.receiveShadow = true;

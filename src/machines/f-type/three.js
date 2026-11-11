@@ -333,7 +333,10 @@ export function buildF() {
     MT.hose,
   );
   S.add(cab);
-  const pad = new T.Mesh(new T.PlaneGeometry(40, 26), std({ map: padTex(0.41, 0.5, 0.5, 0.18), roughness: 0.88 }));
+  const pad = new T.Mesh(
+    new T.PlaneGeometry(40, 26),
+    std({ map: padTex(0.41, 0.5, 0.5, 0.18, [0.385, 0.5, 0.1, 0.075, 0.5]), roughness: 0.88 }),
+  );
   pad.rotation.x = -Math.PI / 2;
   pad.position.set(4, 0.012, 0);
   pad.receiveShadow = true;
