@@ -192,6 +192,9 @@ export function applyScene(s) {
   skyU.uSun.value.set(...c.sun).normalize();
   skyU.uSunC.value.set(...(c.glow || c.sunC));
   skyU.uSunI.value = c.sunI;
+  /* a Mars sunset: the glow stays near the Sun and the dim, small disc doesn't flood the frame with bloom */
+  skyU.uBroad.value = c.glow ? 0.25 : 1;
+  skyU.uDisk.value = c.glow ? 0.3 : 1;
   skyU.uStars.value = c.stars;
   scn.fog = sp ? null : new T.FogExp2(col(...c.hor), c.fog);
   earthU.uSun.value.set(...c.sun).normalize();
