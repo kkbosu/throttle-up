@@ -42,6 +42,9 @@ export function waveWater() {
     false,
     [600, 600],
   );
+  /* Towards the horizon the anisotropic filter kept the fine waves sharp while they were already smaller than a
+     pixel, and their glints beat against the pixel grid as a moire lattice. Without it they blur out with distance. */
+  waves.anisotropy = 1;
   const wm = std({
     color: 0x1b4650,
     roughness: 0.16,
