@@ -900,6 +900,11 @@ button:disabled,
 #ov.daily #ovk {
   color: var(--info);
 }
+/* ...and no machine chips: someone sent this challenge, so the cover offers that and nothing else (the MACHINE key
+   is still there once it starts) */
+#ov.daily #mch {
+  display: none;
+}
 /* the name over each lever on two-lever machines */
 #trk::before,
 #trk2::before {
