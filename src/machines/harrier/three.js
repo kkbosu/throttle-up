@@ -147,6 +147,12 @@ export function buildHR() {
           paint,
         ),
       );
+      /* two pylons under each wing and a fence on top of it, outboard of the outrigger (places by eye) */
+      [
+        [1.75, -0.6, 0.38],
+        [3.4, -0.05, 0.18],
+      ].forEach(([pz, px, py]) => top.add(box(1.5, 0.3, 0.07, paint, px + 0.55, py - 0.14, sg * pz)));
+      top.add(box(1.1, 0.12, 0.03, paint, 0.75, 0.2, sg * 3.05));
       /* outrigger wheels at mid-span, in their fairings */
       const oz = sg * 2.6;
       top.add(
