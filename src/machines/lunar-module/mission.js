@@ -3,7 +3,7 @@
 // land inside the landing gear's limits, and keep as many seconds in hand as you can.
 import { state } from '../../core/state.js';
 import { applyRaw } from '../../input/lever.js';
-import { FT, GL, ISP, LM0, M0, lm, lmHov, lmLimit, lmMass, lmReset, lmSecs } from './machine.js';
+import { FT, GL, ISP, LM0, M0, lm, lmLimit, lmMass, lmRate, lmReset, lmSecs } from './machine.js';
 
 /* the real decision point: land or abort at least this many seconds before the tanks run dry (sourced in INFO) */
 const BINGO = 20,
@@ -34,8 +34,8 @@ export default {
   /* a phone has no arrow keys, so its brief doesn't name them */
   get brief() {
     return matchMedia('(pointer: coarse)').matches
-      ? 'MISSION: drag sideways to stop the drift, land softly before the bingo call.'
-      : 'MISSION: drag sideways (or ←/→) to stop the drift, land softly before bingo.';
+      ? 'MISSION: drag sideways to stop the drift, slow to 3 ft/s, land before bingo.'
+      : 'MISSION: drag sideways (or ←/→) to stop the drift, land at 3 ft/s before bingo.';
   },
   start(r) {
     /* 100 to 150 ft up, sinking at 5 to 9 ft/s and drifting at 5 to 8 ft/s: left alone it lands beyond the gear's
@@ -59,7 +59,10 @@ export default {
       state.fu = 1;
       state.lit = true;
     }
-    state.raw = lmHov();
+    /* (and the sim must not take this for a fresh engine start, which would put the switch at HOLD) */
+    lm.lp = 2;
+    /* the switch starts where the sink rate is: left alone, it keeps coming down that fast */
+    state.raw = lmRate(Math.round(LM0.vz / FT));
     applyRaw();
     lm.T = lmMass() * GL;
   },

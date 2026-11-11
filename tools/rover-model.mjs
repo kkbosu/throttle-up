@@ -1,7 +1,14 @@
-// One-off converter: NASA's Perseverance model -> the small file the game loads (src/machines/sky-crane/rover.bin).
+// One-off converter: a NASA model -> the small file the game loads. Written for the Perseverance rover
+// (src/machines/sky-crane/rover.bin); the Apollo lunar module (src/machines/lunar-module/lander.bin) goes through it too.
 //
-//   npm i --no-save @gltf-transform/core@4 @gltf-transform/functions@4 meshoptimizer sharp
+//   npm i --no-save @gltf-transform/core@4 @gltf-transform/functions@4 @gltf-transform/extensions@4 draco3dgltf meshoptimizer sharp
 //   node tools/rover-model.mjs <perseverance.glb> [triangles, default 15000]
+//   node tools/rover-model.mjs <Apollo Lunar Module.glb> 16000 --out src/machines/lunar-module/lander.bin --turn 0 --scale 1.4
+//
+// The lunar module: "Apollo Lunar Module", NASA 3D Resources,
+// https://github.com/nasa/NASA-3D-Resources/tree/master/3D%20Models/Apollo%20Lunar%20Module (GLB, 717 kB, Draco-compressed,
+// about 97,600 triangles, 12 materials). It is 5.0 units tall; --scale 1.4 makes it about 7 m, the lander's height on
+// its gear. --turn sets which way the front (ladder and hatch) faces: the game wants it towards +X.
 //
 // Source: "Mars Perseverance Rover, 3D Model", NASA/JPL-Caltech,
 // https://science.nasa.gov/resource/mars-perseverance-rover-3d-model/ (GLB, 11 MB, about 199,000 triangles, 48 materials,
@@ -19,6 +26,8 @@
 // group: uint32 vertices, uint32 indices, uint32 metal (0/1), uint16 positions x3 + 1 pad (0..65535 over the
 // box), uint8 colours x3 + 1 pad, uint32 indices.
 import { NodeIO } from '@gltf-transform/core';
+import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
+import draco3d from 'draco3dgltf';
 import { flatten, join, prune } from '@gltf-transform/functions';
 import { MeshoptSimplifier } from 'meshoptimizer';
 import sharp from 'sharp';
@@ -26,9 +35,17 @@ import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ROOT } from './harness.mjs';
 
-const [src, ratioArg] = process.argv.slice(2);
+const argv = process.argv.slice(2);
+const opt = (n, d) => (argv.includes('--' + n) ? argv.splice(argv.indexOf('--' + n), 2)[1] : d);
+const OUT = opt('out', 'src/machines/sky-crane/rover.bin'),
+  TURN_ARG = opt('turn', null),
+  SCALE = +opt('scale', 1);
+const [src, ratioArg] = argv;
 const BUDGET = +(ratioArg || 15000);
-const doc = await new NodeIO().read(src);
+const doc = await new NodeIO()
+  .registerExtensions(ALL_EXTENSIONS)
+  .registerDependencies({ 'draco3d.decoder': await draco3d.createDecoderModule() })
+  .read(src);
 const root = doc.getRoot();
 const lin = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
 const srgb = (c) => (c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055);
@@ -131,6 +148,25 @@ for (const node of root.listNodes()) {
     groups.push({ metal: prim.getMaterial() === M[1] ? 1 : 0, pos, nor, col, idx: Uint32Array.from(I.getArray()) });
   }
 }
+// one group per material kind, however many pieces the file came in (the lunar module's parts do not all join)
+for (const metal of [0, 1]) {
+  const gs = groups.filter((g) => g.metal === metal);
+  if (gs.length < 2) continue;
+  const n = gs.reduce((t, g) => t + g.pos.length, 0),
+    pos = new Float32Array(n),
+    col = new Float32Array(n),
+    idx = new Uint32Array(gs.reduce((t, g) => t + g.idx.length, 0));
+  let o = 0,
+    io = 0;
+  for (const g of gs) {
+    pos.set(g.pos, o);
+    col.set(g.col, o);
+    for (let i = 0; i < g.idx.length; i++) idx[io + i] = g.idx[i] + o / 3;
+    o += g.pos.length;
+    io += g.idx.length;
+  }
+  groups.splice(0, groups.length, ...groups.filter((g) => g.metal !== metal), { metal, pos, col, idx });
+}
 // weld by place (to the millimetre), averaging colour, then simplify each group to its share of the budget
 const total = groups.reduce((t, g) => t + g.idx.length / 3, 0);
 for (const g of groups) {
@@ -181,7 +217,7 @@ for (const g of groups) {
   Object.assign(g, { pos: Float32Array.from(np), col: Float32Array.from(nc), idx });
 }
 // The model's axes: +Y up, the nose towards +Z (checked by eye in a render). The game's rover: nose towards +X.
-const TURN = process.env.ROVER_TURN ? +process.env.ROVER_TURN : Math.PI / 2;
+const TURN = TURN_ARG != null ? +TURN_ARG : process.env.ROVER_TURN ? +process.env.ROVER_TURN : Math.PI / 2;
 const cs = Math.cos(TURN),
   sn = Math.sin(TURN);
 const mn = [1e9, 1e9, 1e9],
@@ -189,8 +225,9 @@ const mn = [1e9, 1e9, 1e9],
 for (const g of groups)
   for (const arr of [g.pos])
     for (let i = 0; i < arr.length; i += 3) {
-      const x = arr[i],
-        z = arr[i + 2];
+      const x = arr[i] * SCALE,
+        z = arr[i + 2] * SCALE;
+      arr[i + 1] *= SCALE;
       arr[i] = cs * x + sn * z;
       arr[i + 2] = -sn * x + cs * z;
       if (arr === g.pos)
@@ -220,7 +257,7 @@ for (const g of groups) {
   tris += g.idx.length / 3;
   console.log(`group ${g.metal ? 'metal' : 'paint'}: ${n} vertices, ${g.idx.length / 3} triangles`);
 }
-const out = resolve(ROOT, 'src/machines/sky-crane/rover.bin');
+const out = resolve(ROOT, OUT);
 writeFileSync(out, Buffer.concat(parts));
 console.log(
   `dropped ${dropped} see-through surfaces; ${tris} triangles; size m: ${mx.map((v, k) => (v - mn[k]).toFixed(2)).join(' x ')}; wrote ${out} (${Buffer.concat(parts).length} bytes)`,

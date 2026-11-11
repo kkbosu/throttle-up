@@ -3,13 +3,19 @@
 
 /* rover: NASA's Perseverance model, cut down by tools/rover-model.mjs (null if it could not be fetched: the sky crane
    then keeps its hand-built rover) */
-export const AS = { rover: null };
+/* lander: NASA's Apollo lunar module model, through the same tool (null: the hand-built lander stays) */
+export const AS = { rover: null, lander: null };
 
-/* files: { rover: a promise of the file's bytes (or null) } */
+/* files: { rover, lander }: each a promise of the file's bytes (or null) */
 export async function preload3D(files) {
   try {
     AS.rover = (await files.rover) || null;
   } catch (e) {
     console.warn('rover model not loaded, using the built-in one', e);
+  }
+  try {
+    AS.lander = (await files.lander) || null;
+  } catch (e) {
+    console.warn('lander model not loaded, using the built-in one', e);
   }
 }

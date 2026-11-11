@@ -3,6 +3,7 @@ import { chips, openView, views } from './machine-switch.js';
 import { state } from './state.js';
 import { $, SN } from './util.js';
 import { cover, lab } from '../hud/controls.js';
+import landerUrl from '../machines/lunar-module/lander.bin?url';
 import roverUrl from '../machines/sky-crane/rover.bin?url';
 
 /* a model file's bytes, or null after 8 s or on any failure (the machine then keeps its built-in model) */
@@ -69,8 +70,9 @@ export function load3D() {
       ready3D(false, null, 'load timeout');
     }, 20000);
     /* the model files travel alongside the 3D code, not after it */
-    const files = { rover: bytes(roverUrl) };
+    const files = { rover: bytes(roverUrl), lander: bytes(landerUrl) };
     files.rover.catch(() => {});
+    files.lander.catch(() => {});
     Promise.all([
       import('three'),
       import('three/addons/postprocessing/EffectComposer.js'),

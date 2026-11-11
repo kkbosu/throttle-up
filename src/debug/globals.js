@@ -871,6 +871,7 @@ d('lmMission', () => lmB.default);
 d('lm', () => lmA.lm);
 d('LM0', () => lmA.LM0);
 d('lmHov', () => lmA.lmHov);
+d('lmRate', () => lmA.lmRate);
 d('lmSecs', () => lmA.lmSecs);
 d('lmReset', () => lmA.lmReset);
 d('CL', () => m36.CL);

@@ -43,8 +43,10 @@ export const lm = {
   hard: 0,
   dry: 0,
   lp: 0,
-  vzT: null,
+  call: 0,
+  sec: 1e9,
 };
+const CALLS = [100, 75, 50, 40, 30, 20, 10];
 export function lmReset() {
   Object.assign(lm, {
     T: 0,
@@ -59,16 +61,23 @@ export function lmReset() {
     tdh: 0,
     hard: 0,
     dry: 0,
-    vzT: null,
   });
   state.alt = LM0.alt;
   state.vz = LM0.vz;
+  /* callouts already passed at this height, and the seconds calls not yet made */
+  lm.call = CALLS.findIndex((c) => c < LM0.alt / FT);
+  if (lm.call < 0) lm.call = CALLS.length;
+  lm.sec = 1e9;
 }
 /* what it weighs now (kg): Apollo 11's landing weight, which here stands for the craft with its tanks at the end of
    the run, plus whatever usable propellant is still on board in a mission */
 export const lmMass = () => M0 + (lm.prop < Infinity ? Math.max(0, lm.prop - lm.used) : 0),
-  /* the lever setting that holds a hover */
-  lmHov = () => Math.min(1, Math.max(0, ((lmMass() * GL) / TMAX - LO) / (HI - LO))),
+  /* The lever is the rate-of-descent switch: each notch is one foot per second, from 4 up (top) to 12 down (bottom).
+     lmRate: the lever setting for a rate in ft/s (up is positive); lmHov: the one that holds height; lmCmd: the
+     rate the lever is asking for now */
+  lmRate = (ft) => Math.min(1, Math.max(0, (ft + 12) / 16)),
+  lmHov = () => lmRate(0),
+  lmCmd = () => Math.round(-12 + 16 * state.L),
   lmLeft = () => Math.max(0, lm.prop - lm.used),
   /* seconds of hover left in the tanks: propellant over the flow a hover needs */
   lmSecs = () => lmLeft() / ((lmMass() * GL) / (ISP * 9.80665)),
@@ -86,13 +95,10 @@ export function lmStep(dt) {
     lm.lp = state.ph;
   }
   const run = state.ph == 2 && !lm.td;
-  /* SEQUENCE holds a sink rate with a simple loop, which is what the real computer did for the crew in the landing */
-  if (SQ.on && lm.vzT != null && run) {
-    state.raw = Math.min(1, Math.max(0, lmHov() + 0.6 * (lm.vzT - state.vz)));
-    applyRaw();
-  }
   lm.dry = lm.used >= lm.prop ? 1 : 0;
-  const want = run && !lm.dry ? (LO + (HI - LO) * state.L) * TMAX : 0;
+  /* the computer works the throttle to hold the sink rate asked for, inside the 10 to 60% it can use */
+  const acc = GL + 0.9 * (lmCmd() * FT - state.vz),
+    want = run && !lm.dry ? Math.min(HI, Math.max(LO, (lmMass() * acc) / Math.cos(lm.tilt) / TMAX)) * TMAX : 0;
   lm.T += (want - lm.T) * (1 - Math.exp(-dt / 0.25));
   state.N = lm.T / TMAX;
   if (run) lm.used += (lm.T / (ISP * 9.80665)) * dt;
@@ -108,6 +114,30 @@ export function lmStep(dt) {
   lm.vx += a * Math.sin(lm.tilt) * dt;
   state.alt += state.vz * dt;
   lm.x += lm.vx * dt;
+  /* callouts on the way down, in the style of the ones the lunar module pilot read out (height, sink rate, drift),
+     and mission control's count of the seconds left before the land-or-abort point */
+  const ft = state.alt / FT;
+  while (lm.call < CALLS.length && ft <= CALLS[lm.call]) {
+    const dn = -state.vz / FT,
+      dr = Math.abs(lm.vx) / FT;
+    if (ft > CALLS[lm.call] - 8 && state.alt > PROBE)
+      say(
+        CALLS[lm.call] +
+          ' feet, ' +
+          (dn >= 0 ? 'down ' : 'up ') +
+          Math.abs(dn).toFixed(1) +
+          (dr >= 0.5 ? ', ' + dr.toFixed(0) + ' sideways.' : '.'),
+      );
+    lm.call++;
+  }
+  if (lm.prop < Infinity) {
+    const left = lmSecs() - 20;
+    for (const n of [60, 30])
+      if (left <= n && lm.sec > n) {
+        if (left > n - 2) say(n + ' seconds.');
+        lm.sec = n;
+      }
+  }
   if (!lm.con && state.alt <= PROBE) {
     lm.con = 1;
     say('CONTACT LIGHT: a probe has touched the surface.');
@@ -169,7 +199,7 @@ export default {
      CLOSE-UP stays with it */
   camA: (v) => (v == 1 ? [state.alt, state.alt] : [state.alt * 0.5, state.alt * 0.5, 1 + state.alt / 24]),
   sub: 'The lunar module on its descent engine, the last hundred feet above the Moon.',
-  hint: 'Hovering. Ease the THROTTLE down to descend; land at about 3 ft/s.',
+  hint: 'Holding height. Each notch down is 1 ft/s more descent; land at about 3.',
   nxf: 0.4,
   ab: 0,
   stall: 0,
@@ -207,9 +237,11 @@ export default {
   ],
   gv: () => [(lm.T / TMAX) * 100, Math.max(0, state.alt) / FT, lm.td ? 0 : Math.max(0, -state.vz) / FT],
   lv: [
-    ['60%', 1, 't'],
-    ['HOVER', 0.31],
-    ['10%', 0, 'b'],
+    ['UP 4', 1, 't'],
+    ['HOLD', 0.75],
+    ['DOWN 3', 0.5625],
+    ['DOWN 8', 0.25],
+    ['DOWN 12 ft/s', 0, 'b'],
   ],
   lp: () => [
     ['CONTACT', !!lm.con, 'info'],
@@ -231,16 +263,14 @@ export default {
   sq: [
     {
       cap: '100 FEET: HOLDING THE HOVER',
-      do: () => {
-        lm.vzT = 0;
-      },
+      lever: 0.75,
+      dur: 0.3,
       wait: 2.5,
     },
     {
       cap: 'DOWN AT 3 FEET PER SECOND',
-      do: () => {
-        lm.vzT = -3 * FT;
-      },
+      lever: 0.5625,
+      dur: 0.6,
       until: () => state.alt < 12,
       max: 30,
     },
@@ -263,18 +293,20 @@ export default {
     ],
     a: [
       'Only the last hundred feet or so are simulated. The braking burn from orbit and the approach are not.',
-      'Here you work the throttle by hand. On the real landings the computer worked it and the commander set the sink rate; full manual throttle existed but was not normally used.',
+      'The lever stands in for the rate-of-descent switch: each notch asks for one foot per second more or less, and a simple loop works the throttle to hold it, as the computer did. The real switch was clicked up or down, not left in a position.',
       'The craft weighs what Apollo 11 did at landing, plus the propellant still on board in a mission. Propellant use is worked out from thrust with the specific impulse the engine was designed to meet, 305 seconds.',
       'MISSION is a game, not a re-enactment: the start height, sink rate, drift and propellant are drawn for the day, and the score is a game rule. The limits it judges by (the gear limits and the 20-second point) are the real ones.',
       'Sideways motion is in one direction only, by leaning up to 10°; the real craft could lean any way and further. Thrusters, the ground radar and the computer are not modelled.',
       'The engine stops by itself when the footpads touch. The crew stopped it by hand at the contact light, or just after touchdown as on Apollo 11. The probes simply vanish here; the real ones bent or broke.',
       'In free play the propellant never runs out.',
-      'The lander and the ground are simplified, hand-built approximations, and the dust is simple particles thrown out along the ground. The site is not a real place on the Moon, and the Earth is not drawn in the sky.',
+      'The lander and the ground are simplified, hand-built approximations, and the dust is simple particles thrown out along the ground. The site is not a real place on the Moon. The Earth is drawn about the size it looks from there, but placed by eye, lower than it stood over the Apollo sites.',
+      'The lander is NASA’s own 3D model of the lunar module, simplified to about 16,000 triangles with its textures reduced to flat colours, and scaled to stand about 7 m tall. CUTAWAY swaps it for a plainer hand-built one whose foil comes off. The contact probes are added by hand.',
+      'The callouts in the hint copy the style of the real ones (height, sink rate, drift), with this run’s numbers.',
       'The exhaust is drawn much brighter than it was: in a vacuum this engine’s plume spreads wide and is almost invisible.',
       'There is no sound on the Moon. The rumble is a stand-in for what came through the cabin structure; it is synthesized.',
     ],
     cut: [
-      'CUTAWAY takes the foil off the descent stage. Four tanks, two of fuel and two of oxidizer, sit round the engine. Blue dots trace the two liquids to the engine, where they burn; violet dots are the exhaust. Speeds are slowed enormously.',
+      'CUTAWAY swaps in a plainer model and takes the foil off its descent stage. Four tanks, two of fuel and two of oxidizer, sit round the engine. Blue dots trace the two liquids to the engine, where they burn; violet dots are the exhaust. Speeds are slowed enormously.',
       "SCHLIEREN shows density changes in a gas. It is drawn from the toy's exhaust model; on the Moon there is no air around the plume to disturb.",
       'THERMAL is false colour by temperature, like an infrared camera. The temperatures are illustrative.',
     ],
@@ -300,6 +332,10 @@ export default {
         'https://www.nasa.gov/wp-content/uploads/static/history/alsj/a11/a11.landing.html',
       ],
       ['Moon Fact Sheet (NASA NSSDC)', 'https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html'],
+      [
+        'Apollo Lunar Module, 3D model (NASA 3D Resources)',
+        'https://github.com/nasa/NASA-3D-Resources/tree/master/3D%20Models/Apollo%20Lunar%20Module',
+      ],
     ],
   },
 };

@@ -139,14 +139,14 @@
   "slug": "lunar-module",
   "m": 9,
   "name": "APOLLO LUNAR MODULE",
-  "title": "Apollo lunar module: land on the Moon by throttle",
-  "desc": "Fly the Apollo lunar module's last hundred feet: hold the hover on the descent engine, ease down at 3 feet per second and touch down inside the landing gear's limits. Every fact cites its source.",
+  "title": "Apollo lunar module: land on the Moon",
+  "desc": "Fly the Apollo lunar module's last hundred feet: set the sink rate a foot per second at a time, stop the drift and touch down inside the landing gear's limits before the bingo call. Every fact cites its source.",
   "alt": "The Apollo lunar module descending on its engine just above the Moon, dust streaking out along the ground, from Throttle Up.",
   "shot": {
    "view": 0,
    "scenes": 0,
-   "lever": 0.27,
-   "secs": 15
+   "lever": 0.375,
+   "secs": 11
   },
   "daily": {
    "title": "Daily challenge: land the Apollo lunar module",

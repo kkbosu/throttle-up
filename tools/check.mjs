@@ -509,7 +509,7 @@ const scenarios = [
         const p0 = { ...LM0, secs: lmSecs(), slide };
         if (how === 'dry') lm.used = lm.prop - 60;
         for (let t = 0; t < 200 && MS.tr >= 0; t += 0.05) {
-          if (how === 'good') { raw = Math.min(1, Math.max(0, lmHov() + 0.6 * ((alt > 8 ? -2 : -0.8) - vz))); applyRaw(); side = Math.max(-1, Math.min(1, -lm.vx * 0.8)); }
+          if (how === 'good') { raw = lmRate(alt > 10 ? -8 : alt > 4 ? -4 : -2); applyRaw(); side = Math.max(-1, Math.min(1, -lm.vx * 0.8)); }
           if (how === 'dry') { raw = lmHov(); applyRaw(); }
           keys(0.05); update(0.05); misTick(0.05);
         }

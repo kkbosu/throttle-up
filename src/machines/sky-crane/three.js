@@ -10,7 +10,7 @@ import { MLE, sc, skyRy } from './machine.js';
 
 /* The rover from rover.bin (layout in tools/rover-model.mjs): two meshes, metal and painted, coloured per vertex and
    shaded flat, so the file carries no normals and no textures. Returns null if the file is not what was expected. */
-function roverModel(buf) {
+export function roverModel(buf) {
   const dv = new DataView(buf);
   if (buf.byteLength < 32 || dv.getUint32(0, true) !== 0x31525652) return null;
   const n = dv.getUint32(4, true),

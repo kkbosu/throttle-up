@@ -2,14 +2,17 @@
 // renderer hooks (plume, dust, thermal lens, flame light, tracers).
 import * as T from 'three';
 import { state } from '../../core/state.js';
+import { AS } from '../../render3d/assets.js';
 import { k3 } from '../../render3d/context.js';
+import { roverModel } from '../sky-crane/three.js';
 import { CAT, MT, V3, beam, box, canvasTex, cyl, isolated, lathe, rnd, std } from '../../render3d/kit.js';
 import { TH, thSet } from '../../render3d/lenses.js';
 import { SMK, axisPt } from '../../render3d/particles.js';
 import { HI, PROBE, lm } from './machine.js';
 
 /* ---------- the ground: a flat mare plain round the landing spot, craters and low swells further out ---------- */
-/* craters as [x, z, radius]; none within about 50 m of the middle, so wherever the craft drifts the ground is level */
+/* craters as [x, z, radius]. Big ones stand well off; small ones come close, but none touches the strip the craft
+   can drift along (z near 0), so wherever it comes down the ground is level */
 function craters() {
   const L = [];
   for (let i = 0; i < 70; i++) {
@@ -17,6 +20,14 @@ function craters() {
       r = 3 + Math.pow(Math.random(), 2.2) * 55,
       d = 52 + r * 1.5 + Math.pow(Math.random(), 1.3) * 520;
     L.push([Math.cos(a) * d, Math.sin(a) * d, r]);
+  }
+  for (let i = 0; i < 60; i++) {
+    const a = Math.random() * 6.283,
+      r = 1.5 + Math.pow(Math.random(), 2) * 8,
+      d = 12 + Math.random() * 75,
+      x = Math.cos(a) * d,
+      z = Math.sin(a) * d;
+    if (Math.abs(z) > 7 + r * 1.9) L.push([x, z, r]);
   }
   return L;
 }
@@ -28,9 +39,41 @@ function height(x, z, L) {
     Math.min(1, Math.max(0, (d0 - 60) / 240));
   for (const [cx, cz, r] of L) {
     const d = Math.hypot(x - cx, z - cz) / r;
-    if (d < 2.2) y += d < 1 ? -r * 0.17 * (1 - d * d) + r * 0.035 : r * 0.035 * Math.exp(-Math.pow((d - 1) / 0.45, 2));
+    /* a bowl about a fifth as deep as it is wide, a raised rim, and a blanket of thrown-out soil that dies away */
+    if (d < 2.4) y += d < 1 ? -r * 0.36 * (1 - d * d) + r * 0.06 : r * 0.06 * Math.exp(-Math.pow((d - 1) / 0.42, 2));
   }
   return y;
+}
+/* The Earth as it looks from the Moon: a blue and white disc about 1.9 degrees across (its 12,742 km at 384,400 km),
+   lit by the same Sun. It hangs in one place in the lunar sky; this one is placed by eye. */
+const EARTH = [-0.62, 0.2, -0.76];
+function buildEarth() {
+  const D = 7000,
+    u = { uSun: { value: V3(0, 1, 0) }, uFull: { value: 0 } },
+    m = new T.Mesh(
+      new T.SphereGeometry(D * Math.tan((0.95 * Math.PI) / 180), 40, 24),
+      new T.ShaderMaterial({
+        uniforms: u,
+        vertexShader:
+          'varying vec3 vN;void main(){vN=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+        fragmentShader: `uniform vec3 uSun;uniform float uFull;varying vec3 vN;
+  float h3(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
+  float n3(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+   return mix(mix(mix(h3(i),h3(i+vec3(1,0,0)),f.x),mix(h3(i+vec3(0,1,0)),h3(i+vec3(1,1,0)),f.x),f.y),
+    mix(mix(h3(i+vec3(0,0,1)),h3(i+vec3(1,0,1)),f.x),mix(h3(i+vec3(0,1,1)),h3(i+vec3(1,1,1)),f.x),f.y),f.z);}
+  void main(){vec3 n=normalize(vN);float land=smoothstep(.52,.6,n3(n*2.3+4.)*.65+n3(n*6.)*.35);
+   float cl=smoothstep(.45,.75,n3(n*vec3(3.,7.,3.)+9.)*.6+n3(n*11.)*.4);
+   vec3 c=mix(vec3(.03,.12,.38),vec3(.16,.2,.1),land);c=mix(c,vec3(.95),cl);
+   float l=mix(smoothstep(-.06,.22,dot(n,normalize(uSun))),1.,uFull);gl_FragColor=vec4(c*l*1.5,1.);}`,
+      }),
+    );
+  m.position
+    .set(...EARTH)
+    .normalize()
+    .multiplyScalar(D);
+  m.userData.bg = 1;
+  m.userData.u = u;
+  return m;
 }
 function buildSite() {
   const S = new T.Group(),
@@ -50,6 +93,8 @@ function buildSite() {
       y = height(x, z, L),
       k = 0.82 + Math.random() * 0.16 + Math.max(-0.12, Math.min(0.12, y * 0.02));
     p.setXYZ(i, x, y, z);
+    /* the texture is laid by the metre (it tiles every 9 m), not by the squeezed grid */
+    g.attributes.uv.setXY(i, x / 9, z / 9);
     c[i * 3] = k;
     c[i * 3 + 1] = k * 0.985;
     c[i * 3 + 2] = k * 0.96;
@@ -97,7 +142,7 @@ function buildSite() {
       }
     },
     true,
-    [200, 200],
+    [1, 1],
   );
   const gm = std({ color: 0xffffff, map: tex, vertexColors: true, roughness: 1, metalness: 0 });
   CAT.set(gm, 'gnd');
@@ -115,6 +160,37 @@ function buildSite() {
   far.position.y = -1.5;
   far.userData.bg = 1;
   S.add(far);
+  /* low, rounded highlands a few kilometres off, all the way round */
+  const HN = 120,
+    hp = [],
+    hi = [];
+  for (let i = 0; i <= HN; i++) {
+    const a = (i / HN) * 6.283,
+      h = 60 + 260 * Math.pow(0.5 + 0.5 * Math.sin(a * 3 + 1.7) * Math.sin(a * 7 + 0.4), 2) + 70 * Math.sin(a * 13 + 2);
+    hp.push(
+      Math.cos(a) * 5200,
+      -8,
+      Math.sin(a) * 5200,
+      Math.cos(a) * 5900,
+      Math.max(20, h),
+      Math.sin(a) * 5900,
+      Math.cos(a) * 6600,
+      -8,
+      Math.sin(a) * 6600,
+    );
+    if (i < HN) {
+      const k = i * 3;
+      hi.push(k, k + 3, k + 1, k + 1, k + 3, k + 4, k + 1, k + 4, k + 2, k + 2, k + 4, k + 5);
+    }
+  }
+  const hg = new T.BufferGeometry();
+  hg.setAttribute('position', new T.Float32BufferAttribute(hp, 3));
+  hg.setIndex(hi);
+  hg.computeVertexNormals();
+  const hills = new T.Mesh(hg, std({ color: 0x8a8782, roughness: 1, metalness: 0, side: T.DoubleSide }));
+  CAT.set(hills.material, 'gnd');
+  hills.userData.bg = 1;
+  S.add(hills);
   /* rocks, small near the middle */
   const rm = std({ color: 0x6d6a66, roughness: 0.95, flatShading: true }),
     rk = new T.InstancedMesh(new T.DodecahedronGeometry(1, 0), rm, 420),
@@ -148,7 +224,12 @@ function buildSite() {
 function buildLM() {
   const G = new T.Group(),
     LM = new T.Group();
-  G.add(buildSite(), LM);
+  /* HB: the hand-built lander. It is what you see if NASA's model did not arrive, and in CUTAWAY, where its foil
+     comes off to show the tanks and the engine. */
+  const HB = new T.Group();
+  LM.add(HB);
+  const earth = buildEarth();
+  G.add(buildSite(), earth, LM);
   const foil = std({ color: 0xd9ab52, metalness: 0.5, roughness: 0.48, flatShading: true, side: T.DoubleSide }),
     blk = std({ color: 0x18181a, roughness: 0.75, flatShading: true, side: T.DoubleSide }),
     skinA = std({ color: 0x9c9a94, metalness: 0.55, roughness: 0.5, flatShading: true }),
@@ -156,7 +237,7 @@ function buildLM() {
   [foil, blk, skinA, glass].forEach((m) => CAT.set(m, 'case'));
   /* ---- descent stage: an octagonal box, foil outside; inside, four tanks round the engine ---- */
   const skin = new T.Group();
-  LM.add(skin);
+  HB.add(skin);
   const oct = cyl(2.25, 2.25, 1.7, foil, 8);
   oct.rotation.y = Math.PI / 8;
   oct.position.y = 2.4;
@@ -171,13 +252,13 @@ function buildLM() {
   const deck = cyl(2.25, 2.25, 0.06, blk, 8);
   deck.rotation.y = Math.PI / 8;
   deck.position.y = 3.27;
-  LM.add(deck);
+  HB.add(deck);
   const floor = cyl(2.2, 2.2, 0.05, blk, 8);
   floor.rotation.y = Math.PI / 8;
   floor.position.y = 1.56;
-  LM.add(floor);
-  beam(LM, [-2, 2.4, 0], [2, 2.4, 0], 0.09, MT.alu);
-  beam(LM, [0, 2.4, -2], [0, 2.4, 2], 0.09, MT.alu);
+  HB.add(floor);
+  beam(HB, [-2, 2.4, 0], [2, 2.4, 0], 0.09, MT.alu);
+  beam(HB, [0, 2.4, -2], [0, 2.4, 2], 0.09, MT.alu);
   const TK = [
     [1.08, 1.08],
     [-1.08, 1.08],
@@ -188,16 +269,16 @@ function buildLM() {
     const t = new T.Mesh(new T.SphereGeometry(0.62, 20, 12), i % 2 ? MT.steel : MT.ti);
     t.scale.y = 1.2;
     t.position.set(x, 2.42, z);
-    LM.add(t);
+    HB.add(t);
   });
   /* the engine: chamber up inside the stage, the thin nozzle skirt hanging below it */
   const ch = cyl(0.32, 0.38, 0.6, MT.dark, 20);
   ch.position.y = 2.45;
-  LM.add(ch);
+  HB.add(ch);
   const bell = new T.Group();
   bell.position.y = 2.15;
   bell.rotation.z = -Math.PI / 2;
-  LM.add(bell);
+  HB.add(bell);
   bell.add(
     lathe(
       [
@@ -212,42 +293,44 @@ function buildLM() {
     ),
   );
   /* ---- landing gear: four legs, a dished pad on each, a contact probe under three of them ---- */
-  const probes = [];
+  /* the footpads' distance from the middle (NASA's model has them a little closer in than the hand-built one) */
+  const probes = [],
+    PR = AS.lander ? 4.05 : 4.3;
   for (let k = 0; k < 4; k++) {
     const a = (k * Math.PI) / 2,
       c = Math.cos(a),
       s = Math.sin(a),
       P = (r, y, t = 0) => [c * r - s * t, y, s * r + c * t];
-    beam(LM, P(2.0, 3.2), P(2.75, 3.1), 0.1, foil);
-    beam(LM, P(2.0, 1.75), P(2.75, 3.1), 0.09, foil);
-    beam(LM, P(2.75, 3.1), P(4.3, 0.16), 0.15, foil);
-    beam(LM, P(1.9, 1.7, 0.85), P(3.7, 1.3), 0.07, MT.alu);
-    beam(LM, P(1.9, 1.7, -0.85), P(3.7, 1.3), 0.07, MT.alu);
+    beam(HB, P(2.0, 3.2), P(2.75, 3.1), 0.1, foil);
+    beam(HB, P(2.0, 1.75), P(2.75, 3.1), 0.09, foil);
+    beam(HB, P(2.75, 3.1), P(PR, 0.16), 0.15, foil);
+    beam(HB, P(1.9, 1.7, 0.85), P(3.7, 1.3), 0.07, MT.alu);
+    beam(HB, P(1.9, 1.7, -0.85), P(3.7, 1.3), 0.07, MT.alu);
     const pad = cyl(0.455, 0.36, 0.14, foil, 18);
-    pad.position.set(...P(4.3, 0.07));
+    pad.position.set(...P(PR, 0.07));
     pad.castShadow = true;
-    LM.add(pad);
+    HB.add(pad);
     if (k) {
       const pr = cyl(0.018, 0.018, PROBE, MT.alu, 5);
-      pr.position.set(...P(4.3, -PROBE / 2));
+      pr.position.set(...P(PR, -PROBE / 2));
       LM.add(pr);
       probes.push(pr);
     } else {
       /* the front leg carries the ladder, and the porch above it leads to the hatch */
-      for (const t of [-0.22, 0.22]) beam(LM, P(2.95, 3.0, t), P(3.85, 1.25, t), 0.035, MT.alu);
+      for (const t of [-0.22, 0.22]) beam(HB, P(2.95, 3.0, t), P(3.85, 1.25, t), 0.035, MT.alu);
       for (let j = 0; j < 8; j++) {
         const f = j / 7;
-        beam(LM, P(2.95 + 0.9 * f, 3.0 - 1.75 * f, -0.22), P(2.95 + 0.9 * f, 3.0 - 1.75 * f, 0.22), 0.03, MT.alu);
+        beam(HB, P(2.95 + 0.9 * f, 3.0 - 1.75 * f, -0.22), P(2.95 + 0.9 * f, 3.0 - 1.75 * f, 0.22), 0.03, MT.alu);
       }
-      LM.add(box(1.0, 0.05, 0.85, MT.alu, 2.6, 3.32, 0));
+      HB.add(box(1.0, 0.05, 0.85, MT.alu, 2.6, 3.32, 0));
     }
   }
   /* ---- ascent stage: the round crew cabin in front, a mid section, the equipment bay behind, a tank each side ---- */
   const cabin = cyl(1.17, 1.17, 1.25, skinA, 14);
   cabin.rotation.z = Math.PI / 2;
   cabin.position.set(0.95, 4.72, 0);
-  LM.add(cabin);
-  LM.add(
+  HB.add(cabin);
+  HB.add(
     box(1.35, 2.3, 2.1, skinA, -0.2, 4.55, 0),
     box(0.75, 1.55, 1.9, blk, -1.2, 4.5, 0),
     box(1.1, 0.5, 1.5, blk, 0.75, 3.62, 0),
@@ -259,7 +342,7 @@ function buildLM() {
     const t = new T.Mesh(new T.SphereGeometry(r, 8, 6), skinA);
     t.position.set(-0.2, 4.15, z);
     t.castShadow = true;
-    LM.add(t);
+    HB.add(t);
   });
   /* two triangular windows leaning in, the square hatch below them */
   [-1, 1].forEach((sg) => {
@@ -272,16 +355,16 @@ function buildLM() {
     g2.computeVertexNormals();
     const w = new T.Mesh(g2, glass);
     w.position.set(1.585, 4.85, 0.22 * sg);
-    LM.add(w);
+    HB.add(w);
   });
-  LM.add(box(0.03, 0.8, 0.8, blk, 1.585, 3.95, 0));
+  HB.add(box(0.03, 0.8, 0.8, blk, 1.585, 3.95, 0));
   /* on top: the docking hatch, the rendezvous radar in front, the steerable dish on its arm */
   const tun = cyl(0.42, 0.42, 0.3, MT.alu, 18);
   tun.position.set(-0.1, 5.85, 0);
-  LM.add(tun);
+  HB.add(tun);
   const rr = new T.Group();
   rr.position.set(1.05, 5.95, 0);
-  LM.add(rr);
+  HB.add(rr);
   rr.add(
     lathe(
       [
@@ -293,11 +376,11 @@ function buildLM() {
       18,
     ),
   );
-  beam(LM, [1.05, 5.5, 0], [1.05, 5.95, 0], 0.07, MT.alu);
+  beam(HB, [1.05, 5.5, 0], [1.05, 5.95, 0], 0.07, MT.alu);
   const sb = new T.Group();
   sb.position.set(0.1, 6.25, -1.5);
   sb.rotation.z = 1.1;
-  LM.add(sb);
+  HB.add(sb);
   sb.add(
     lathe(
       [
@@ -309,8 +392,8 @@ function buildLM() {
       18,
     ),
   );
-  beam(LM, [-0.2, 5.6, -1.0], [0.1, 6.25, -1.5], 0.05, MT.alu);
-  beam(LM, [-0.6, 5.7, 0.7], [-0.75, 6.6, 0.8], 0.02, MT.alu);
+  beam(HB, [-0.2, 5.6, -1.0], [0.1, 6.25, -1.5], 0.05, MT.alu);
+  beam(HB, [-0.6, 5.7, 0.7], [-0.75, 6.6, 0.8], 0.02, MT.alu);
   /* four thruster clusters at the corners, four small nozzles each */
   [
     [0.85, 1.55],
@@ -318,8 +401,8 @@ function buildLM() {
     [-1.25, 1.55],
     [-1.25, -1.55],
   ].forEach(([x, z]) => {
-    beam(LM, [x * 0.7, 5.0, z * 0.6], [x, 5.15, z], 0.06, MT.alu);
-    LM.add(box(0.26, 0.26, 0.26, MT.dark, x, 5.15, z));
+    beam(HB, [x * 0.7, 5.0, z * 0.6], [x, 5.15, z], 0.06, MT.alu);
+    HB.add(box(0.26, 0.26, 0.26, MT.dark, x, 5.15, z));
     [
       [0, 1, 0],
       [0, -1, 0],
@@ -331,16 +414,19 @@ function buildLM() {
       if (dx) n.rotation.z = (-Math.PI / 2) * dx;
       if (dz) n.rotation.x = (Math.PI / 2) * dz;
       if (dy < 0) n.rotation.x = Math.PI;
-      LM.add(n);
+      HB.add(n);
     });
   });
-  LM.traverse((o) => {
+  HB.traverse((o) => {
     if (o.isMesh) o.castShadow = o.receiveShadow = true;
   });
   const anchor = new T.Object3D();
   anchor.position.y = 0.7;
   anchor.rotation.z = -Math.PI / 2;
   LM.add(anchor);
+  /* NASA's own model of the lunar module takes the hand-built one's place when its file arrived (render3d/assets.js) */
+  const MD = AS.lander ? roverModel(AS.lander) : null;
+  if (MD) LM.add(MD);
   return {
     G,
     E: LM,
@@ -389,12 +475,17 @@ function buildLM() {
       return P;
     },
     /* what upd() moves or shows/hides: not merged (render3d/merge.js) */
-    keep: [LM, skin, ...probes],
+    keep: [LM, HB, skin, ...(MD ? [MD] : []), ...probes],
     upd() {
       LM.position.set(lm.x, Math.max(0, state.alt), 0);
       LM.rotation.z = -lm.tilt;
       skin.visible = !state.exposed;
+      HB.visible = !MD || !!state.exposed;
+      if (MD) MD.visible = !state.exposed;
       probes.forEach((p) => (p.visible = !lm.td));
+      /* the Earth takes the day's Sun; in EARTHLIGHT it is nearly full */
+      earth.userData.u.uSun.value.set(...k3.curP.sun);
+      earth.userData.u.uFull.value = state.scene == 2 ? 1 : 0;
     },
   };
 }
@@ -479,7 +570,7 @@ export default {
         sd: Math.random(),
         k: 10,
         s0: 0.35,
-        s1: rnd(0.8, 2),
+        s1: rnd(0.6, 1.5),
       });
     }
   },
