@@ -10,7 +10,7 @@ Throttle Up is a browser toy (heading toward a game) where you throttle up real 
 
 | # | Button | What it is | 3D only | Special mechanics |
 |---|--------|------------|---------|-------------------|
-| 0 | F-TYPE | Generic afterburning turbojet on a test stand | no | afterburner detent at MIL, compressor stall (FAULTS) |
+| 0 | F-TYPE | Generic afterburning turbofan on a test stand | no | afterburner detent at MIL, compressor stall (FAULTS) |
 | 1 | SR-71 J58 | J58 with inlet spike, bypass tubes, start cart | no | simulated Mach drives spike position; stall |
 | 2 | SHUTTLE | RS-25 on a vertical test stand | no | hydrogen burn-off igniters, steam |
 | 3 | HALL | SPT-140-class Hall thruster on a Psyche-like craft in Earth orbit | yes | TIME WARP (1x / 1,000x / 100,000x), what-if orbit raising, EARTH view |

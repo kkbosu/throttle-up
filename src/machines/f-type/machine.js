@@ -153,6 +153,15 @@ export default {
       'The 3D engine and test stand are simplified, hand-built models, not CAD data.',
       'The sound is synthesized, not recorded.',
     ],
-    s: [],
+    /* a generic engine has no data sheet; these cover the general facts above */
+    s: [
+      [
+        'Afterburning Jet Thrust (NASA Glenn Research Center)',
+        'https://www.grc.nasa.gov/www/k-12/airplane/turbab.html',
+      ],
+      ['Propelling nozzle (Wikipedia)', 'https://en.wikipedia.org/wiki/Propelling_nozzle'],
+      ['Shock diamond (Wikipedia)', 'https://en.wikipedia.org/wiki/Shock_diamond'],
+      ['Compressor stall (Wikipedia)', 'https://en.wikipedia.org/wiki/Compressor_stall'],
+    ],
   },
 };

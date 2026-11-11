@@ -3,7 +3,11 @@
 Extracted from the INFO panels (now in `src/machines/<name>/machine.js`; originally `throttle-up-v11.html`, kept in `legacy/`). Every user-facing fact should trace to one of these, or be listed under WHAT IS APPROXIMATED.
 
 ## AFTERBURNER (F-TYPE)
-(none: a generic afterburning turbojet; its INFO panel says the numbers are illustrative)
+A generic afterburning turbofan, not one real engine: its INFO panel says the numbers are illustrative. These cover the general facts it states (afterburner, nozzle, shock diamonds, compressor stall).
+- [Afterburning Jet Thrust (NASA Glenn Research Center)](https://www.grc.nasa.gov/www/k-12/airplane/turbab.html)
+- [Propelling nozzle (Wikipedia)](https://en.wikipedia.org/wiki/Propelling_nozzle)
+- [Shock diamond (Wikipedia)](https://en.wikipedia.org/wiki/Shock_diamond)
+- [Compressor stall (Wikipedia)](https://en.wikipedia.org/wiki/Compressor_stall)
 
 ## SR-71
 - [SR-71 Propulsion System (Aircraft Engine Historical Society)](https://enginehistory.org/Convention/2013/SR-71Propul/SR-71Propul.shtml)
