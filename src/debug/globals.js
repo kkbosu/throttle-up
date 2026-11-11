@@ -2,6 +2,8 @@
 // assign names like view, raw, N or step() directly. Expose every module export and state key on window.
 import { state } from '../core/state.js';
 import * as m0 from '../audio/audio.js';
+import * as lmA from '../machines/lunar-module/machine.js';
+import * as lmB from '../machines/lunar-module/mission.js';
 import * as m1 from '../core/engine.js';
 import * as m2 from '../core/loader3d.js';
 import * as m3 from '../core/loop.js';
@@ -865,6 +867,12 @@ d('misStop', () => m34.misStop);
 d('misTick', () => m34.misTick);
 d('wireMission', () => m34.wireMission);
 d('skyMission', () => m35.default);
+d('lmMission', () => lmB.default);
+d('lm', () => lmA.lm);
+d('LM0', () => lmA.LM0);
+d('lmHov', () => lmA.lmHov);
+d('lmSecs', () => lmA.lmSecs);
+d('lmReset', () => lmA.lmReset);
 d('CL', () => m36.CL);
 d('clipStart', () => m36.clipStart);
 d('clipDrop', () => m36.clipDrop);

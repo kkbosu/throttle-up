@@ -11,7 +11,7 @@ import { flowSetup, flowUpd } from './flow.js';
 import { MT, R, V3, cam, pscn, scn } from './kit.js';
 import { lensRender } from './lenses.js';
 import { flame } from './lights.js';
-import { applyMachine } from './machine.js';
+import { CFG, applyMachine } from './machine.js';
 import { FIR, SPK, axisPt, burst, emitters, updParticles } from './particles.js';
 import { PU, plumeParams } from './plume.js';
 import { applyScene, sKey } from './scenes.js';
@@ -95,7 +95,8 @@ export function render(dt, dr) {
   /* nozzle exit depth along the view, and how far the hot exit reaches sideways (one bell, or the whole cluster) */
   cu.uZA.value = -ZA.setFromMatrixPosition(e.anchor.matrixWorld).applyMatrix4(cam.matrixWorldInverse).z;
   cu.uZR.value = PU.uR0.value + (PU.uCl.value > 0.5 ? PU.uMR.value : 0);
-  k3.bloom.strength = 0.35 + state.A * 0.15;
+  /* a machine can turn the bloom down (cfg.bloom): on the Moon there is no air to make a bright ground glow */
+  k3.bloom.strength = (0.35 + state.A * 0.15) * (CFG[state.mi].bloom ?? 1);
   k3.comp.render(dr);
   SPK.L.length = Math.min(SPK.L.length, 400);
   P.length = EM.length = SM.length = VP.length = 0;

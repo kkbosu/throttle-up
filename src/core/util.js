@@ -14,6 +14,8 @@ export const sm = (a, b, x) => {
   return x * x * (3 - 2 * x);
 };
 export const SNM = ['MIDDAY', 'AFTERNOON', 'SUNSET'];
+/* the Moon's scenes: the Sun low (as on the Apollo landings), the Sun high, and the lunar night under a nearly full Earth */
+export const SNL = ['LOW SUN', 'HIGH SUN', 'EARTHLIGHT'];
 export const SL = [1, 0.5, 0.2],
   SLN = ['OFF', '1/2x', '1/5x'],
   VN = ['SIDE', 'CLOSE-UP', 'REAR', 'EARTH', 'DRONE'],

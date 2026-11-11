@@ -4,7 +4,7 @@ import { click, initAudio } from '../audio/audio.js';
 import { master } from '../core/engine.js';
 import { nextM, prevM, setMachine, views } from '../core/machine-switch.js';
 import { state } from '../core/state.js';
-import { $, SL, SLN, SN, SNM, VN } from '../core/util.js';
+import { $, SL, SLN, SN, SNL, SNM, VN } from '../core/util.js';
 import { showInfo } from '../info/info.js';
 import { tq, trk } from '../input/lever.js';
 import { MS, dayNo, misStart, misStop, vsOn } from '../mission/mission.js';
@@ -50,9 +50,11 @@ export function lab() {
     'SCENE',
     state.M.space
       ? ['TERMINATOR', 'SUNLIT', 'ECLIPSE'][state.scene]
-      : state.M.sky && state.G3
-        ? SNM[state.scene]
-        : SN[state.scene],
+      : state.M.moon && state.G3
+        ? SNL[state.scene]
+        : state.M.sky && state.G3
+          ? SNM[state.scene]
+          : SN[state.scene],
   );
   if (state.M.warp) setK(q('slow'), 'WARP', state.M.warpName(state.sl), state.sl);
   else setK(q('slow'), 'SLOW-MO', SLN[state.sl], state.sl);

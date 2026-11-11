@@ -10,7 +10,7 @@ import { CFG } from './machine.js';
 import { envScn, pm, skyU } from './sky.js';
 
 // assigned by create*() below, when init3D runs
-export let SCN, SCNS, SCNM, sKey;
+export let SCN, SCNS, SCNM, SCNL, sKey;
 
 export function createScenes() {
   SCN = [
@@ -174,7 +174,66 @@ export function createScenes() {
       fl: 0,
     },
   ];
-  sKey = (s) => (CFG[state.mi].space ? 3 : CFG[state.mi].mars ? 6 : 0) + s;
+  /* The Moon: no air, so the sky is black whatever the Sun is doing and nothing softens the shadows; the only fill
+     light is what the ground throws back. No stars by day: with the sunlit ground in view neither eye nor camera
+     picks them out. EARTHLIGHT is the lunar night under a nearly full Earth, dim and bluish, stars out. */
+  SCNL = [
+    {
+      n: 'LOW SUN',
+      zen: [0, 0, 0],
+      hor: [0, 0, 0],
+      gnd: [0.02, 0.02, 0.02],
+      sun: [0.5, 0.19, 0.84],
+      sunC: [1, 0.98, 0.95],
+      sunI: 1.1,
+      broad: 0,
+      sunL: 3.1,
+      hS: 0x000000,
+      hG: 0x8a8680,
+      hI: 0.55,
+      exp: 0.78,
+      fog: 0,
+      stars: 0,
+      fl: 0,
+    },
+    {
+      n: 'HIGH SUN',
+      zen: [0, 0, 0],
+      hor: [0, 0, 0],
+      gnd: [0.02, 0.02, 0.02],
+      sun: [0.34, 0.82, 0.46],
+      sunC: [1, 0.98, 0.95],
+      sunI: 1.1,
+      broad: 0,
+      sunL: 2.9,
+      hS: 0x000000,
+      hG: 0x8a8680,
+      hI: 0.6,
+      exp: 0.66,
+      fog: 0,
+      stars: 0,
+      fl: 0,
+    },
+    {
+      n: 'EARTHLIGHT',
+      zen: [0, 0, 0],
+      hor: [0, 0, 0],
+      gnd: [0.004, 0.005, 0.007],
+      sun: [0.25, 0.62, 0.74],
+      sunC: [0.62, 0.74, 1],
+      sunI: 0,
+      broad: 0,
+      sunL: 0.34,
+      hS: 0x10141c,
+      hG: 0x14161a,
+      hI: 0.5,
+      exp: 1.25,
+      fog: 0,
+      stars: 1.3,
+      fl: 0,
+    },
+  ];
+  sKey = (s) => (CFG[state.mi].space ? 3 : CFG[state.mi].mars ? 6 : CFG[state.mi].moon ? 9 : 0) + s;
   k3.curS = -1;
   k3.curP = SCN[0];
 }
@@ -182,7 +241,8 @@ export function createScenes() {
 export function applyScene(s) {
   const sp = !!(CFG[state.mi] && CFG[state.mi].space),
     mr = !!(CFG[state.mi] && CFG[state.mi].mars),
-    c = (sp ? SCNS : mr ? SCNM : SCN)[s];
+    mn = !!(CFG[state.mi] && CFG[state.mi].moon),
+    c = (sp ? SCNS : mr ? SCNM : mn ? SCNL : SCN)[s];
   k3.curS = sKey(s);
   k3.curP = c;
   skyU.uSpace.value = sp ? 1 : 0;
@@ -193,7 +253,7 @@ export function applyScene(s) {
   skyU.uSunC.value.set(...(c.glow || c.sunC));
   skyU.uSunI.value = c.sunI;
   /* a Mars sunset: the glow stays near the Sun and the dim, small disc doesn't flood the frame with bloom */
-  skyU.uBroad.value = c.glow ? 0.25 : 1;
+  skyU.uBroad.value = c.broad != null ? c.broad : c.glow ? 0.25 : 1;
   skyU.uDisk.value = c.glow ? 0.3 : 1;
   skyU.uStars.value = c.stars;
   scn.fog = sp ? null : new T.FogExp2(col(...c.hor), c.fog);

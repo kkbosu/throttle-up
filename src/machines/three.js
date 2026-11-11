@@ -10,8 +10,9 @@ import m5 from './harrier/three.js';
 import m6 from './nk-12/three.js';
 import m7 from './sky-crane/three.js';
 import m8 from './starship/three.js';
+import m9 from './lunar-module/three.js';
 
 export const M3 = [];
 export function loadM3() {
-  if (!M3.length) M3.push(m0, m1, m2, m3, m4, m5, m6, m7, m8);
+  if (!M3.length) M3.push(m0, m1, m2, m3, m4, m5, m6, m7, m8, m9);
 }

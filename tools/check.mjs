@@ -44,6 +44,7 @@ const OUTCOME = [
   ['NK-12', 'reaches full power', r => r.mx.N > 0.9],
   ['SKY CRANE', 'puts the rover down', r => !!r.td],
   ['STARSHIP', 'lights all 33 Raptors and reaches full throttle', r => r.mx.N > 0.95],
+  ['APOLLO LM', 'lands inside the gear limits', r => !!r.lmtd],
 ];
 
 // Merged static meshes (render3d/merge.js): the originals stay in the scene, hidden. If one moves, changes material
@@ -166,7 +167,7 @@ async function machineRun(page, rec, m, r2d) {
     await c.frames(1);   // render each step
   }
   await c.frames(2);
-  const out = await c.ev(() => ({ mx: window.__mx, dv: orb.dv, td: sc.td, hint: document.getElementById('hint').textContent }));
+  const out = await c.ev(() => ({ mx: window.__mx, dv: orb.dv, td: sc.td, lmtd: typeof lm !== 'undefined' && lm.td && !lm.hard, hint: document.getElementById('hint').textContent }));
   c.expect(out.hint === 'Sequence complete.', `SEQUENCE ends with "Sequence complete." (got "${out.hint}")`);
   c.expect(OUTCOME[m][2](out), `SEQUENCE: ${OUTCOME[m][0]} ${OUTCOME[m][1]}`);
   if (has3D && !V11) {
@@ -221,7 +222,7 @@ async function stallRun(page, rec) {
 }
 
 const scenarios = [
-  ...[0, 1, 2, 3, 4, 5, 6, 7, 8].map(m => ({ id: `3d-m${m}`, q: 2, m, ctx: SMALL, init: MERGE_GUARD, notV11: m > 7, run: (p, r) => machineRun(p, r, m, false) })),
+  ...[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(m => ({ id: `3d-m${m}`, q: 2, m, ctx: SMALL, init: MERGE_GUARD, notV11: m > 7, run: (p, r) => machineRun(p, r, m, false) })),
   ...[0, 1, 2].map(m => ({ id: `2d-m${m}`, q: 2, m, r2d: true, ctx: SMALL, run: (p, r) => machineRun(p, r, m, true) })),
   {
     id: '2d-fallback-m3', q: 2, m: 3, r2d: true, ctx: SMALL,
@@ -492,6 +493,41 @@ const scenarios = [
       await c.frames(2); // the mission starts from the frame loop (misTick) once the engine runs
       const r = await c.ev(() => ({ on: MS.on, day: MS.day, today: dayNo(), tries: MS.tries, alt: SKY0.alt, hint: document.getElementById('hint').textContent }));
       c.expect(r.on === 1 && r.day === r.today && r.tries === 1 && r.alt !== 32 && /^MISSION:/.test(r.hint), `?daily starts today's challenge at START (${JSON.stringify(r)})`);
+    },
+  },
+  {
+    // the lunar landing: seeded conditions repeat; left alone it overloads the gear; a flown landing scores; running
+    // down to the 20-second point is BINGO; CLOSE restores free play
+    id: 'mission-m9', q: 0, m: 9, ctx: SMALL, notV11: true,
+    async run(page, rec) {
+      const c = checker(page, rec);
+      await c.start();
+      await c.ev(() => { for (let t = 0; t < 8; t += 0.05) { keys(0.05); update(0.05); misTick(0.05); } });
+      c.expect((await c.ev(() => document.querySelector('#ctl [data-k=mis]').textContent)) === '◆ MISSION', 'the lunar module shows the ◆ MISSION button');
+      const fly = (seed, how) => c.ev(([seed, how]) => {
+        misStart(seed);
+        const p0 = { ...LM0, secs: lmSecs(), slide };
+        if (how === 'dry') lm.used = lm.prop - 60;
+        for (let t = 0; t < 200 && MS.tr >= 0; t += 0.05) {
+          if (how === 'good') { raw = Math.min(1, Math.max(0, lmHov() + 0.6 * ((alt > 8 ? -2 : -0.8) - vz))); applyRaw(); side = Math.max(-1, Math.min(1, -lm.vx * 0.8)); }
+          if (how === 'dry') { raw = lmHov(); applyRaw(); }
+          keys(0.05); update(0.05); misTick(0.05);
+        }
+        return { p0, res: MS.res, td: lm.td, hard: lm.hard };
+      }, [seed, how]);
+      let r = await fly(11, 'good');
+      const p = r.p0;
+      c.expect(p.alt >= 30 && p.alt <= 46 && p.vz <= -1.5 && p.vz >= -2.7 && Math.abs(p.vx) >= 1.5 && Math.abs(p.vx) <= 2.4 && p.secs > 69 && p.secs < 91 && p.slide === 1, `seeded start conditions in range (${JSON.stringify(p)})`);
+      c.expect(r.res && r.res.ok === 1 && r.res.title === 'ON THE SURFACE' && r.res.score > 600 && r.res.score <= 1000, `a flown landing scores (${JSON.stringify(r.res)})`);
+      const same = await fly(11, 'good');
+      c.expect(JSON.stringify(same.p0) === JSON.stringify(p) && same.res.score === r.res.score, 'the same seed gives the same conditions and score');
+      r = await fly(11, 'off');
+      c.expect(r.res && r.res.ok === 0 && r.res.title === 'GEAR OVERLOADED' && r.hard === 1, `left alone it lands beyond the gear limits (${JSON.stringify(r.res)})`);
+      r = await fly(11, 'dry');
+      c.expect(r.res && r.res.ok === 0 && r.res.title === 'BINGO: ABORT', `hovering to the 20-second point is BINGO (${JSON.stringify(r.res)})`);
+      await page.click('#misx');
+      const f = await c.ev(() => ({ on: MS.on, prop: LM0.prop === Infinity, slide, vx: LM0.vx }));
+      c.expect(f.on === 0 && f.prop && f.slide === 0 && f.vx === 0, `CLOSE restores free play (${JSON.stringify(f)})`);
     },
   },
   {

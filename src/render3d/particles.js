@@ -154,6 +154,11 @@ export function updParticles(dt, lc, li) {
   });
   SMK.upd(dt, (p, dt) => {
     const f = p.a / p.l;
+    /* k 10: lunar dust. No air: nothing slows it and nothing lifts it, it just falls back at the Moon's 1.62 m/s2 */
+    if (p.k == 10) {
+      p.vy -= 1.62 * dt;
+      return [p.s0 + (p.s1 - p.s0) * Math.pow(f, 0.55), 0.62, 0.61, 0.58, Math.min(1, f * 8) * (1 - f) * 0.5];
+    }
     p.vx *= Math.exp(-dt * (p.k == 2 || p.k == 6 ? 0.35 : p.k == 7 ? 1.6 : p.k == 8 ? 0.7 : 0.8));
     p.vz *= p.k == 7 ? Math.exp(-dt * 1.6) : p.k == 8 ? Math.exp(-dt * 0.3) : 1;
     p.vz *= Math.exp(-dt * 0.6);

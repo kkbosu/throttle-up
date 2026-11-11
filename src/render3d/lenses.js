@@ -59,7 +59,9 @@ export function thermalU() {
       ? [5, 20, -60][state.scene]
       : CFG[state.mi].mars
         ? [-20, -5, -45][state.scene]
-        : [24, 38, 14][state.scene],
+        : CFG[state.mi].moon
+          ? [20, 100, -150][state.scene]
+          : [24, 38, 14][state.scene],
     nn = state.N * state.fu,
     fh = M3[state.mi].thFh ? M3[state.mi].thFh(nn) : nn * 190 + state.ign * 90;
   thSet(TH.cold, amb, 0, 0, 1, fh * 0.55, M3[state.mi].thR ? M3[state.mi].thR[0] : 7);
