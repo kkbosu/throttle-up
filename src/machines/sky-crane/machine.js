@@ -71,7 +71,8 @@ export const skyRy = () => (sc.td ? 0 : state.alt - RH - sc.bl),
 export function skyCam(v) {
   const ry = sc.td ? 0 : Math.max(0, state.alt - RH - sc.bl);
   if (sc.cut) {
-    const fl = sc.fly && !sc.done,
+    /* in a mission the camera stays with the rover (SKY0.hold): the result and the clip rest on it, not on empty sky */
+    const fl = sc.fly && !sc.done && !SKY0.hold,
       m2 = fl ? Math.min(30, state.alt * 0.5) : 0.4,
       k = fl ? Math.min(3, 1 + state.alt / 30) : 1;
     return v == 1 ? [0, 0] : v == 2 ? [0, m2, k] : [m2 * 0.5, m2, k];

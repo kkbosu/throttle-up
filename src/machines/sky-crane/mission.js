@@ -15,8 +15,9 @@ export default {
   /* the clip's readouts */
   /* the trace on the result card and the clip: the same two quantities as the first two readouts */
   traceLab: ['ROVER m', 'DESCENT m/s'],
-  /* the clip keeps the middle of the stage-and-rover pair in the middle of its frame */
-  aim: () => [0, (state.alt + Math.max(0, skyRy())) / 2 + 0.6, 0],
+  /* the clip keeps the middle of the stage-and-rover pair in the middle of its frame, and once the wheels are down it
+     stays on the rover while the stage flies off (a looping clip rests on its last frame) */
+  aim: () => (sc.td ? [0, 1.6, 0] : [0, (state.alt + Math.max(0, skyRy())) / 2 + 0.6, 0]),
   trace: () => [Math.max(0, skyRy()), sc.td ? 0 : -state.vz],
   clip: () => [
     ['ROVER', Math.max(0, skyRy()).toFixed(1) + ' m'],
@@ -31,13 +32,14 @@ export default {
     SKY0.vz = -Math.round(15 + r() * 20) / 10;
     /* enough for a careful descent with some margin; more for a higher start */
     SKY0.prop = Math.round(2.4 * (SKY0.alt + 8));
+    SKY0.hold = 1;
     state.raw2 = 0;
     skyReset();
     state.raw = skyHov();
     applyRaw();
   },
   end() {
-    Object.assign(SKY0, { alt: 32, vz: -2.5, prop: Infinity });
+    Object.assign(SKY0, { alt: 32, vz: -2.5, prop: Infinity, hold: 0 });
     sc.prop = Infinity;
   },
   /* the verdict, once the wheels are down (null before) */
