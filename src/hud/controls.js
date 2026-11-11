@@ -1,5 +1,5 @@
 // Controls: button labels (lab), button actions (act), lever labels, hint text, the START overlay.
-import { DAILY } from '../core/params.js';
+import { DAILY, MAN } from '../core/params.js';
 import { click, initAudio } from '../audio/audio.js';
 import { master } from '../core/engine.js';
 import { nextM, prevM, setMachine, views } from '../core/machine-switch.js';
@@ -70,7 +70,44 @@ export function say(t) {
 /* The run clock beside the title: T+mm:ss since the engine was switched on. While a SEQUENCE or a MISSION runs it
    shows that run's time instead, in amber (a mission's stops at the verdict). Written only when the second changes. */
 const CK = { e: 0, t: 0, on: 0, s: -1 };
+/* First-run tips: after 20 s of an engine simply running, the hint names one key to try and that key lights for a few
+   seconds; two more follow, 14 s of running apart. Each is shown once per visitor (kept in localStorage; without it
+   they show once per visit). Never during a SEQUENCE or a MISSION, on a ?daily link, or under ?manual (tests). */
+const TIPS = [
+    ['view', () => 'TRY: VIEW moves the camera.'],
+    ['exp', () => (state.G3 ? 'TRY: CUTAWAY shows the inside.' : 'TRY: CASING opens the engine.')],
+    ['seq', () => 'TRY: SEQUENCE runs the whole show.'],
+  ],
+  TP = { t: 0, i: -1 };
+function tips(dr) {
+  if (MAN || DAILY || TP.i >= TIPS.length) return;
+  if (TP.i < 0) {
+    try {
+      TP.i = +localStorage.getItem('tu-tips') || 0;
+    } catch (_) {
+      TP.i = 0;
+    }
+    return;
+  }
+  if (state.ph != 2 || SQ.on || MS.on) {
+    TP.t = 0;
+    return;
+  }
+  TP.t += dr;
+  if (TP.t < (TP.i ? 14 : 20)) return;
+  TP.t = 0;
+  const [k, text] = TIPS[TP.i++],
+    b = document.querySelector('#ctl [data-k=' + k + ']');
+  try {
+    localStorage.setItem('tu-tips', TP.i);
+  } catch (_) {}
+  if (!b || !b.offsetParent) return;
+  say(text());
+  b.classList.add('tip');
+  setTimeout(() => b.classList.remove('tip'), 5000);
+}
 export function clock(dr) {
+  tips(dr);
   const run = state.ph == 1 || state.ph == 2,
     on = SQ.on || MS.on ? 1 : 0;
   CK.e = run ? CK.e + dr : 0;
