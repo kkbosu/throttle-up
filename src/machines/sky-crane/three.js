@@ -75,15 +75,13 @@ export function buildSC() {
   }
   beam(ST, [-1.4, 0.3, 0], [1.4, 0.3, 0], 0.1, MT.alu);
   beam(ST, [0, 0.3, -1.4], [0, 0.3, 1.4], 0.1, MT.alu);
-  /* four hydrazine tanks, two pressurant tanks, the bridle and umbilical device in the middle, a radar */
-  [
-    [0.78, 0],
-    [-0.78, 0],
-    [0, 0.78],
-    [0, -0.78],
-  ].forEach(([x, z]) => {
+  /* three spherical hydrazine tanks and two helium tanks (NASA's 2012 landing press kit), the bridle and umbilical
+     device in the middle, a radar. There were four tanks here; the fourth is still constructed and left out, so the
+     random numbers drawn for it are the same. */
+  [[0.78, 0], [-0.39, 0.675], [-0.39, -0.675], null].forEach((p) => {
     const t = new T.Mesh(new T.SphereGeometry(0.42, 28, 16), MT.ti);
-    t.position.set(x, 0.66, z);
+    if (!p) return;
+    t.position.set(p[0], 0.66, p[1]);
     t.castShadow = true;
     ST.add(t);
   });

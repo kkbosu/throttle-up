@@ -306,7 +306,7 @@ export default {
   info: {
     f: [
       'Perseverance landed in Jezero Crater on Mars on 18 February 2021. For its last seconds of flight it hung beneath a rocket-powered descent stage: the sky crane.',
-      "The descent stage uses the design that landed Curiosity in 2012: eight throttleable Mars Landing Engines burning hydrazine, each adjustable from 400 N to 3,060 N. Early in powered descent all eight fire; later four drop to a near-shutdown level of about 1% flow and serve as backups. Curiosity's stage carried 390 kg of hydrazine in four tanks.",
+      "The descent stage uses the design that landed Curiosity in 2012: eight throttleable Mars Landing Engines burning hydrazine, each adjustable from about 400 N up to about 3,300 N. All eight fire at the start of powered descent; four shut off just before the cords begin to pay out. Curiosity's stage carried about 387 kg of usable hydrazine in three spherical tanks, pushed to the engines by helium from two more.",
       "The engine, Aerojet's MR-80B, is derived from the Viking landers' descent engine. In qualification tests it throttled from 31 N to 3,603 N with a specific impulse of 204 to 223 seconds: every 1,000 N of thrust held for a second burns about half a kilogram of hydrazine.",
       'About 12 seconds before touchdown, roughly 20 m up, the stage had slowed to its final descent speed of about 0.75 m/s (1.7 mph) and began lowering the rover on cables about 6.4 m (21 ft) long.',
       'When the rover sensed its wheels on the ground it cut the cables, and the descent stage flew off to crash a safe distance away.',
@@ -320,6 +320,7 @@ export default {
       "There is no wind. Mars's air is so thin (about 0.016 kg/m³ at the surface) that even a strong gust would push on the stage and rover with only tens of newtons, against a weight of about 7,900 N.",
       'The lever sets total thrust; the real stage is flown entirely by its guidance computer. A little artificial damping makes hand-flying manageable, and SEQUENCE flies it with a simple speed-hold loop.',
       'Here the switch to four engines happens when you start lowering the rover and the bridles pay out at up to 1 m/s; the real timings differ, so this descent takes a few seconds longer than the real 12.',
+      'Each engine here runs from 400 N to 3,060 N, and four of them idle at 1% of full thrust where the real ones shut off. Those figures came from a page that is no longer online; NASA’s press kit gives about 3,300 N.',
       'The flyaway is simplified. The stage, terrain and crater rim are hand-built approximations, and the dust is simple particles.',
       'The rover is NASA/JPL-Caltech’s own 3D model of Perseverance, simplified to about 10,000 triangles with its textures reduced to flat colours. It is shown with its mast raised and its arm out, as that model has them; how the rover was folded for the landing is not shown.',
       "Mars's thin carbon-dioxide air would make the engines sound far fainter than this; the sound is synthesized.",
@@ -342,7 +343,10 @@ export default {
         'Mars 2020 landing quick facts (NASA JPL)',
         'https://www.jpl.nasa.gov/news/press_kits/mars_2020/landing/quick_facts',
       ],
-      ['MSL descent stage (Spaceflight101)', 'https://spaceflight101.com/msl/?p=311'],
+      [
+        'Mars Science Laboratory Landing press kit (NASA/JPL, 2012)',
+        'https://www.jpl.nasa.gov/news/press_kits/MSLLanding.pdf',
+      ],
       ['The Sun Sets on Mars (NASA)', 'https://science.nasa.gov/?p=926395'],
       ['Sky crane (Wikipedia)', 'https://en.wikipedia.org/wiki/Sky_crane_(landing_system)'],
       [
