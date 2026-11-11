@@ -14,7 +14,12 @@ export default {
   name: 'DECK LANDING',
   tag: 'Harrier deck landing',
   /* no longer than the longest hint the layout checks try, so it fits a phone held sideways */
-  brief: 'MISSION: drag sideways (or ←/→) to slide over the deck, land on spot 5.',
+  /* a phone has no arrow keys, so its brief doesn't name them */
+  get brief() {
+    return matchMedia('(pointer: coarse)').matches
+      ? 'MISSION: drag sideways to slide over the deck, land on spot 5.'
+      : 'MISSION: drag sideways (or ←/→) to slide over the deck, land on spot 5.';
+  },
   /* the trace on the result card and the clip: the same three quantities as the readouts */
   traceLab: ['HEIGHT m', 'SINK m/s', 'TO SPOT m'],
   trace: () => [Math.max(0, state.alt - HRD.h), HRD.td ? 0 : HRD.hv - state.vz, dist()],
