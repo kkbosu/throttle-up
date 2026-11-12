@@ -26,7 +26,7 @@ One line each, to go with the clip. Pick one; they are drafts.
 - Apollo 11 touched down at about 1.7 ft/s, 20 to 30 seconds before the land-or-abort call. Same engine, same site. Your turn.
 - The lunar module's engine could only run between 10 and 60% for the landing. You get the same lever the crew had.
 - I landed on the Moon at 2.0 ft/s. Beat it: kkbosu.github.io/throttle-up/lunar-module/daily/
-- Every number in this lunar landing comes from a NASA report. The flying is up to you.
+- The engine and the landing site in this are built from NASA's own reports. The flying is up to you.
 
 For X, the challenge link from your own try (SHARE on the result card) is better than the plain one: it opens on
 "769 POINTS TO BEAT".
