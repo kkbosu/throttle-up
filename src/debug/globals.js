@@ -4,6 +4,7 @@ import { state } from '../core/state.js';
 import * as m0 from '../audio/audio.js';
 import * as lmA from '../machines/lunar-module/machine.js';
 import * as lmB from '../machines/lunar-module/mission.js';
+import * as lmS from '../machines/lunar-module/site.js';
 import * as m1 from '../core/engine.js';
 import * as m2 from '../core/loader3d.js';
 import * as m3 from '../core/loop.js';
@@ -405,6 +406,13 @@ d(
   () => state.side,
   (v) => {
     state.side = v;
+  },
+);
+d(
+  'fwd',
+  () => state.fwd,
+  (v) => {
+    state.fwd = v;
   },
 );
 d(
@@ -874,6 +882,8 @@ d('lmHov', () => lmA.lmHov);
 d('lmRate', () => lmA.lmRate);
 d('lmSecs', () => lmA.lmSecs);
 d('lmReset', () => lmA.lmReset);
+d('siteH', () => lmS.siteH);
+d('siteSlope', () => lmS.siteSlope);
 d('CL', () => m36.CL);
 d('clipStart', () => m36.clipStart);
 d('clipDrop', () => m36.clipDrop);

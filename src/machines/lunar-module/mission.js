@@ -1,6 +1,7 @@
-// APOLLO LM: the lunar-landing MISSION. Each attempt starts about where Apollo 11 was when its quantity light came on:
-// roughly 100 ft up, still sinking and drifting, with a limited time before the call to land or abort. Null the drift,
-// land inside the landing gear's limits, and keep as many seconds in hand as you can.
+// APOLLO LM: the lunar-landing MISSION. Each attempt starts about where Apollo 11 was half a minute before it landed:
+// 100 to 150 ft up over Little West crater, still sinking and moving west, with a limited time before the call to land
+// or abort. Fly clear of the crater, null the drift, land on level ground inside the landing gear's limits, and keep
+// as many seconds in hand as you can.
 import { state } from '../../core/state.js';
 import { applyRaw } from '../../input/lever.js';
 import { FT, GL, ISP, LM0, M0, lm, lmLimit, lmMass, lmRate, lmReset, lmSecs } from './machine.js';
@@ -20,8 +21,13 @@ export default {
   tag: 'Apollo lunar landing',
   traceLab: ['ALTITUDE ft', 'DESCENT ft/s', 'DRIFT ft/s'],
   /* the clip keeps the craft in the middle of its frame */
-  aim: () => [lm.x, state.alt * 0.5 + 2.6, 0],
-  trace: () => [Math.max(0, state.alt) / FT, lm.td ? 0 : Math.max(0, -state.vz) / FT, lm.td ? 0 : Math.abs(lm.vx) / FT],
+  /* (a little under the middle, so the verdict panel over the top of the frame does not cover it) */
+  aim: () => [lm.x, lm.h + 5.5 + state.alt * 0.1, lm.z],
+  trace: () => [
+    Math.max(0, state.alt) / FT,
+    lm.td ? 0 : Math.max(0, -state.vz) / FT,
+    lm.td ? 0 : Math.hypot(lm.vx, lm.vd) / FT,
+  ],
   clip: () => [
     ['ALTITUDE', (Math.max(0, state.alt) / FT).toFixed(0) + ' ft'],
     ['DESCENT', (lm.td ? lm.tdv / FT : Math.max(0, -state.vz) / FT).toFixed(1) + ' ft/s'],
@@ -34,15 +40,20 @@ export default {
   /* a phone has no arrow keys, so its brief doesn't name them */
   get brief() {
     return matchMedia('(pointer: coarse)').matches
-      ? 'MISSION: drag sideways to stop the drift, slow to 3 ft/s, land before bingo.'
-      : 'MISSION: drag sideways (or ←/→) to stop the drift, land at 3 ft/s before bingo.';
+      ? 'MISSION: drag to lean. Clear the crater, stop the drift, land before bingo.'
+      : 'MISSION: drag (or arrow keys) to lean. Clear the crater, stop the drift, land.';
   },
   start(r) {
-    /* 100 to 150 ft up, sinking at 5 to 9 ft/s and drifting at 5 to 8 ft/s: left alone it lands beyond the gear's
+    /* 100 to 150 ft up, sinking at 5 to 9 ft/s and moving west at 5 to 8 ft/s: left alone it lands beyond the gear's
        limits on both counts */
     LM0.alt = Math.round(30 + r() * 16);
     LM0.vz = -Math.round(15 + r() * 12) / 10;
-    LM0.vx = ((r() < 0.5 ? -1 : 1) * Math.round(15 + r() * 9)) / 10;
+    LM0.vx = Math.round(15 + r() * 9) / 10;
+    /* over the western half of Little West crater (its middle is 60 m east of where Apollo 11 stood), a little to one
+       side of the track, drifting sideways at 2 to 5 ft/s */
+    LM0.x = -Math.round(42 + r() * 14);
+    LM0.z = Math.round(-8 + r() * 16);
+    LM0.vd = ((r() < 0.5 ? -1 : 1) * Math.round(6 + r() * 9)) / 10;
     /* enough propellant to hover for 50 to 70 seconds before the land-or-abort point */
     t0 = Math.round(50 + r() * 20);
     /* hover seconds = propellant / (weight / exhaust speed), and the propellant is part of the weight */
@@ -51,8 +62,8 @@ export default {
     lmReset();
     bingo = 0;
     t0 = toBingo();
-    state.slide = 1;
-    state.side = 0;
+    state.slide = 2;
+    state.side = state.fwd = 0;
     /* already flying, whatever the engine was doing when MISSION was pressed */
     if (state.ph != 2) {
       state.ph = 2;
@@ -67,11 +78,11 @@ export default {
     lm.T = lmMass() * GL;
   },
   end() {
-    Object.assign(LM0, { alt: 30, vz: 0, vx: 0, prop: Infinity });
+    Object.assign(LM0, { alt: 30, vz: 0, x: 0, z: 0, vx: 0, vd: 0, prop: Infinity });
     lm.prop = Infinity;
-    lm.vx = 0;
+    lm.vx = lm.vd = 0;
     state.slide = 0;
-    state.side = 0;
+    state.side = state.fwd = 0;
   },
   /* the verdict: at touchdown, or at the bingo call if the pads are not down by then (null before) */
   judge() {
@@ -111,6 +122,16 @@ export default {
               ' ft/s; with that drift the landing gear was built for ' +
               (lmLimit(lm.tdh) / FT).toFixed(1) +
               '.',
+        rows,
+      };
+    if (lm.steep)
+      return {
+        ok: 0,
+        title: 'TOO STEEP',
+        why:
+          'It came to rest on a slope of ' +
+          ((lm.slope * 180) / Math.PI).toFixed(0) +
+          '°, on a crater’s wall. The limit here is 12°; Apollo 11 stood 4.5° off level.',
         rows,
       };
     const soft = lm.tdv <= SOFT ? 1 : Math.max(0, (lmLimit(0) - lm.tdv) / (lmLimit(0) - SOFT)),

@@ -30,7 +30,8 @@ export function fromY2(y) {
   state.raw2 = Math.min(1, Math.max(0, 1 - (y - b.top) / b.height));
 }
 export const K = {};
-let sideK = 0;
+let sideK = 0,
+  fwdK = 0;
 export function keys(dt) {
   /* sliding (Harrier deck landing): ←/→ steer, A/D keep the nozzle lever */
   if (state.slide) {
@@ -38,13 +39,20 @@ export function keys(dt) {
     /* a key held sets the input; releasing it centres it (a drag in progress is left alone) */
     if (s || sideK) state.side = s;
     sideK = s;
+    /* steering both ways (lunar landing): ↑/↓ lean the craft too, and W/S keep the lever */
+    if (state.slide == 2) {
+      const f = (K.arrowup ? 1 : 0) - (K.arrowdown ? 1 : 0);
+      if (f || fwdK) state.fwd = f;
+      fwdK = f;
+    }
   }
   if (state.M.nozzle) {
     const n = (state.slide ? K.d : K.arrowright || K.d) ? 1 : 0,
       m = (state.slide ? K.a : K.arrowleft || K.a) ? 1 : 0;
     if (n - m) state.raw2 = Math.min(1, Math.max(0, state.raw2 + (n - m) * 0.5 * dt));
   }
-  const d = (K.arrowup || K.w ? 1 : 0) - (K.arrowdown || K.s ? 1 : 0);
+  const two = state.slide == 2,
+    d = ((!two && K.arrowup) || K.w ? 1 : 0) - ((!two && K.arrowdown) || K.s ? 1 : 0);
   if (!d) return;
   const sp = state.M.ab && state.raw >= 0.7 && state.raw < 0.8 ? 0.1 : 0.45;
   state.raw = Math.min(1, Math.max(0, state.raw + d * sp * dt));
@@ -82,20 +90,24 @@ export function wireInput() {
   let sx = null;
   cv.addEventListener('pointerdown', (e) => {
     if (!state.slide) return;
-    sx = { x: e.clientX, id: e.pointerId };
+    sx = { x: e.clientX, y: e.clientY, id: e.pointerId };
     try {
       cv.setPointerCapture(e.pointerId);
     } catch (_) {}
   });
   cv.addEventListener('pointermove', (e) => {
-    if (sx && e.pointerId === sx.id)
-      state.side = Math.max(-1, Math.min(1, (e.clientX - sx.x) / Math.max(60, Math.min(160, state.W * 0.15))));
+    if (sx && e.pointerId === sx.id) {
+      const k = Math.max(60, Math.min(160, state.W * 0.15));
+      state.side = Math.max(-1, Math.min(1, (e.clientX - sx.x) / k));
+      /* up the screen is away from the camera */
+      if (state.slide == 2) state.fwd = Math.max(-1, Math.min(1, (sx.y - e.clientY) / k));
+    }
   });
   ['pointerup', 'pointercancel'].forEach((n) =>
     cv.addEventListener(n, (e) => {
       if (sx && e.pointerId === sx.id) {
         sx = null;
-        state.side = 0;
+        state.side = state.fwd = 0;
       }
     }),
   );

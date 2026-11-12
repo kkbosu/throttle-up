@@ -176,22 +176,25 @@ export function createScenes() {
   ];
   /* The Moon: no air, so the sky is black whatever the Sun is doing and nothing softens the shadows; the only fill
      light is what the ground throws back. No stars by day: with the sunlit ground in view neither eye nor camera
-     picks them out. EARTHLIGHT is the lunar night under a nearly full Earth, dim and bluish, stars out. */
+     picks them out. LOW SUN is the Sun where it stood when Apollo 11 landed (11.4 degrees up, a little north of
+     east: machines/lunar-module/site.js has the axes); HIGH SUN is the same place later in the lunar day.
+     EARTHLIGHT is the lunar night under a nearly full Earth, dim and bluish, stars out. */
   SCNL = [
     {
       n: 'LOW SUN',
       zen: [0, 0, 0],
       hor: [0, 0, 0],
       gnd: [0.02, 0.02, 0.02],
-      sun: [0.5, 0.19, 0.84],
+      sun: [-0.9802, 0.1971, 0.0204],
       sunC: [1, 0.98, 0.95],
       sunI: 1.1,
       broad: 0,
-      sunL: 3.1,
+      halo: 0.08,
+      sunL: 3.6,
       hS: 0x000000,
       hG: 0x8a8680,
-      hI: 0.55,
-      exp: 0.78,
+      hI: 0.5,
+      exp: 1.2,
       fog: 0,
       stars: 0,
       fl: 0,
@@ -201,10 +204,11 @@ export function createScenes() {
       zen: [0, 0, 0],
       hor: [0, 0, 0],
       gnd: [0.02, 0.02, 0.02],
-      sun: [0.34, 0.82, 0.46],
+      sun: [-0.62, 0.77, 0.15],
       sunC: [1, 0.98, 0.95],
       sunI: 1.1,
       broad: 0,
+      halo: 0.08,
       sunL: 2.9,
       hS: 0x000000,
       hG: 0x8a8680,
@@ -220,10 +224,11 @@ export function createScenes() {
       hor: [0, 0, 0],
       gnd: [0.004, 0.005, 0.007],
       /* the light comes from the Earth (where machines/lunar-module/three.js draws it) */
-      sun: [-0.62, 0.2, -0.76],
+      sun: [0.3907, 0.9205, 0],
       sunC: [0.62, 0.74, 1],
       sunI: 0,
       broad: 0,
+      halo: 0.08,
       sunL: 0.4,
       hS: 0x10141c,
       hG: 0x1c2028,
@@ -256,6 +261,7 @@ export function applyScene(s) {
   /* a Mars sunset: the glow stays near the Sun and the dim, small disc doesn't flood the frame with bloom */
   skyU.uBroad.value = c.broad != null ? c.broad : c.glow ? 0.25 : 1;
   skyU.uDisk.value = c.glow ? 0.3 : 1;
+  skyU.uGlow.value = c.halo != null ? c.halo : 1;
   skyU.uStars.value = c.stars;
   scn.fog = sp ? null : new T.FogExp2(col(...c.hor), c.fog);
   earthU.uSun.value.set(...c.sun).normalize();

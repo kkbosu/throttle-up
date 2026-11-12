@@ -7,46 +7,14 @@ import { k3 } from '../../render3d/context.js';
 import { roverModel } from '../sky-crane/three.js';
 import { CAT, MT, V3, beam, box, canvasTex, cyl, isolated, lathe, rnd, std } from '../../render3d/kit.js';
 import { TH, thSet } from '../../render3d/lenses.js';
+import { sun } from '../../render3d/lights.js';
 import { SMK, axisPt } from '../../render3d/particles.js';
 import { HI, PROBE, lm } from './machine.js';
+import { BOULDERS, CRATERS, EARTH_DIR, siteH } from './site.js';
 
-/* ---------- the ground: a flat mare plain round the landing spot, craters and low swells further out ---------- */
-/* craters as [x, z, radius]. Big ones stand well off; small ones come close, but none touches the strip the craft
-   can drift along (z near 0), so wherever it comes down the ground is level */
-function craters() {
-  const L = [];
-  for (let i = 0; i < 70; i++) {
-    const a = Math.random() * 6.283,
-      r = 3 + Math.pow(Math.random(), 2.2) * 55,
-      d = 52 + r * 1.5 + Math.pow(Math.random(), 1.3) * 520;
-    L.push([Math.cos(a) * d, Math.sin(a) * d, r]);
-  }
-  for (let i = 0; i < 60; i++) {
-    const a = Math.random() * 6.283,
-      r = 1.5 + Math.pow(Math.random(), 2) * 8,
-      d = 12 + Math.random() * 75,
-      x = Math.cos(a) * d,
-      z = Math.sin(a) * d;
-    if (Math.abs(z) > 7 + r * 1.9) L.push([x, z, r]);
-  }
-  return L;
-}
-function height(x, z, L) {
-  const d0 = Math.hypot(x, z);
-  /* long, low swells, fading in beyond the landing area */
-  let y =
-    (Math.sin(x * 0.011 + 1.3) * Math.cos(z * 0.009) * 5 + Math.sin(x * 0.031 + z * 0.027) * 1.2) *
-    Math.min(1, Math.max(0, (d0 - 60) / 240));
-  for (const [cx, cz, r] of L) {
-    const d = Math.hypot(x - cx, z - cz) / r;
-    /* a bowl about a fifth as deep as it is wide, a raised rim, and a blanket of thrown-out soil that dies away */
-    if (d < 2.4) y += d < 1 ? -r * 0.36 * (1 - d * d) + r * 0.06 : r * 0.06 * Math.exp(-Math.pow((d - 1) / 0.42, 2));
-  }
-  return y;
-}
+/* ---------- the ground: Tranquility Base (site.js has the craters and the heights the sim lands on) ---------- */
 /* The Earth as it looks from the Moon: a blue and white disc about 1.9 degrees across (its 12,742 km at 384,400 km),
-   lit by the same Sun. It hangs in one place in the lunar sky; this one is placed by eye. */
-const EARTH = [-0.62, 0.2, -0.76];
+   lit by the same Sun. It hangs in one place in the lunar sky: over Tranquility Base, 23 degrees west of straight up. */
 function buildEarth() {
   const D = 7000,
     u = { uSun: { value: V3(0, 1, 0) }, uFull: { value: 0 } },
@@ -68,7 +36,7 @@ function buildEarth() {
       }),
     );
   m.position
-    .set(...EARTH)
+    .set(...EARTH_DIR)
     .normalize()
     .multiplyScalar(D);
   m.userData.bg = 1;
@@ -77,8 +45,7 @@ function buildEarth() {
 }
 function buildSite() {
   const S = new T.Group(),
-    L = craters(),
-    N = 200,
+    N = 240,
     W = 1400,
     g = new T.PlaneGeometry(W, W, N, N);
   g.rotateX(-Math.PI / 2);
@@ -88,9 +55,9 @@ function buildSite() {
     /* finer squares near the middle: the grid is squeezed towards it */
     const u = p.getX(i) / (W / 2),
       v = p.getZ(i) / (W / 2),
-      x = Math.sign(u) * Math.pow(Math.abs(u), 1.8) * (W / 2),
-      z = Math.sign(v) * Math.pow(Math.abs(v), 1.8) * (W / 2),
-      y = height(x, z, L),
+      x = Math.sign(u) * Math.pow(Math.abs(u), 2.2) * (W / 2),
+      z = Math.sign(v) * Math.pow(Math.abs(v), 2.2) * (W / 2),
+      y = siteH(x, z),
       k = 0.82 + Math.random() * 0.16 + Math.max(-0.12, Math.min(0.12, y * 0.02));
     p.setXYZ(i, x, y, z);
     /* the texture is laid by the metre (it tiles every 9 m), not by the squeezed grid */
@@ -116,7 +83,7 @@ function buildSite() {
         for (const ox of [-w, 0, w])
           for (const oy of [-h, 0, h]) {
             const gd = x.createRadialGradient(px + ox, py + oy, 0, px + ox, py + oy, r);
-            gd.addColorStop(0, `rgba(${v},${v},${v},.07)`);
+            gd.addColorStop(0, `rgba(${v},${v},${v},.03)`);
             gd.addColorStop(1, `rgba(${v},${v},${v},0)`);
             x.fillStyle = gd;
             x.fillRect(px + ox - r, py + oy - r, 2 * r, 2 * r);
@@ -160,55 +127,40 @@ function buildSite() {
   far.position.y = -1.5;
   far.userData.bg = 1;
   S.add(far);
-  /* low, rounded highlands a few kilometres off, all the way round */
-  const HN = 120,
-    hp = [],
-    hi = [];
-  for (let i = 0; i <= HN; i++) {
-    const a = (i / HN) * 6.283,
-      h = 60 + 260 * Math.pow(0.5 + 0.5 * Math.sin(a * 3 + 1.7) * Math.sin(a * 7 + 0.4), 2) + 70 * Math.sin(a * 13 + 2);
-    hp.push(
-      Math.cos(a) * 5200,
-      -8,
-      Math.sin(a) * 5200,
-      Math.cos(a) * 5900,
-      Math.max(20, h),
-      Math.sin(a) * 5900,
-      Math.cos(a) * 6600,
-      -8,
-      Math.sin(a) * 6600,
-    );
-    if (i < HN) {
-      const k = i * 3;
-      hi.push(k, k + 3, k + 1, k + 1, k + 3, k + 4, k + 1, k + 4, k + 2, k + 2, k + 4, k + 5);
-    }
-  }
-  const hg = new T.BufferGeometry();
-  hg.setAttribute('position', new T.Float32BufferAttribute(hp, 3));
-  hg.setIndex(hi);
-  hg.computeVertexNormals();
-  const hills = new T.Mesh(hg, std({ color: 0x8a8782, roughness: 1, metalness: 0, side: T.DoubleSide }));
-  CAT.set(hills.material, 'gnd');
-  hills.userData.bg = 1;
-  S.add(hills);
-  /* rocks, small near the middle */
+  /* rocks: the boulders the photographs show at their distances (bearings by eye), West crater's field of blocks up
+     to 3 m, and small ones everywhere */
   const rm = std({ color: 0x6d6a66, roughness: 0.95, flatShading: true }),
     rk = new T.InstancedMesh(new T.DodecahedronGeometry(1, 0), rm, 420),
     M4 = new T.Matrix4(),
     q = new T.Quaternion(),
     eu = new T.Euler();
   CAT.set(rm, 'gnd');
+  const WEST = CRATERS[0];
   for (let i = 0; i < 420; i++) {
-    const a = Math.random() * 6.283,
-      d = 7 + Math.pow(Math.random(), 1.5) * 330,
-      s = 0.05 + Math.pow(Math.random(), 4) * 0.9 * (d / 80 + 0.25),
-      x = Math.cos(a) * d,
+    let x, z, s;
+    if (i < BOULDERS.length) {
+      const a = Math.PI + (Math.random() - 0.5) * 1.5;
+      x = Math.cos(a) * BOULDERS[i][0];
+      z = Math.sin(a) * BOULDERS[i][0];
+      s = BOULDERS[i][1] * 0.5;
+    } else if (i < 150) {
+      const a = Math.random() * 6.283,
+        d = WEST[2] * (0.9 + Math.pow(Math.random(), 1.6) * 1.5);
+      x = WEST[0] + Math.cos(a) * d;
+      z = WEST[1] + Math.sin(a) * d;
+      s = 0.25 + Math.pow(Math.random(), 2.5) * 1.25;
+    } else {
+      const a = Math.random() * 6.283,
+        d = 7 + Math.pow(Math.random(), 1.5) * 330;
+      x = Math.cos(a) * d - 20;
       z = Math.sin(a) * d;
+      s = 0.04 + Math.pow(Math.random(), 5) * 0.5;
+    }
     q.setFromEuler(eu.set(Math.random() * 3, Math.random() * 3, Math.random() * 3));
     M4.compose(
-      V3(x, height(x, z, L) + s * 0.2, z),
+      V3(x, siteH(x, z) + s * 0.2, z),
       q,
-      V3(s * (1 + Math.random()), s * (0.5 + Math.random() * 0.5), s * (1 + Math.random())),
+      V3(s * (1 + Math.random() * 0.6), s * (0.5 + Math.random() * 0.5), s * (1 + Math.random() * 0.6)),
     );
     rk.setMatrixAt(i, M4);
   }
@@ -424,6 +376,53 @@ function buildLM() {
   anchor.position.y = 0.7;
   anchor.rotation.z = -Math.PI / 2;
   LM.add(anchor);
+  /* thruster puffs: a short, faint cone above and below each of the four clusters. A lean starts with one pair of
+     puffs and stops with the opposite pair (drawn to be seen; INFO says what is simplified) */
+  const pm = new T.MeshBasicMaterial({
+      color: 0xd8d2ff,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.5,
+      blending: T.AdditiveBlending,
+      depthWrite: false,
+      side: T.DoubleSide,
+    }),
+    pg = new T.ConeGeometry(0.13, 0.75, 12, 3, true),
+    QD = AS.lander
+      ? [
+          [1.9, 4.6, 1.9],
+          [1.9, 4.6, -1.9],
+          [-1.9, 4.6, 1.9],
+          [-1.9, 4.6, -1.9],
+        ]
+      : [
+          [0.85, 5.15, 1.55],
+          [0.85, 5.15, -1.55],
+          [-1.25, 5.15, 1.55],
+          [-1.25, 5.15, -1.55],
+        ],
+    puffs = [];
+  QD.forEach(([x, y, z]) =>
+    [1, -1].forEach((up) => {
+      const c = new T.Mesh(pg, pm);
+      /* the cone's point sits on the nozzle and it widens away from it */
+      c.position.set(x, y + up * 0.6, z);
+      if (up > 0) c.rotation.x = Math.PI;
+      c.visible = false;
+      c.userData.q = [Math.sign(x), Math.sign(z), up];
+      LM.add(c);
+      puffs.push(c);
+    }),
+  );
+  /* brightest at the nozzle, gone by the wide end */
+  {
+    const py = pg.attributes.position,
+      pc = new Float32Array(py.count * 3);
+    for (let i = 0; i < py.count; i++) pc.fill(Math.pow(Math.max(0, py.getY(i) / 0.75 + 0.5), 1.6), i * 3, i * 3 + 3);
+    pg.setAttribute('color', new T.BufferAttribute(pc, 3));
+  }
+  /* pt, pr: seconds left of the puff that changes the lean forward/back and left/right; ps: which way; l*: last rates */
+  const PF = { pt: 0, pr: 0, st: 0, sr: 0, lt: 0, lr: 0, tilt: 0, roll: 0 };
   /* NASA's own model of the lunar module takes the hand-built one's place when its file arrived (render3d/assets.js) */
   const MD = AS.lander ? roverModel(AS.lander) : null;
   if (MD) LM.add(MD);
@@ -475,10 +474,39 @@ function buildLM() {
       return P;
     },
     /* what upd() moves or shows/hides: not merged (render3d/merge.js) */
-    keep: [LM, HB, skin, ...(MD ? [MD] : []), ...probes],
-    upd() {
-      LM.position.set(lm.x, Math.max(0, state.alt), 0);
+    keep: [LM, HB, skin, ...(MD ? [MD] : []), ...probes, ...puffs],
+    upd(dt) {
+      LM.position.set(lm.x, lm.h, lm.z);
       LM.rotation.z = -lm.tilt;
+      LM.rotation.x = -lm.roll;
+      /* the shadow area travels with the craft; so low a Sun throws its shadow a long way down-Sun of it */
+      sun.target.position.set(lm.x, 3, lm.z);
+      sun.position.copy(sun.target.position).addScaledVector(V3(...k3.curP.sun).normalize(), 60);
+      /* puffs: display only. A change in how fast the lean is changing is a thruster firing */
+      const flying = state.ph == 2 && !lm.td && dt > 0,
+        rt = flying ? (lm.tilt - PF.tilt) / dt : 0,
+        rr = flying ? (lm.roll - PF.roll) / dt : 0;
+      PF.tilt = lm.tilt;
+      PF.roll = lm.roll;
+      if (Math.abs(rt - PF.lt) > 0.02) {
+        PF.st = Math.sign(rt - PF.lt);
+        PF.pt = 0.3;
+      }
+      if (Math.abs(rr - PF.lr) > 0.02) {
+        PF.sr = Math.sign(rr - PF.lr);
+        PF.pr = 0.3;
+      }
+      PF.lt = rt;
+      PF.lr = rr;
+      PF.pt = Math.max(0, PF.pt - dt);
+      PF.pr = Math.max(0, PF.pr - dt);
+      /* leaning forward more: the front clusters fire up and the back ones down; leaning left more: the left ones
+         fire up and the right ones down */
+      for (const c of puffs) {
+        const [qx, qz, up] = c.userData.q;
+        c.visible =
+          flying && ((PF.pt > 0 && PF.st * qx * up > 0) || (PF.pr > 0 && PF.sr * qz * up < 0)) && !state.exposed;
+      }
       skin.visible = !state.exposed;
       HB.visible = !MD || !!state.exposed;
       if (MD) MD.visible = !state.exposed;
@@ -499,11 +527,15 @@ export default {
     land: 1,
     bloom: 0.15,
     envG: [0.13, 0.13, 0.125],
+    /* the Sun is low in the east (-X): SIDE and CLOSE-UP stand north-east of the craft, on its sunlit side; REAR looks
+       back from the north-west, along its long shadow */
     cams: [
-      [[18, 4.2, 30], [0, 3.2, 0], 8],
-      [[9.5, 2.6, 11], [0, 2.7, 0], 5.2],
-      [[-13, 1.7, 21], [0, 2.6, 0], 7.5],
+      [[-15, 4.2, 31], [0, 3.2, 0], 8],
+      [[-8.5, 2.6, 11.5], [0, 2.7, 0], 5.2],
+      [[17, 1.9, 19], [0, 2.6, 0], 7.5],
     ],
+    /* its shadow can fall 150 m away */
+    shF: 280,
     mt: 0,
   },
   build: () => isolated(buildLM, 0x1969),
@@ -511,6 +543,8 @@ export default {
   cam(P0, T0) {
     P0.x += lm.x;
     T0.x += lm.x;
+    P0.z += lm.z;
+    T0.z += lm.z;
   },
   plume(u) {
     const nn = (state.N / HI) * state.fu,
@@ -560,8 +594,8 @@ export default {
         sp = rnd(10, 26) * (0.5 + k2 * 0.5);
       SMK.add({
         x: lm.x + Math.cos(a) * r,
-        y: 0.12,
-        z: Math.sin(a) * r,
+        y: lm.h - h + 0.12,
+        z: lm.z + Math.sin(a) * r,
         vx: Math.cos(a) * sp,
         vy: rnd(0.2, 1.6),
         vz: Math.sin(a) * sp,

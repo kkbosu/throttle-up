@@ -54,9 +54,11 @@ export const state = {
   vz: 0,
   nz: 90,
   /* slide: dragging sideways on the view (and ←/→) steers instead of orbiting the camera (Harrier deck landing);
-     side: that input, -1 (left) to 1 (right) */
+     side: that input, -1 (left) to 1 (right). slide 2 (the lunar landing): a drag up or down and the up/down arrows
+     steer too, as fwd, -1 (towards the camera) to 1 (away) */
   slide: 0,
   side: 0,
+  fwd: 0,
   prp: 0,
   beta: 86,
   ph: 0,

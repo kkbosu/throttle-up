@@ -508,26 +508,48 @@ const scenarios = [
         misStart(seed);
         const p0 = { ...LM0, secs: lmSecs(), slide };
         if (how === 'dry') lm.used = lm.prop - 60;
+        // 'steep': stopped over the wall of Little West crater, then straight down
+        if (how === 'steep') { lm.x = -48; lm.z = 0; lm.vx = lm.vd = 0; }
         for (let t = 0; t < 200 && MS.tr >= 0; t += 0.05) {
-          if (how === 'good') { raw = lmRate(alt > 10 ? -8 : alt > 4 ? -4 : -2); applyRaw(); side = Math.max(-1, Math.min(1, -lm.vx * 0.8)); }
+          if (how === 'good' || how === 'steep') { raw = lmRate(alt > 10 ? -8 : alt > 4 ? -4 : -2); applyRaw(); }
+          // 'good': fly on west, clear of the crater, to level ground 22 m short of where Apollo 11 stood, and stop there
+          if (how === 'good') { side = Math.max(-1, Math.min(1, (Math.max(-3, Math.min(3, (-22 - lm.x) * 0.25)) - lm.vx) * 0.8)); fwd = Math.max(-1, Math.min(1, lm.vd * 0.8)); }
           if (how === 'dry') { raw = lmHov(); applyRaw(); }
           keys(0.05); update(0.05); misTick(0.05);
         }
-        return { p0, res: MS.res, td: lm.td, hard: lm.hard };
+        return { p0, res: MS.res, td: lm.td, hard: lm.hard, steep: lm.steep, x: lm.x, slope: siteSlope(lm.x, lm.z) };
       }, [seed, how]);
       let r = await fly(11, 'good');
       const p = r.p0;
-      c.expect(p.alt >= 30 && p.alt <= 46 && p.vz <= -1.5 && p.vz >= -2.7 && Math.abs(p.vx) >= 1.5 && Math.abs(p.vx) <= 2.4 && p.secs > 69 && p.secs < 91 && p.slide === 1, `seeded start conditions in range (${JSON.stringify(p)})`);
+      c.expect(p.alt >= 30 && p.alt <= 46 && p.vz <= -1.5 && p.vz >= -2.7 && p.vx >= 1.5 && p.vx <= 2.4 && p.x >= -56 && p.x <= -42 && Math.abs(p.z) <= 8 && Math.abs(p.vd) >= 0.6 && Math.abs(p.vd) <= 1.5 && p.secs > 69 && p.secs < 91 && p.slide === 2, `seeded start conditions in range (${JSON.stringify(p)})`);
       c.expect(r.res && r.res.ok === 1 && r.res.title === 'ON THE SURFACE' && r.res.score > 600 && r.res.score <= 1000, `a flown landing scores (${JSON.stringify(r.res)})`);
       const same = await fly(11, 'good');
       c.expect(JSON.stringify(same.p0) === JSON.stringify(p) && same.res.score === r.res.score, 'the same seed gives the same conditions and score');
       r = await fly(11, 'off');
       c.expect(r.res && r.res.ok === 0 && r.res.title === 'GEAR OVERLOADED' && r.hard === 1, `left alone it lands beyond the gear limits (${JSON.stringify(r.res)})`);
+      r = await fly(11, 'steep');
+      c.expect(r.res && r.res.ok === 0 && r.res.title === 'TOO STEEP' && r.steep === 1, `down on a crater's wall is TOO STEEP (${JSON.stringify(r.res)}, slope ${r.slope})`);
+      // leaning both ways: a drag (or the arrow keys) right and up the screen pushes it west and away from the camera
+      const lean = await c.ev(() => {
+        misStart(11);
+        const v0 = [lm.vx, lm.vd];
+        side = 1; fwd = 1;
+        for (let t = 0; t < 3; t += 0.05) { keys(0.05); update(0.05); misTick(0.05); }
+        const o = { dvx: lm.vx - v0[0], dvd: lm.vd - v0[1], tilt: lm.tilt, roll: lm.roll };
+        side = 0; fwd = 0;
+        return o;
+      });
+      c.expect(lean.dvx > 0.2 && lean.dvd < -0.2 && lean.tilt > 0.1 && lean.roll > 0.1, `leaning steers in both directions (${JSON.stringify(lean)})`);
+      await page.keyboard.down('ArrowUp');
+      const ku = await c.ev(() => { const r0 = raw; keys(0.05); return { fwd, same: raw === r0 }; });
+      await page.keyboard.up('ArrowUp');
+      const kd = await c.ev(() => { keys(0.05); return fwd; });
+      c.expect(ku.fwd === 1 && ku.same && kd === 0, `in the mission ↑ leans the craft and leaves the lever alone (${JSON.stringify(ku)}, then ${kd})`);
       r = await fly(11, 'dry');
       c.expect(r.res && r.res.ok === 0 && r.res.title === 'BINGO: ABORT', `hovering to the 20-second point is BINGO (${JSON.stringify(r.res)})`);
       await page.click('#misx');
-      const f = await c.ev(() => ({ on: MS.on, prop: LM0.prop === Infinity, slide, vx: LM0.vx }));
-      c.expect(f.on === 0 && f.prop && f.slide === 0 && f.vx === 0, `CLOSE restores free play (${JSON.stringify(f)})`);
+      const f = await c.ev(() => ({ on: MS.on, prop: LM0.prop === Infinity, slide, vx: LM0.vx, x: LM0.x, vd: LM0.vd }));
+      c.expect(f.on === 0 && f.prop && f.slide === 0 && f.vx === 0 && f.x === 0 && f.vd === 0, `CLOSE restores free play (${JSON.stringify(f)})`);
     },
   },
   {
