@@ -31,6 +31,8 @@ export const VS = (() => {
 })();
 /* the machine to open: ?m, or the one this page belongs to */
 export const M0 = +(new URLSearchParams(location.search).get('m') ?? meta('m')) || 0;
+/* the bare home page: no ?m and not a machine's own page (it opens the first machine) */
+export const HOME = new URLSearchParams(location.search).get('m') == null && meta('m') == null;
 /* where the machines' own pages live (the site's root as a full URL), or null when the build has none (the dev
    server): links then use ?m= */
 export const PAGES = meta('pages') == null ? null : new URL(meta('pages'), location.href).href;

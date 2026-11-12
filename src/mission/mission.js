@@ -2,6 +2,7 @@
 // judges the result and shows its progress in its inset; this module runs it: the ◆ MISSION button, the daily
 // challenge (the same conditions for everyone on the same date), the result card and its share line.
 import { master } from '../core/engine.js';
+import { count } from '../core/analytics.js';
 import { DAILY, M0, VS, dailyLink } from '../core/params.js';
 import { state } from '../core/state.js';
 import { $ } from '../core/util.js';
@@ -88,6 +89,7 @@ export function misStart(seed) {
     MS.best = s.best;
     MS.seed = daySeed(m.name, MS.day);
     save(m.name);
+    count('mission/' + state.M.slug, 1);
   } else {
     MS.day = 0;
     MS.seed = seed >>> 0;
@@ -139,6 +141,7 @@ export function misTick(dr) {
     MS.res = m.judge();
     traceSample(MS.t, m.trace, !!MS.res);
     if (MS.res) MS.tv = MS.t;
+    if (MS.res && MS.day) count((MS.res.ok ? 'landed/' : 'failed/') + state.M.slug, 1);
     if (MS.res && MS.res.ok && MS.day && MS.res.score > MS.best) {
       MS.best = MS.res.score;
       save(m.name);
@@ -164,6 +167,7 @@ export function shareText(r = MS.res) {
   ].join('\n');
 }
 function share() {
+  count('share/' + state.M.slug, 1);
   const t = shareText(),
     b = $('misy'),
     done = (s) => {
@@ -234,7 +238,10 @@ function hideCard() {
 /* load-time setup, called from main.js */
 export function wireMission() {
   $('misy').onclick = share;
-  $('misv').onclick = clipOpen;
+  $('misv').onclick = () => {
+    count('clip/' + state.M.slug, 1);
+    clipOpen();
+  };
   /* the same conditions again: today's (a new try) or the given seed's */
   $('misa').onclick = () => misStart(MS.day ? null : MS.seed);
   $('misx').onclick = () => misStop();

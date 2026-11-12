@@ -37,6 +37,11 @@ src/
   core/params.js          ?q (QP), ?manual (MAN), ?fps (FPS), ?nomerge, ?daily (DAILY), ?vs (VS: a friend's result to
                           beat), ?m or the page's own machine (M0), PAGES + dailyLink() (the machines' own pages);
                           ?r=2d is read in core/loader3d.js
+  core/analytics.js       visitor counts through GoatCounter (kkbosu.goatcounter.com; no cookies): wireAnalytics() loads the
+                          script only on the live site and never under automation or ?manual; count(path) is the visit's
+                          one page view ('/', '/lunar-module', '/sky-crane/daily': the machine's address whichever link
+                          opened it), count(name, 1) an event (start/, mission/, landed/, failed/, share/, clip/,
+                          challenge/ + the machine's slug). Development and the tests count and fetch nothing
   core/util.js            $, cv/g (HUD canvas), mk, sm (smoothstep), label tables, MONO (the system monospace stack,
                           no longer used by the HUD)
   core/tokens.js          design tokens for canvas-drawn UI: T (colours by role, copied from style.css :root by
@@ -279,7 +284,7 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
 
 1. **Make it shippable**
    - ~~Split into a Vite project, one module per machine (sim + builder + config + info together), shared renderer/HUD/audio modules. Behaviour identical to v11 — compare screenshots before/after.~~ Done (branch `refactor/vite-split`): identical to v11 on the full golden suite.
-   - ~~Git, then host on GitHub Pages; social preview image (Open Graph), favicon.~~ Done (live, see Hosting). Still open: privacy-friendly analytics (not chosen yet; needs Kingsley's choice and account, e.g. GoatCounter, Plausible, Cloudflare Web Analytics).
+   - ~~Git, then host on GitHub Pages; social preview image (Open Graph), favicon.~~ Done (live, see Hosting). Analytics: GoatCounter (Kingsley's account, 2026-11-12; `core/analytics.js`).
    - ~~Interface polish: tokens, type system, keys, lever, dials and lamps, START overlay, INFO, result card with trace, clip frame.~~ Done 2026-11-10 on branch `ui/polish` (see Interface design). Not yet checked on a real phone.
    - Real-device test pass and fixes (performance budget for mid-range Android). Partly done (2026-10-22 to 10-28): the `?fps` readout, the CPU work above, and the landscape layout. Deferred until later (Kingsley's call, 2026-10-28): Starship's GPU cost on the Mali-G52 (see Known issues), iPhone Safari, listening on real speakers.
 
@@ -292,7 +297,7 @@ Real-device checks still outstanding: real GPU, mid-range Android, iPhone Safari
    - Better models (check NASA 3D Resources for Perseverance; check usage terms).
    - Flight mode: Saturn V / Shuttle ascent to orbit with staging.
    - ~~Machine 10: the Apollo lunar module's descent engine, with the landing as its mission.~~ Done 2026-11-11 (machine index 9, `?m=9`, `/lunar-module/`): every INFO number read from the NASA documents listed in `docs/SOURCES.md`. The lander is NASA's own model (approved 2026-11-11; "Apollo Lunar Module" from NASA 3D Resources, through `tools/rover-model.mjs ... --out src/machines/lunar-module/lander.bin --turn 1.5707963 --scale 1.4`: 15,800 triangles, one draw call, 284 kB, fetched with the rover before `init3D`); the hand-built one is the fallback and what CUTAWAY shows. The lever is the rate-of-descent switch, as the crews flew it. Since 2026-11-12 the site is Tranquility Base (`site.js`; sources in `docs/SOURCES.md`): West, Little West, Double and four smaller craters at their sourced sizes and distances, bearings and depths by eye where no source gives them, small craters scattered by a fixed sequence, the Sun at 11.4° in the east (LOW SUN), the Earth 23° from overhead (out of most views), a flat horizon. The craft leans both ways (10°, a game number) and shows thruster puffs; touchdown is on the terrain, and resting on more than 12° (a game rule) fails. The Moon's scenes set `halo` (the sky's glow round the Sun, `uGlow`). The clip was looked at: its aim keeps the landed craft below the verdict panel. Not done: turning the craft (yaw), leaning in free play (a drag there still orbits the camera), a look on a real GPU and a phone. Measured on this PC's GPU (2026-11-12, `snapshots/perf/d31d171.md`): cheap in GPU time and draw calls (11 at Q0), but the most triangles of any machine at Q0 (about 149,000, mostly the ground mesh, not reduced from Q2), so a coarser ground at Q0 is the lever if a phone struggles. Both model files are fetched whichever machine is opened.
-4. **Launch**: the proposal Kingsley agreed to on 2026-11-11 is `docs/BREAKOUT.md` (mock-up in `docs/breakout/`). Frame it as an interactive explainer on Hacker News and Reddit and as a challenge on short video and X; time it to a real flight if one is near; no server for launch. Still needed first: analytics (GoatCounter or Cloudflare Web Analytics; Kingsley picks one and makes the account). Channels: Show HN, r/space, r/aviation, r/InternetIsBeautiful, aviation/space creators, led by a 10-second clip.
+4. **Launch**: the proposal Kingsley agreed to on 2026-11-11 is `docs/BREAKOUT.md` (mock-up in `docs/breakout/`). Frame it as an interactive explainer on Hacker News and Reddit and as a challenge on short video and X; time it to a real flight if one is near; no server for launch. Analytics is in (GoatCounter). Channels: Show HN, r/space, r/aviation, r/InternetIsBeautiful, aviation/space creators, led by a 10-second clip.
 
 ## Working style for this project
 

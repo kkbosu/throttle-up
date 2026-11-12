@@ -1,4 +1,5 @@
 // Controls: button labels (lab), button actions (act), lever labels, hint text, the START overlay.
+import { count } from '../core/analytics.js';
 import { DAILY, MAN, VS } from '../core/params.js';
 import { click, initAudio } from '../audio/audio.js';
 import { master } from '../core/engine.js';
@@ -228,6 +229,7 @@ export function wireControls() {
     if (state.AC) state.AC.resume();
     state.ph = 1;
     state.st = 0;
+    count('start/' + state.M.slug, 1);
     $('hint').textContent = 'Engine starting...';
     $('ov').style.opacity = 0;
     setTimeout(() => ($('ov').style.display = 'none'), 600);
