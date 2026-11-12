@@ -159,18 +159,18 @@ export function clipFrame(dr) {
     txt(k, cw * (i + 0.5), TOP + VID + 50, lbl(20), T.dim, 'center', 3);
     txt(v, cw * (i + 0.5), TOP + VID + 96, num(34), T.hi, 'center');
   });
-  /* where to play it: for a daily try, the link that opens today's challenge */
+  /* where to play it: for a daily try, the link that opens today's challenge, and once a try has scored, the link
+     that challenges a friend to beat it. A long address is set smaller so that it fits the frame */
+  const link = (
+    MS.day ? (r ? shareLink(r) : dailyLink(state.mi, state.M.slug)) : PAGES || location.origin + location.pathname
+  ).replace(/^https?:\/\/|\/$/g, '');
+  vc.font = num(19);
+  if ('letterSpacing' in vc) vc.letterSpacing = '0px';
   txt(
-    /* ...and once a try has scored, the link that challenges a friend to beat it */
-    (MS.day
-      ? r
-        ? shareLink(r)
-        : dailyLink(state.mi, state.M.slug)
-      : PAGES || location.origin + location.pathname
-    ).replace(/^https?:\/\/|\/$/g, ''),
+    link,
     VW / 2,
     VH - 26,
-    num(19),
+    num(Math.min(19, Math.floor((19 * (VW - 2 * PAD)) / Math.max(1, vc.measureText(link).width)))),
     T.live,
     'center',
   );
